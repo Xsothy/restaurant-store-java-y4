@@ -111,6 +111,10 @@ public class Customer {
         return passwordHash;
     }
     
+    public String getPassword() {
+        return passwordHash;
+    }
+    
     public void setPasswordHash(String passwordHash) {
         this.passwordHash = passwordHash;
     }

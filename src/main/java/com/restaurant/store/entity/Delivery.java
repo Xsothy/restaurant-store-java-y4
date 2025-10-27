@@ -20,9 +20,14 @@ public class Delivery {
     @JoinColumn(name = "order_id", nullable = false)
     private Order order;
     
-    @NotBlank(message = "Driver name is required")
+    @Column(name = "delivery_address")
+    private String deliveryAddress;
+    
+    @Column(name = "phone_number")
+    private String phoneNumber;
+    
     @Size(max = 100)
-    @Column(name = "driver_name", nullable = false, length = 100)
+    @Column(name = "driver_name", length = 100)
     private String driverName;
     
     @Size(max = 20)
@@ -34,13 +39,16 @@ public class Delivery {
     
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private DeliveryStatus status = DeliveryStatus.ASSIGNED;
+    private DeliveryStatus status = DeliveryStatus.PENDING;
     
     @Column(name = "pickup_time")
     private LocalDateTime pickupTime;
     
     @Column(name = "estimated_arrival_time")
     private LocalDateTime estimatedArrivalTime;
+    
+    @Column(name = "estimated_delivery_time")
+    private LocalDateTime estimatedDeliveryTime;
     
     @Column(name = "actual_delivery_time")
     private LocalDateTime actualDeliveryTime;
@@ -130,6 +138,22 @@ public class Delivery {
         this.vehicleInfo = vehicleInfo;
     }
     
+    public String getDeliveryAddress() {
+        return deliveryAddress;
+    }
+    
+    public void setDeliveryAddress(String deliveryAddress) {
+        this.deliveryAddress = deliveryAddress;
+    }
+    
+    public String getPhoneNumber() {
+        return phoneNumber;
+    }
+    
+    public void setPhoneNumber(String phoneNumber) {
+        this.phoneNumber = phoneNumber;
+    }
+    
     public DeliveryStatus getStatus() {
         return status;
     }
@@ -152,6 +176,14 @@ public class Delivery {
     
     public void setEstimatedArrivalTime(LocalDateTime estimatedArrivalTime) {
         this.estimatedArrivalTime = estimatedArrivalTime;
+    }
+    
+    public LocalDateTime getEstimatedDeliveryTime() {
+        return estimatedDeliveryTime;
+    }
+    
+    public void setEstimatedDeliveryTime(LocalDateTime estimatedDeliveryTime) {
+        this.estimatedDeliveryTime = estimatedDeliveryTime;
     }
     
     public LocalDateTime getActualDeliveryTime() {

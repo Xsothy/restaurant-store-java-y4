@@ -4,7 +4,9 @@ import com.restaurant.store.dto.request.CustomerRegisterRequest;
 import com.restaurant.store.dto.request.LoginRequest;
 import com.restaurant.store.dto.response.ApiResponse;
 import com.restaurant.store.dto.response.AuthResponse;
+import com.restaurant.store.service.AuthService;
 import jakarta.validation.Valid;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -14,31 +16,31 @@ import org.springframework.web.bind.annotation.*;
 @CrossOrigin(origins = "*")
 public class AuthController {
     
-    // TODO: Inject AuthService when implemented
-    // private final AuthService authService;
+    @Autowired
+    private AuthService authService;
     
     @PostMapping("/register")
     public ResponseEntity<ApiResponse<AuthResponse>> register(
             @Valid @RequestBody CustomerRegisterRequest request) {
         
-        // TODO: Implement customer registration logic
+        AuthResponse response = authService.register(request);
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.success("Customer registered successfully", null));
+                .body(ApiResponse.success("Customer registered successfully", response));
     }
     
     @PostMapping("/login")
     public ResponseEntity<ApiResponse<AuthResponse>> login(
             @Valid @RequestBody LoginRequest request) {
         
-        // TODO: Implement login logic
-        return ResponseEntity.ok(ApiResponse.success("Login successful", null));
+        AuthResponse response = authService.login(request);
+        return ResponseEntity.ok(ApiResponse.success("Login successful", response));
     }
     
     @PostMapping("/logout")
     public ResponseEntity<ApiResponse<String>> logout(
             @RequestHeader("Authorization") String authToken) {
         
-        // TODO: Implement logout logic (if needed, mostly handled client-side)
+        // Logout is handled client-side by discarding JWT token
         return ResponseEntity.ok(ApiResponse.success("Logout successful", null));
     }
 }

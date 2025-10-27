@@ -2,6 +2,8 @@ package com.restaurant.store.controller;
 
 import com.restaurant.store.dto.response.ApiResponse;
 import com.restaurant.store.dto.response.DeliveryResponse;
+import com.restaurant.store.service.DeliveryService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -10,16 +12,16 @@ import org.springframework.web.bind.annotation.*;
 @CrossOrigin(origins = "*")
 public class DeliveryController {
     
-    // TODO: Inject DeliveryService when implemented
-    // private final DeliveryService deliveryService;
+    @Autowired
+    private DeliveryService deliveryService;
     
     @GetMapping("/{orderId}")
     public ResponseEntity<ApiResponse<DeliveryResponse>> getDeliveryByOrderId(
             @PathVariable Long orderId,
             @RequestHeader("Authorization") String authToken) {
         
-        // TODO: Implement get delivery by order ID logic
-        return ResponseEntity.ok(ApiResponse.success("Delivery information retrieved successfully", null));
+        DeliveryResponse response = deliveryService.getDeliveryByOrderId(orderId, authToken);
+        return ResponseEntity.ok(ApiResponse.success("Delivery information retrieved successfully", response));
     }
     
     @GetMapping("/track/{orderId}")
@@ -27,8 +29,8 @@ public class DeliveryController {
             @PathVariable Long orderId,
             @RequestHeader("Authorization") String authToken) {
         
-        // TODO: Implement delivery tracking logic
-        return ResponseEntity.ok(ApiResponse.success("Delivery tracking information retrieved successfully", null));
+        DeliveryResponse response = deliveryService.trackDelivery(orderId, authToken);
+        return ResponseEntity.ok(ApiResponse.success("Delivery tracking information retrieved successfully", response));
     }
     
     @PutMapping("/{deliveryId}/update-location")

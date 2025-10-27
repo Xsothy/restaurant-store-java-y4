@@ -4,7 +4,9 @@ import com.restaurant.store.dto.request.CreateOrderRequest;
 import com.restaurant.store.dto.request.PaymentRequest;
 import com.restaurant.store.dto.response.ApiResponse;
 import com.restaurant.store.dto.response.OrderResponse;
+import com.restaurant.store.service.OrderService;
 import jakarta.validation.Valid;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -16,17 +18,17 @@ import java.util.List;
 @CrossOrigin(origins = "*")
 public class OrderController {
     
-    // TODO: Inject OrderService when implemented
-    // private final OrderService orderService;
+    @Autowired
+    private OrderService orderService;
     
     @PostMapping
     public ResponseEntity<ApiResponse<OrderResponse>> createOrder(
             @Valid @RequestBody CreateOrderRequest request,
             @RequestHeader("Authorization") String authToken) {
         
-        // TODO: Implement order creation logic
+        OrderResponse response = orderService.createOrder(request, authToken);
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.success("Order created successfully", null));
+                .body(ApiResponse.success("Order created successfully", response));
     }
     
     @GetMapping("/{orderId}")
@@ -34,8 +36,8 @@ public class OrderController {
             @PathVariable Long orderId,
             @RequestHeader("Authorization") String authToken) {
         
-        // TODO: Implement get order logic
-        return ResponseEntity.ok(ApiResponse.success("Order retrieved successfully", null));
+        OrderResponse response = orderService.getOrderById(orderId, authToken);
+        return ResponseEntity.ok(ApiResponse.success("Order retrieved successfully", response));
     }
     
     @GetMapping("/{orderId}/status")
@@ -43,8 +45,8 @@ public class OrderController {
             @PathVariable Long orderId,
             @RequestHeader("Authorization") String authToken) {
         
-        // TODO: Implement get order status logic
-        return ResponseEntity.ok(ApiResponse.success("Order status retrieved successfully", "PENDING"));
+        String status = orderService.getOrderStatus(orderId, authToken);
+        return ResponseEntity.ok(ApiResponse.success("Order status retrieved successfully", status));
     }
     
     @PostMapping("/{orderId}/pay")
@@ -53,8 +55,8 @@ public class OrderController {
             @Valid @RequestBody PaymentRequest request,
             @RequestHeader("Authorization") String authToken) {
         
-        // TODO: Implement payment processing logic
-        return ResponseEntity.ok(ApiResponse.success("Payment processed successfully", null));
+        String result = orderService.processPayment(orderId, request, authToken);
+        return ResponseEntity.ok(ApiResponse.success(result, null));
     }
     
     @GetMapping("/customer/{customerId}")
@@ -62,16 +64,16 @@ public class OrderController {
             @PathVariable Long customerId,
             @RequestHeader("Authorization") String authToken) {
         
-        // TODO: Implement get customer orders logic
-        return ResponseEntity.ok(ApiResponse.success("Customer orders retrieved successfully", null));
+        List<OrderResponse> orders = orderService.getCustomerOrders(customerId, authToken);
+        return ResponseEntity.ok(ApiResponse.success("Customer orders retrieved successfully", orders));
     }
     
     @GetMapping("/my-orders")
     public ResponseEntity<ApiResponse<List<OrderResponse>>> getMyOrders(
             @RequestHeader("Authorization") String authToken) {
         
-        // TODO: Implement get current user's orders logic
-        return ResponseEntity.ok(ApiResponse.success("Your orders retrieved successfully", null));
+        List<OrderResponse> orders = orderService.getMyOrders(authToken);
+        return ResponseEntity.ok(ApiResponse.success("Your orders retrieved successfully", orders));
     }
     
     @PutMapping("/{orderId}/cancel")
@@ -79,7 +81,7 @@ public class OrderController {
             @PathVariable Long orderId,
             @RequestHeader("Authorization") String authToken) {
         
-        // TODO: Implement order cancellation logic
-        return ResponseEntity.ok(ApiResponse.success("Order cancelled successfully", null));
+        String result = orderService.cancelOrder(orderId, authToken);
+        return ResponseEntity.ok(ApiResponse.success(result, null));
     }
 }
