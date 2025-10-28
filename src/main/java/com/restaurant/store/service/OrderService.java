@@ -260,7 +260,7 @@ public class OrderService {
         response.setProductId(orderItem.getProduct().getId());
         response.setProductName(orderItem.getProduct().getName());
         response.setQuantity(orderItem.getQuantity());
-        response.setPrice(orderItem.getPrice());
+        response.setTotalPrice(orderItem.getPrice());
         response.setSpecialInstructions(orderItem.getSpecialInstructions());
         return response;
     }

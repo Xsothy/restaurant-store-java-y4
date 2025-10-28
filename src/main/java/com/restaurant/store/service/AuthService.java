@@ -56,7 +56,7 @@ public class AuthService {
         CustomerResponse customerResponse = mapToCustomerResponse(customer);
 
         // Expire token after 30 minutes
-        Long expiresIn = 30 * 60;
+        Long expiresIn = (long) (30 * 60);
 
         return new AuthResponse(token, expiresIn, customerResponse);
     }
@@ -78,7 +78,7 @@ public class AuthService {
         CustomerResponse customerResponse = mapToCustomerResponse(customer);
 
         // Expire token after 30 minutes
-        Long expiresIn = 30 * 60;
+        Long expiresIn = (long) (30 * 60);
 
         return new AuthResponse(token, expiresIn, customerResponse);
     }
