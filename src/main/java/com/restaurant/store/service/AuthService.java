@@ -55,7 +55,10 @@ public class AuthService {
         // Create customer response
         CustomerResponse customerResponse = mapToCustomerResponse(customer);
 
-        return new AuthResponse(token, customerResponse);
+        // Expire token after 30 minutes
+        Long expiresIn = 30 * 60;
+
+        return new AuthResponse(token, expiresIn, customerResponse);
     }
 
     public AuthResponse login(LoginRequest request) {
@@ -74,7 +77,10 @@ public class AuthService {
         // Create customer response
         CustomerResponse customerResponse = mapToCustomerResponse(customer);
 
-        return new AuthResponse(token, customerResponse);
+        // Expire token after 30 minutes
+        Long expiresIn = 30 * 60;
+
+        return new AuthResponse(token, expiresIn, customerResponse);
     }
 
     private CustomerResponse mapToCustomerResponse(Customer customer) {

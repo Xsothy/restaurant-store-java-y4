@@ -57,7 +57,7 @@ public class DeliveryService {
         response.setDriverName(delivery.getDriverName());
         response.setDriverPhone(delivery.getDriverPhone());
         response.setVehicleInfo(delivery.getVehicleInfo());
-        response.setStatus(delivery.getStatus().toString());
+        response.setStatus(delivery.getStatus());
         response.setPickupTime(delivery.getPickupTime());
         response.setEstimatedArrivalTime(delivery.getEstimatedArrivalTime());
         response.setActualDeliveryTime(delivery.getActualDeliveryTime());

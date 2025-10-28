@@ -237,9 +237,9 @@ public class OrderService {
         response.setId(order.getId());
         response.setCustomerId(order.getCustomer().getId());
         response.setCustomerName(order.getCustomer().getName());
-        response.setStatus(order.getStatus().toString());
+        response.setStatus(order.getStatus());
         response.setTotalPrice(order.getTotalPrice());
-        response.setOrderType(order.getOrderType().toString());
+        response.setOrderType(order.getOrderType());
         response.setDeliveryAddress(order.getDeliveryAddress());
         response.setPhoneNumber(order.getPhoneNumber());
         response.setSpecialInstructions(order.getSpecialInstructions());
