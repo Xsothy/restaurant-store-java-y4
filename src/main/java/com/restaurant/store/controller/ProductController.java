@@ -24,7 +24,9 @@ public class ProductController {
         List<Category> categories = productService.getAllCategories();
         return ResponseEntity.ok(ApiResponse.success("Categories retrieved successfully", categories));
     }
-    
+
+
+    // TODO: Can stick with this for now
     @GetMapping("/products")
     public ResponseEntity<ApiResponse<List<ProductResponse>>> getAllProducts(
             @RequestParam(required = false) Long categoryId,

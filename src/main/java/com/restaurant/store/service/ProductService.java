@@ -29,7 +29,7 @@ public class ProductService {
         List<Product> products;
 
         if (categoryId != null && availableOnly != null && availableOnly) {
-            products = productRepository.findAvailableProductsByCategory(categoryId);
+            products = productRepository.findByIsAvailableTrueAndCategoryId(categoryId);
         } else if (categoryId != null) {
             products = productRepository.findByCategoryId(categoryId);
         } else if (availableOnly != null && availableOnly) {

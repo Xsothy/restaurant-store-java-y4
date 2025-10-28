@@ -13,7 +13,6 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     List<Product> findByCategoryId(Long categoryId);
     
     List<Product> findByIsAvailableTrue();
-    
-    @Query("SELECT p FROM Product p WHERE p.category.id = :categoryId AND p.isAvailable = true")
-    List<Product> findAvailableProductsByCategory(Long categoryId);
+
+    List<Product> findByIsAvailableTrueAndCategoryId(Long categoryId);
 }

@@ -16,6 +16,8 @@ import java.util.List;
 @RestController
 @RequestMapping("/orders")
 @CrossOrigin(origins = "*")
+
+// TODO: For authorization need middleware
 public class OrderController {
     
     @Autowired
