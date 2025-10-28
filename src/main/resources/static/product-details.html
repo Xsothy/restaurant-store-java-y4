@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Product Details - Restaurant Store</title>
+    <style>
+        :root {
+            --primary: #ff7c5c;
+            --primary-dark: #ff5a30;
+            --accent: #ffe0d6;
+            --gray-light: #f8f8fb;
+            --gray-dark: #424750;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--gray-light);
+            min-height: 100vh;
+            color: var(--gray-dark);
+        }
+
+        header {
+            background: white;
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.05);
+            padding: 20px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .logo {
+            font-size: 26px;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .btn {
+            padding: 10px 18px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s ease;
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 1px solid var(--primary);
+            color: var(--primary);
+        }
+
+        .btn-outline:hover {
+            background: var(--primary);
+            color: white;
+        }
+
+        main {
+            max-width: 1100px;
+            margin: 40px auto;
+            padding: 0 20px;
+        }
+
+        .product-container {
+            background: white;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.08);
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+        }
+
+        .product-image {
+            width: 100%;
+            height: 500px;
+            object-fit: cover;
+        }
+
+        .product-info {
+            padding: 40px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .breadcrumb {
+            font-size: 14px;
+            color: #6f7884;
+        }
+
+        .breadcrumb a {
+            color: var(--primary);
+            text-decoration: none;
+        }
+
+        .tag {
+            background: var(--accent);
+            color: var(--primary);
+            font-size: 13px;
+            padding: 6px 14px;
+            border-radius: 999px;
+            width: fit-content;
+        }
+
+        h1 {
+            font-size: 32px;
+            color: #21252b;
+        }
+
+        .price {
+            font-size: 36px;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .description {
+            font-size: 16px;
+            color: #6f7884;
+            line-height: 1.7;
+        }
+
+        .availability {
+            font-size: 15px;
+            padding: 10px 16px;
+            border-radius: 8px;
+            width: fit-content;
+        }
+
+        .availability.available {
+            background: #e7f8ed;
+            color: #1fa750;
+        }
+
+        .availability.unavailable {
+            background: #ffe5e5;
+            color: #d73a49;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            box-shadow: 0 10px 20px rgba(255, 124, 92, 0.25);
+            flex: 1;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 25px rgba(255, 124, 92, 0.35);
+        }
+
+        @media (max-width: 768px) {
+            .product-container {
+                grid-template-columns: 1fr;
+            }
+
+            .product-image {
+                height: 300px;
+            }
+
+            .product-info {
+                padding: 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+<header>
+    <div class="logo" onclick="window.location.href='menu.html'" style="cursor: pointer;">🍽️ Restaurant Store</div>
+    <button class="btn btn-outline" onclick="window.location.href='menu.html'">Back to Menu</button>
+</header>
+
+<main>
+    <div class="product-container" id="productContainer">
+        <img id="productImage" class="product-image" src="" alt="Product">
+        <div class="product-info">
+            <div class="breadcrumb">
+                <a href="menu.html">Menu</a> / <span id="breadcrumbCategory"></span>
+            </div>
+            <div class="tag" id="categoryTag"></div>
+            <h1 id="productName"></h1>
+            <div class="price" id="productPrice"></div>
+            <p class="description" id="productDescription"></p>
+            <div class="availability" id="availabilityBadge"></div>
+            <div class="action-buttons">
+                <button class="btn btn-primary" id="addToCartBtn">Add to Cart</button>
+            </div>
+        </div>
+    </div>
+</main>
+
+<script>
+    function loadProductDetails() {
+        const product = JSON.parse(localStorage.getItem('selectedProduct'));
+
+        if (!product) {
+            window.location.href = 'menu.html';
+            return;
+        }
+
+        document.getElementById('productImage').src = product.imageUrl || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=800&q=80';
+        document.getElementById('productImage').alt = product.name;
+        document.getElementById('breadcrumbCategory').textContent = product.categoryName || 'Category';
+        document.getElementById('categoryTag').textContent = product.categoryName || 'Special';
+        document.getElementById('productName').textContent = product.name;
+        document.getElementById('productPrice').textContent = `$${product.price}`;
+        document.getElementById('productDescription').textContent = product.description || 'No description available';
+
+        const availabilityBadge = document.getElementById('availabilityBadge');
+        if (product.isAvailable) {
+            availabilityBadge.textContent = '✓ Available';
+            availabilityBadge.className = 'availability available';
+        } else {
+            availabilityBadge.textContent = '✗ Currently Unavailable';
+            availabilityBadge.className = 'availability unavailable';
+            document.getElementById('addToCartBtn').disabled = true;
+            document.getElementById('addToCartBtn').textContent = 'Out of Stock';
+        }
+    }
+
+    document.getElementById('addToCartBtn').addEventListener('click', () => {
+        alert('Cart functionality will be implemented in a future update!');
+    });
+
+    loadProductDetails();
+</script>
+</body>
+</html>

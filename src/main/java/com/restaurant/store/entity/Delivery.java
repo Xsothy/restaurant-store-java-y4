@@ -1,14 +1,19 @@
 package com.restaurant.store.entity;
 
 import jakarta.persistence.*;
-import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "deliveries")
+@Getter
+@Setter
+@NoArgsConstructor
 public class Delivery {
     
     @Id
@@ -65,10 +70,6 @@ public class Delivery {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
     
-    // Constructors
-    public Delivery() {
-    }
-    
     public Delivery(Order order, String driverName, String driverPhone, String vehicleInfo) {
         this.order = order;
         this.driverName = driverName;
@@ -79,7 +80,6 @@ public class Delivery {
         this.updatedAt = LocalDateTime.now();
     }
     
-    // Lifecycle callbacks
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
@@ -95,134 +95,5 @@ public class Delivery {
         if (status == DeliveryStatus.DELIVERED && actualDeliveryTime == null) {
             actualDeliveryTime = LocalDateTime.now();
         }
-    }
-    
-    // Getters and Setters
-    public Long getId() {
-        return id;
-    }
-    
-    public void setId(Long id) {
-        this.id = id;
-    }
-    
-    public Order getOrder() {
-        return order;
-    }
-    
-    public void setOrder(Order order) {
-        this.order = order;
-    }
-    
-    public String getDriverName() {
-        return driverName;
-    }
-    
-    public void setDriverName(String driverName) {
-        this.driverName = driverName;
-    }
-    
-    public String getDriverPhone() {
-        return driverPhone;
-    }
-    
-    public void setDriverPhone(String driverPhone) {
-        this.driverPhone = driverPhone;
-    }
-    
-    public String getVehicleInfo() {
-        return vehicleInfo;
-    }
-    
-    public void setVehicleInfo(String vehicleInfo) {
-        this.vehicleInfo = vehicleInfo;
-    }
-    
-    public String getDeliveryAddress() {
-        return deliveryAddress;
-    }
-    
-    public void setDeliveryAddress(String deliveryAddress) {
-        this.deliveryAddress = deliveryAddress;
-    }
-    
-    public String getPhoneNumber() {
-        return phoneNumber;
-    }
-    
-    public void setPhoneNumber(String phoneNumber) {
-        this.phoneNumber = phoneNumber;
-    }
-    
-    public DeliveryStatus getStatus() {
-        return status;
-    }
-    
-    public void setStatus(DeliveryStatus status) {
-        this.status = status;
-    }
-    
-    public LocalDateTime getPickupTime() {
-        return pickupTime;
-    }
-    
-    public void setPickupTime(LocalDateTime pickupTime) {
-        this.pickupTime = pickupTime;
-    }
-    
-    public LocalDateTime getEstimatedArrivalTime() {
-        return estimatedArrivalTime;
-    }
-    
-    public void setEstimatedArrivalTime(LocalDateTime estimatedArrivalTime) {
-        this.estimatedArrivalTime = estimatedArrivalTime;
-    }
-    
-    public LocalDateTime getEstimatedDeliveryTime() {
-        return estimatedDeliveryTime;
-    }
-    
-    public void setEstimatedDeliveryTime(LocalDateTime estimatedDeliveryTime) {
-        this.estimatedDeliveryTime = estimatedDeliveryTime;
-    }
-    
-    public LocalDateTime getActualDeliveryTime() {
-        return actualDeliveryTime;
-    }
-    
-    public void setActualDeliveryTime(LocalDateTime actualDeliveryTime) {
-        this.actualDeliveryTime = actualDeliveryTime;
-    }
-    
-    public String getDeliveryNotes() {
-        return deliveryNotes;
-    }
-    
-    public void setDeliveryNotes(String deliveryNotes) {
-        this.deliveryNotes = deliveryNotes;
-    }
-    
-    public String getCurrentLocation() {
-        return currentLocation;
-    }
-    
-    public void setCurrentLocation(String currentLocation) {
-        this.currentLocation = currentLocation;
-    }
-    
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-    
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
-    }
-    
-    public LocalDateTime getUpdatedAt() {
-        return updatedAt;
-    }
-    
-    public void setUpdatedAt(LocalDateTime updatedAt) {
-        this.updatedAt = updatedAt;
     }
 }
