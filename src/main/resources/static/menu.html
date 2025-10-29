@@ -4,350 +4,166 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Menu - Restaurant Store</title>
-    <style>
-        :root {
-            --primary: #ff7c5c;
-            --primary-dark: #ff5a30;
-            --accent: #ffe0d6;
-            --gray-light: #f8f8fb;
-            --gray-dark: #424750;
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: var(--gray-light);
-            min-height: 100vh;
-            color: var(--gray-dark);
-        }
-
-        header {
-            background: white;
-            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.05);
-            padding: 20px 40px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            position: sticky;
-            top: 0;
-            z-index: 100;
-        }
-
-        .logo {
-            font-size: 26px;
-            font-weight: 700;
-            color: var(--primary);
-        }
-
-        .nav-actions {
-            display: flex;
-            gap: 12px;
-            align-items: center;
-        }
-
-        .btn {
-            padding: 10px 18px;
-            border-radius: 8px;
-            border: none;
-            cursor: pointer;
-            font-size: 14px;
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
-        }
-
-        .btn-primary {
-            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-            color: white;
-            box-shadow: 0 10px 20px rgba(255, 124, 92, 0.25);
-        }
-
-        .btn-outline {
-            background: transparent;
-            border: 1px solid var(--primary);
-            color: var(--primary);
-        }
-
-        .btn:hover {
-            transform: translateY(-1px);
-        }
-
-        .filters {
-            max-width: 1100px;
-            margin: 30px auto 0;
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-            gap: 15px;
-        }
-
-        .filter-card {
-            background: white;
-            border-radius: 14px;
-            padding: 16px 20px;
-            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.06);
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-
-        .filter-card label {
-            font-size: 13px;
-            color: #717882;
-        }
-
-        .filter-card select,
-        .filter-card input {
-            padding: 10px;
-            border-radius: 8px;
-            border: 1px solid #e3e3e3;
-            font-size: 14px;
-        }
-
-        main {
-            max-width: 1100px;
-            margin: 30px auto;
-            padding: 0 20px 40px;
-        }
-
-        .menu-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-            gap: 20px;
-            margin-top: 20px;
-        }
-
-        .menu-card {
-            background: white;
-            border-radius: 16px;
-            overflow: hidden;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
-            cursor: pointer;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .menu-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 12px 35px rgba(0, 0, 0, 0.12);
-        }
-
-        .menu-card img {
-            width: 100%;
-            height: 180px;
-            object-fit: cover;
-        }
-
-        .menu-card-content {
-            padding: 18px;
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-
-        .menu-card h3 {
-            font-size: 18px;
-            color: #21252b;
-        }
-
-        .menu-card p {
-            font-size: 14px;
-            color: #6f7884;
-            line-height: 1.5;
-        }
-
-        .menu-card .price {
-            font-size: 20px;
-            font-weight: 700;
-            color: var(--primary);
-        }
-
-        .tag {
-            background: var(--accent);
-            color: var(--primary);
-            font-size: 12px;
-            padding: 4px 10px;
-            border-radius: 999px;
-            width: fit-content;
-        }
-
-        .empty-state {
-            text-align: center;
-            padding: 60px 20px;
-            color: #717882;
-            background: white;
-            border-radius: 16px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
-            margin-top: 40px;
-        }
-
-        footer {
-            text-align: center;
-            padding: 30px 20px;
-            color: #9aa1ad;
-        }
-
-        @media (max-width: 768px) {
-            header {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 15px;
-            }
-
-            .filters {
-                margin: 20px;
-            }
-
-            main {
-                margin: 20px;
-                padding-bottom: 20px;
-            }
-        }
-    </style>
+    <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
-<header>
-    <div class="logo">🍽️ Restaurant Store</div>
-    <div class="nav-actions">
-        <span id="customerName"></span>
-        <button class="btn btn-outline" onclick="window.location.href='login.html'">Login</button>
-        <button class="btn btn-primary" onclick="logout()">Logout</button>
-    </div>
-</header>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Header -->
+    <header class="bg-white shadow-md sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-6 py-4 flex flex-col md:flex-row items-center justify-between gap-4">
+            <div class="text-2xl font-bold text-orange-500 cursor-pointer" onclick="window.location.reload()">
+                🍽️ Restaurant Store
+            </div>
+            <div class="flex items-center gap-3">
+                <span id="customerName" class="text-gray-700 font-medium"></span>
+                <button onclick="window.location.href='login.html'" class="px-4 py-2 border-2 border-orange-500 text-orange-500 rounded-lg hover:bg-orange-50 transition-colors">
+                    Login
+                </button>
+                <button onclick="logout()" class="px-4 py-2 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-lg hover:shadow-lg transform hover:-translate-y-0.5 transition-all">
+                    Logout
+                </button>
+            </div>
+        </div>
+    </header>
 
-<section class="filters">
-    <div class="filter-card">
-        <label for="categoryFilter">Category</label>
-        <select id="categoryFilter">
-            <option value="">All categories</option>
-        </select>
-    </div>
-    <div class="filter-card">
-        <label>
-            <input type="checkbox" id="availableOnly"> Show available only
-        </label>
-    </div>
-</section>
+    <!-- Filters -->
+    <section class="max-w-7xl mx-auto px-6 py-8">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="bg-white rounded-xl p-4 shadow-sm">
+                <label for="categoryFilter" class="block text-sm text-gray-600 mb-2">Category</label>
+                <select id="categoryFilter" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500">
+                    <option value="">All categories</option>
+                </select>
+            </div>
+            <div class="bg-white rounded-xl p-4 shadow-sm flex items-center">
+                <label class="flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" id="availableOnly" class="w-4 h-4 text-orange-500 rounded focus:ring-orange-500">
+                    <span class="text-gray-700">Show available only</span>
+                </label>
+            </div>
+        </div>
+    </section>
 
-<main>
-    <div id="menuContainer" class="menu-grid"></div>
-    <div id="emptyState" class="empty-state" style="display: none;">
-        No menu items found. Try adjusting your filters.
-    </div>
-</main>
+    <!-- Menu Grid -->
+    <main class="max-w-7xl mx-auto px-6 pb-12">
+        <div id="menuContainer" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"></div>
+        <div id="emptyState" class="hidden text-center py-16 bg-white rounded-2xl shadow-sm">
+            <p class="text-gray-500 text-lg">No menu items found. Try adjusting your filters.</p>
+        </div>
+    </main>
 
-<footer>
-    &copy; <span id="year"></span> Restaurant Store. Crafted with ❤️ for food lovers.
-</footer>
+    <!-- Footer -->
+    <footer class="text-center py-8 text-gray-500">
+        &copy; <span id="year"></span> Restaurant Store. Crafted with ❤️ for food lovers.
+    </footer>
 
-<script>
-    const API_BASE_URL = '/api';
+    <script>
+        const API_BASE_URL = '/api';
 
-    async function fetchMenuItems() {
-        const category = document.getElementById('categoryFilter').value;
-        const availableOnly = document.getElementById('availableOnly').checked;
+        async function fetchMenuItems() {
+            const category = document.getElementById('categoryFilter').value;
+            const availableOnly = document.getElementById('availableOnly').checked;
 
-        let url = `${API_BASE_URL}/products`;
-        const params = [];
+            let url = `${API_BASE_URL}/products`;
+            const params = [];
 
-        if (category) params.push(`categoryId=${category}`);
-        if (availableOnly) params.push('availableOnly=true');
+            if (category) params.push(`categoryId=${category}`);
+            if (availableOnly) params.push('availableOnly=true');
 
-        if (params.length) {
-            url += `?${params.join('&')}`;
+            if (params.length) {
+                url += `?${params.join('&')}`;
+            }
+
+            const response = await fetch(url);
+            const data = await response.json();
+
+            if (response.ok && data.success && data.data) {
+                renderMenuCards(data.data);
+            } else {
+                renderMenuCards([]);
+            }
         }
 
-        const response = await fetch(url);
-        const data = await response.json();
+        async function fetchCategories() {
+            const response = await fetch(`${API_BASE_URL}/categories`);
+            const data = await response.json();
 
-        if (response.ok && data.success && data.data) {
-            renderMenuCards(data.data);
-        } else {
-            renderMenuCards([]);
+            if (response.ok && data.success && data.data) {
+                const categoryFilter = document.getElementById('categoryFilter');
+                data.data.forEach(category => {
+                    const option = document.createElement('option');
+                    option.value = category.id;
+                    option.textContent = category.name;
+                    categoryFilter.appendChild(option);
+                });
+            }
         }
-    }
 
-    async function fetchCategories() {
-        const response = await fetch(`${API_BASE_URL}/categories`);
-        const data = await response.json();
+        function renderMenuCards(items) {
+            const container = document.getElementById('menuContainer');
+            const emptyState = document.getElementById('emptyState');
 
-        if (response.ok && data.success && data.data) {
-            const categoryFilter = document.getElementById('categoryFilter');
-            data.data.forEach(category => {
-                const option = document.createElement('option');
-                option.value = category.id;
-                option.textContent = category.name;
-                categoryFilter.appendChild(option);
+            container.innerHTML = '';
+
+            if (!items.length) {
+                emptyState.classList.remove('hidden');
+                return;
+            }
+
+            emptyState.classList.add('hidden');
+
+            items.forEach(item => {
+                const card = document.createElement('article');
+                card.className = 'bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transform hover:-translate-y-1 transition-all cursor-pointer';
+                card.addEventListener('click', () => openDetails(item));
+
+                card.innerHTML = `
+                    <img src="${item.imageUrl || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=800&q=80'}" 
+                         alt="${item.name}" 
+                         class="w-full h-48 object-cover">
+                    <div class="p-5 space-y-3">
+                        <span class="inline-block px-3 py-1 bg-orange-100 text-orange-600 text-xs font-semibold rounded-full">
+                            ${item.categoryName || 'Special'}
+                        </span>
+                        <h3 class="text-xl font-bold text-gray-800">${item.name}</h3>
+                        <p class="text-gray-600 text-sm line-clamp-2">${item.description || 'No description available'}</p>
+                        <div class="text-2xl font-bold text-orange-500">$${item.price}</div>
+                    </div>
+                `;
+
+                container.appendChild(card);
             });
         }
-    }
 
-    function renderMenuCards(items) {
-        const container = document.getElementById('menuContainer');
-        const emptyState = document.getElementById('emptyState');
-
-        container.innerHTML = '';
-
-        if (!items.length) {
-            emptyState.style.display = 'block';
-            return;
+        function openDetails(item) {
+            localStorage.setItem('selectedProduct', JSON.stringify(item));
+            window.location.href = 'product-details.html';
         }
 
-        emptyState.style.display = 'none';
-
-        items.forEach(item => {
-            const card = document.createElement('article');
-            card.className = 'menu-card';
-            card.addEventListener('click', () => openDetails(item));
-
-            card.innerHTML = `
-                <img src="${item.imageUrl || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=800&q=80'}" alt="${item.name}">
-                <div class="menu-card-content">
-                    <div class="tag">${item.categoryName || 'Special'}</div>
-                    <h3>${item.name}</h3>
-                    <p>${item.description || 'No description available'}</p>
-                    <div class="price">$${item.price}</div>
-                </div>
-            `;
-
-            container.appendChild(card);
-        });
-    }
-
-    function openDetails(item) {
-        localStorage.setItem('selectedProduct', JSON.stringify(item));
-        window.location.href = 'product-details.html';
-    }
-
-    function logout() {
-        localStorage.removeItem('token');
-        localStorage.removeItem('customer');
-        window.location.href = 'login.html';
-    }
-
-    function loadCustomer() {
-        const customer = JSON.parse(localStorage.getItem('customer'));
-        const customerName = document.getElementById('customerName');
-
-        if (customer) {
-            customerName.textContent = `Hi, ${customer.name}`;
-        } else {
-            customerName.textContent = '';
+        function logout() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('customer');
+            window.location.href = 'login.html';
         }
-    }
 
-    document.getElementById('categoryFilter').addEventListener('change', fetchMenuItems);
-    document.getElementById('availableOnly').addEventListener('change', fetchMenuItems);
+        function loadCustomer() {
+            const customer = JSON.parse(localStorage.getItem('customer'));
+            const customerName = document.getElementById('customerName');
 
-    document.getElementById('year').textContent = new Date().getFullYear();
+            if (customer) {
+                customerName.textContent = `Hi, ${customer.name}`;
+            } else {
+                customerName.textContent = '';
+            }
+        }
 
-    loadCustomer();
-    fetchCategories();
-    fetchMenuItems();
-</script>
+        document.getElementById('categoryFilter').addEventListener('change', fetchMenuItems);
+        document.getElementById('availableOnly').addEventListener('change', fetchMenuItems);
+
+        document.getElementById('year').textContent = new Date().getFullYear();
+
+        loadCustomer();
+        fetchCategories();
+        fetchMenuItems();
+    </script>
 </body>
 </html>
