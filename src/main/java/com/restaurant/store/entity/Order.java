@@ -3,6 +3,9 @@ package com.restaurant.store.entity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotNull;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -10,6 +13,9 @@ import java.util.List;
 
 @Entity
 @Table(name = "orders")
+@Getter
+@Setter
+@NoArgsConstructor
 public class Order {
     
     @Id
@@ -58,10 +64,6 @@ public class Order {
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Payment> payments;
     
-    // Constructors
-    public Order() {
-    }
-    
     public Order(Customer customer, BigDecimal totalPrice, OrderType orderType, String deliveryAddress, String phoneNumber) {
         this.customer = customer;
         this.totalPrice = totalPrice;
@@ -73,7 +75,6 @@ public class Order {
         this.updatedAt = LocalDateTime.now();
     }
     
-    // Lifecycle callbacks
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
@@ -89,110 +90,5 @@ public class Order {
     @PreUpdate
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
-    }
-    
-    // Getters and Setters
-    public Long getId() {
-        return id;
-    }
-    
-    public void setId(Long id) {
-        this.id = id;
-    }
-    
-    public Customer getCustomer() {
-        return customer;
-    }
-    
-    public void setCustomer(Customer customer) {
-        this.customer = customer;
-    }
-    
-    public OrderStatus getStatus() {
-        return status;
-    }
-    
-    public void setStatus(OrderStatus status) {
-        this.status = status;
-    }
-    
-    public BigDecimal getTotalPrice() {
-        return totalPrice;
-    }
-    
-    public void setTotalPrice(BigDecimal totalPrice) {
-        this.totalPrice = totalPrice;
-    }
-    
-    public OrderType getOrderType() {
-        return orderType;
-    }
-    
-    public void setOrderType(OrderType orderType) {
-        this.orderType = orderType;
-    }
-    
-    public String getDeliveryAddress() {
-        return deliveryAddress;
-    }
-    
-    public void setDeliveryAddress(String deliveryAddress) {
-        this.deliveryAddress = deliveryAddress;
-    }
-    
-    public String getPhoneNumber() {
-        return phoneNumber;
-    }
-    
-    public void setPhoneNumber(String phoneNumber) {
-        this.phoneNumber = phoneNumber;
-    }
-    
-    public String getSpecialInstructions() {
-        return specialInstructions;
-    }
-    
-    public void setSpecialInstructions(String specialInstructions) {
-        this.specialInstructions = specialInstructions;
-    }
-    
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-    
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
-    }
-    
-    public LocalDateTime getUpdatedAt() {
-        return updatedAt;
-    }
-    
-    public void setUpdatedAt(LocalDateTime updatedAt) {
-        this.updatedAt = updatedAt;
-    }
-    
-    public LocalDateTime getEstimatedDeliveryTime() {
-        return estimatedDeliveryTime;
-    }
-    
-    public void setEstimatedDeliveryTime(LocalDateTime estimatedDeliveryTime) {
-        this.estimatedDeliveryTime = estimatedDeliveryTime;
-    }
-    
-    public List<OrderItem> getOrderItems() {
-        return orderItems;
-    }
-    
-    public void setOrderItems(List<OrderItem> orderItems) {
-        this.orderItems = orderItems;
-    }
-    
-    public List<Payment> getPayments() {
-        return payments;
-    }
-    
-    public void setPayments(List<Payment> payments) {
-        this.payments = payments;
     }
 }

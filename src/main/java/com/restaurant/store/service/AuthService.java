@@ -6,12 +6,12 @@ import com.restaurant.store.dto.response.AuthResponse;
 import com.restaurant.store.dto.response.CustomerResponse;
 import com.restaurant.store.entity.Customer;
 import com.restaurant.store.exception.BadRequestException;
+import com.restaurant.store.mapper.CustomerMapper;
 import com.restaurant.store.repository.CustomerRepository;
 import com.restaurant.store.security.JwtUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,6 +30,9 @@ public class AuthService {
 
     @Autowired
     private AuthenticationManager authenticationManager;
+
+    @Autowired
+    private CustomerMapper customerMapper;
 
     @Transactional
     public AuthResponse register(CustomerRegisterRequest request) {
@@ -53,7 +56,7 @@ public class AuthService {
         String token = jwtUtil.generateToken(customer.getEmail(), customer.getId());
 
         // Create customer response
-        CustomerResponse customerResponse = mapToCustomerResponse(customer);
+        CustomerResponse customerResponse = customerMapper.toResponse(customer);
 
         // Expire token after 30 minutes
         Long expiresIn = (long) (30 * 60);
@@ -63,7 +66,7 @@ public class AuthService {
 
     public AuthResponse login(LoginRequest request) {
         // Authenticate user
-        Authentication authentication = authenticationManager.authenticate(
+        authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
         );
 
@@ -75,22 +78,11 @@ public class AuthService {
         String token = jwtUtil.generateToken(customer.getEmail(), customer.getId());
 
         // Create customer response
-        CustomerResponse customerResponse = mapToCustomerResponse(customer);
+        CustomerResponse customerResponse = customerMapper.toResponse(customer);
 
         // Expire token after 30 minutes
         Long expiresIn = (long) (30 * 60);
 
         return new AuthResponse(token, expiresIn, customerResponse);
-    }
-
-    private CustomerResponse mapToCustomerResponse(Customer customer) {
-        CustomerResponse response = new CustomerResponse();
-        response.setId(customer.getId());
-        response.setName(customer.getName());
-        response.setEmail(customer.getEmail());
-        response.setPhone(customer.getPhone());
-        response.setAddress(customer.getAddress());
-        response.setCreatedAt(customer.getCreatedAt());
-        return response;
     }
 }

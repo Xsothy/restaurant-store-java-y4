@@ -3,11 +3,11 @@ package com.restaurant.store.service;
 import com.restaurant.store.dto.request.CreateOrderRequest;
 import com.restaurant.store.dto.request.OrderItemRequest;
 import com.restaurant.store.dto.request.PaymentRequest;
-import com.restaurant.store.dto.response.OrderItemResponse;
 import com.restaurant.store.dto.response.OrderResponse;
 import com.restaurant.store.entity.*;
 import com.restaurant.store.exception.BadRequestException;
 import com.restaurant.store.exception.ResourceNotFoundException;
+import com.restaurant.store.mapper.OrderMapper;
 import com.restaurant.store.repository.*;
 import com.restaurant.store.security.JwtUtil;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -44,6 +44,9 @@ public class OrderService {
 
     @Autowired
     private JwtUtil jwtUtil;
+
+    @Autowired
+    private OrderMapper orderMapper;
 
     @Transactional
     public OrderResponse createOrder(CreateOrderRequest request, String token) {
@@ -105,7 +108,8 @@ public class OrderService {
             deliveryRepository.save(delivery);
         }
 
-        return mapToOrderResponse(order, orderItems);
+        List<OrderItem> persistedItems = orderItemRepository.findByOrderId(order.getId());
+        return orderMapper.toResponse(order, persistedItems);
     }
 
     public OrderResponse getOrderById(Long orderId, String token) {
@@ -122,7 +126,7 @@ public class OrderService {
         }
 
         List<OrderItem> orderItems = orderItemRepository.findByOrderId(orderId);
-        return mapToOrderResponse(order, orderItems);
+        return orderMapper.toResponse(order, orderItems);
     }
 
     public String getOrderStatus(Long orderId, String token) {
@@ -190,7 +194,7 @@ public class OrderService {
 
         List<Order> orders = orderRepository.findByCustomerIdOrderByCreatedAtDesc(customerId);
         return orders.stream()
-                .map(order -> mapToOrderResponse(order, orderItemRepository.findByOrderId(order.getId())))
+                .map(order -> orderMapper.toResponse(order, orderItemRepository.findByOrderId(order.getId())))
                 .collect(Collectors.toList());
     }
 
@@ -201,7 +205,7 @@ public class OrderService {
 
         List<Order> orders = orderRepository.findByCustomerIdOrderByCreatedAtDesc(customer.getId());
         return orders.stream()
-                .map(order -> mapToOrderResponse(order, orderItemRepository.findByOrderId(order.getId())))
+                .map(order -> orderMapper.toResponse(order, orderItemRepository.findByOrderId(order.getId())))
                 .collect(Collectors.toList());
     }
 
@@ -231,37 +235,5 @@ public class OrderService {
 
         return "Order cancelled successfully";
     }
-
-    private OrderResponse mapToOrderResponse(Order order, List<OrderItem> orderItems) {
-        OrderResponse response = new OrderResponse();
-        response.setId(order.getId());
-        response.setCustomerId(order.getCustomer().getId());
-        response.setCustomerName(order.getCustomer().getName());
-        response.setStatus(order.getStatus());
-        response.setTotalPrice(order.getTotalPrice());
-        response.setOrderType(order.getOrderType());
-        response.setDeliveryAddress(order.getDeliveryAddress());
-        response.setPhoneNumber(order.getPhoneNumber());
-        response.setSpecialInstructions(order.getSpecialInstructions());
-        response.setCreatedAt(order.getCreatedAt());
-        response.setEstimatedDeliveryTime(order.getEstimatedDeliveryTime());
-
-        List<OrderItemResponse> itemResponses = orderItems.stream()
-                .map(this::mapToOrderItemResponse)
-                .collect(Collectors.toList());
-        response.setOrderItems(itemResponses);
-
-        return response;
-    }
-
-    private OrderItemResponse mapToOrderItemResponse(OrderItem orderItem) {
-        OrderItemResponse response = new OrderItemResponse();
-        response.setId(orderItem.getId());
-        response.setProductId(orderItem.getProduct().getId());
-        response.setProductName(orderItem.getProduct().getName());
-        response.setQuantity(orderItem.getQuantity());
-        response.setTotalPrice(orderItem.getPrice());
-        response.setSpecialInstructions(orderItem.getSpecialInstructions());
-        return response;
-    }
 }
+

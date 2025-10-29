@@ -6,6 +6,7 @@ import com.restaurant.store.entity.Delivery;
 import com.restaurant.store.entity.Order;
 import com.restaurant.store.exception.BadRequestException;
 import com.restaurant.store.exception.ResourceNotFoundException;
+import com.restaurant.store.mapper.DeliveryMapper;
 import com.restaurant.store.repository.CustomerRepository;
 import com.restaurant.store.repository.DeliveryRepository;
 import com.restaurant.store.repository.OrderRepository;
@@ -28,6 +29,9 @@ public class DeliveryService {
     @Autowired
     private JwtUtil jwtUtil;
 
+    @Autowired
+    private DeliveryMapper deliveryMapper;
+
     public DeliveryResponse getDeliveryByOrderId(Long orderId, String token) {
         String email = jwtUtil.extractUsername(token.substring(7));
         Customer customer = customerRepository.findByEmail(email)
@@ -43,26 +47,11 @@ public class DeliveryService {
         Delivery delivery = deliveryRepository.findByOrderId(orderId)
                 .orElseThrow(() -> new ResourceNotFoundException("Delivery not found for order id: " + orderId));
 
-        return mapToDeliveryResponse(delivery);
+        return deliveryMapper.toResponse(delivery);
     }
 
     public DeliveryResponse trackDelivery(Long orderId, String token) {
         return getDeliveryByOrderId(orderId, token);
     }
-
-    private DeliveryResponse mapToDeliveryResponse(Delivery delivery) {
-        DeliveryResponse response = new DeliveryResponse();
-        response.setId(delivery.getId());
-        response.setOrderId(delivery.getOrder().getId());
-        response.setDriverName(delivery.getDriverName());
-        response.setDriverPhone(delivery.getDriverPhone());
-        response.setVehicleInfo(delivery.getVehicleInfo());
-        response.setStatus(delivery.getStatus());
-        response.setPickupTime(delivery.getPickupTime());
-        response.setEstimatedArrivalTime(delivery.getEstimatedArrivalTime());
-        response.setActualDeliveryTime(delivery.getActualDeliveryTime());
-        response.setCurrentLocation(delivery.getCurrentLocation());
-        response.setDeliveryNotes(delivery.getDeliveryNotes());
-        return response;
-    }
 }
+

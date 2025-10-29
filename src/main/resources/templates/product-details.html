@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Product Details - Restaurant Store</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Header -->
+    <header class="bg-white shadow-md sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+            <div class="text-2xl font-bold text-orange-500 cursor-pointer" onclick="window.location.href='/menu'">
+                🍽️ Restaurant Store
+            </div>
+            <button onclick="window.location.href='/menu'" class="px-4 py-2 border-2 border-orange-500 text-orange-500 rounded-lg hover:bg-orange-50 transition-colors">
+                Back to Menu
+            </button>
+        </div>
+    </header>
+
+    <!-- Product Details -->
+    <main class="max-w-7xl mx-auto px-6 py-12" id="productView" th:attr="data-product-id=${productId}">
+        <div class="bg-white rounded-3xl shadow-2xl overflow-hidden grid grid-cols-1 lg:grid-cols-2 gap-0">
+            <img id="productImage" src="" alt="Product" class="w-full h-96 lg:h-full object-cover">
+            
+            <div class="p-8 lg:p-12 flex flex-col justify-center space-y-6">
+                <nav class="text-sm text-gray-500">
+                    <a href="/menu" class="text-orange-500 hover:underline">Menu</a> / <span id="breadcrumbCategory"></span>
+                </nav>
+                
+                <span id="categoryTag" class="inline-block px-4 py-2 bg-orange-100 text-orange-600 text-sm font-semibold rounded-full w-fit"></span>
+                
+                <h1 id="productName" class="text-4xl lg:text-5xl font-bold text-gray-900"></h1>
+                
+                <div id="productPrice" class="text-5xl font-bold text-orange-500"></div>
+                
+                <p id="productDescription" class="text-gray-600 text-lg leading-relaxed"></p>
+                
+                <div id="availabilityBadge" class="inline-block px-4 py-2 rounded-lg text-sm font-medium w-fit"></div>
+                
+                <div class="pt-4">
+                    <button 
+                        id="addToCartBtn" 
+                        class="w-full bg-gradient-to-r from-orange-500 to-red-500 text-white font-bold py-4 px-8 rounded-xl hover:shadow-2xl transform hover:-translate-y-1 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                    >
+                        Add to Cart
+                    </button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script th:inline="javascript">
+        const API_BASE_URL = /*[[@{/api}]]*/ '/api';
+        const MENU_PAGE_URL = /*[[@{/menu}]]*/ '/menu';
+    </script>
+    <script>
+        async function fetchProduct(productId) {
+            try {
+                const response = await fetch(`${API_BASE_URL}/products/${productId}`);
+                if (!response.ok) {
+                    return null;
+                }
+                const payload = await response.json();
+                if (payload.success) {
+                    return payload.data;
+                }
+            } catch (error) {
+                console.error('Failed to load product', error);
+            }
+            return null;
+        }
+
+        async function loadProductDetails() {
+            const productView = document.getElementById('productView');
+            const productId = productView?.dataset?.productId;
+            let product = null;
+
+            if (productId) {
+                product = await fetchProduct(productId);
+            }
+
+            if (!product) {
+                product = JSON.parse(localStorage.getItem('selectedProduct'));
+            }
+
+            if (!product) {
+                window.location.href = MENU_PAGE_URL;
+                return;
+            }
+
+            document.getElementById('productImage').src = product.imageUrl || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=800&q=80';
+            document.getElementById('productImage').alt = product.name;
+            document.getElementById('breadcrumbCategory').textContent = product.categoryName || 'Category';
+            document.getElementById('categoryTag').textContent = product.categoryName || 'Special';
+            document.getElementById('productName').textContent = product.name;
+            document.getElementById('productPrice').textContent = `${product.price}`;
+            document.getElementById('productDescription').textContent = product.description || 'No description available';
+
+            const availabilityBadge = document.getElementById('availabilityBadge');
+            const addToCartBtn = document.getElementById('addToCartBtn');
+            
+            if (product.isAvailable) {
+                availabilityBadge.textContent = '✓ Available';
+                availabilityBadge.className = 'inline-block px-4 py-2 rounded-lg text-sm font-medium w-fit bg-green-100 text-green-700';
+                addToCartBtn.disabled = false;
+                addToCartBtn.textContent = 'Add to Cart';
+            } else {
+                availabilityBadge.textContent = '✗ Currently Unavailable';
+                availabilityBadge.className = 'inline-block px-4 py-2 rounded-lg text-sm font-medium w-fit bg-red-100 text-red-700';
+                addToCartBtn.disabled = true;
+                addToCartBtn.textContent = 'Out of Stock';
+            }
+        }
+
+        document.getElementById('addToCartBtn').addEventListener('click', () => {
+            alert('Cart functionality will be implemented in a future update!');
+        });
+
+        loadProductDetails();
+    </script>
+</body>
+</html>
