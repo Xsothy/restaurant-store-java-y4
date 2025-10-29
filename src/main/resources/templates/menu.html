@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,12 +10,12 @@
     <!-- Header -->
     <header class="bg-white shadow-md sticky top-0 z-50">
         <div class="max-w-7xl mx-auto px-6 py-4 flex flex-col md:flex-row items-center justify-between gap-4">
-            <div class="text-2xl font-bold text-orange-500 cursor-pointer" onclick="window.location.reload()">
+            <div class="text-2xl font-bold text-orange-500 cursor-pointer" onclick="window.location.href='/menu'">
                 🍽️ Restaurant Store
             </div>
             <div class="flex items-center gap-3">
                 <span id="customerName" class="text-gray-700 font-medium"></span>
-                <button onclick="window.location.href='login.html'" class="px-4 py-2 border-2 border-orange-500 text-orange-500 rounded-lg hover:bg-orange-50 transition-colors">
+                <button onclick="window.location.href='/login'" class="px-4 py-2 border-2 border-orange-500 text-orange-500 rounded-lg hover:bg-orange-50 transition-colors">
                     Login
                 </button>
                 <button onclick="logout()" class="px-4 py-2 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-lg hover:shadow-lg transform hover:-translate-y-0.5 transition-all">
@@ -56,9 +56,13 @@
         &copy; <span id="year"></span> Restaurant Store. Crafted with ❤️ for food lovers.
     </footer>
 
+    <script th:inline="javascript">
+        const API_BASE_URL = /*[[@{/api}]]*/ '/api';
+        const LOGIN_PAGE_URL = /*[[@{/login}]]*/ '/login';
+        const MENU_PAGE_URL = /*[[@{/menu}]]*/ '/menu';
+        const PRODUCT_PAGE_BASE = /*[[@{/products/}]]*/ '/products/';
+    </script>
     <script>
-        const API_BASE_URL = '/api';
-
         async function fetchMenuItems() {
             const category = document.getElementById('categoryFilter').value;
             const availableOnly = document.getElementById('availableOnly').checked;
@@ -136,13 +140,13 @@
 
         function openDetails(item) {
             localStorage.setItem('selectedProduct', JSON.stringify(item));
-            window.location.href = 'product-details.html';
+            window.location.href = `${PRODUCT_PAGE_BASE}${item.id}`;
         }
 
         function logout() {
             localStorage.removeItem('token');
             localStorage.removeItem('customer');
-            window.location.href = 'login.html';
+            window.location.href = LOGIN_PAGE_URL;
         }
 
         function loadCustomer() {

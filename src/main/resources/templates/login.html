@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -56,9 +56,11 @@
         </div>
     </div>
 
+    <script th:inline="javascript">
+        const API_BASE_URL = /*[[@{/api/auth}]]*/ '/api/auth';
+        const MENU_PAGE_URL = /*[[@{/menu}]]*/ '/menu';
+    </script>
     <script>
-        const API_BASE_URL = '/api/auth';
-
         document.getElementById('loginForm').addEventListener('submit', async (e) => {
             e.preventDefault();
 
@@ -92,7 +94,7 @@
                     successMessage.classList.remove('hidden');
 
                     setTimeout(() => {
-                        window.location.href = 'menu.html';
+                        window.location.href = MENU_PAGE_URL;
                     }, 1000);
                 } else {
                     errorMessage.textContent = data.message || 'Login failed. Please try again.';

@@ -49,8 +49,12 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable())
             .cors(cors -> cors.configure(http))
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/auth/**").permitAll()
-                .requestMatchers("/categories/**", "/products/**").permitAll()
+                .requestMatchers("/", "/login", "/menu", "/products/**", "/product-details").permitAll()
+                .requestMatchers("/api/auth/**").permitAll()
+                .requestMatchers("/api/categories/**", "/api/products/**").permitAll()
+                .requestMatchers("/css/**", "/js/**", "/images/**", "/*.html", "/static/**").permitAll()
+                .requestMatchers("/api/orders/**").authenticated()
+                .requestMatchers("/api/deliveries/**").authenticated()
                 .anyRequest().authenticated()
             )
             .sessionManagement(session -> session

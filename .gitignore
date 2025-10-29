@@ -45,5 +45,5 @@ dist/
 .vite/
 vite.config.js.timestamp-*
 
-### Generated Frontend Assets ###
-src/main/resources/static/
+### Database files ###
+*.db
