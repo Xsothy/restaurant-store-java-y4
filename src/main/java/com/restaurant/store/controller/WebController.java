@@ -8,12 +8,12 @@ import org.springframework.web.bind.annotation.PathVariable;
 @Controller
 public class WebController {
 
-    @GetMapping({"/", "/login"})
+    @GetMapping("/login")
     public String login() {
         return "login";
     }
 
-    @GetMapping("/menu")
+    @GetMapping({"/", "/menu"})
     public String menu() {
         return "menu";
     }

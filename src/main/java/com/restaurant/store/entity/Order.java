@@ -19,7 +19,7 @@ import java.util.List;
 public class Order {
     
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
     
     @NotNull(message = "Customer is required")
