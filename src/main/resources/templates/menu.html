@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Menu - Restaurant Store</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-white min-h-screen">
+    <!-- Header -->
+    <header class="bg-white border-b border-gray-200 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-6 py-5 flex flex-col md:flex-row items-center justify-between gap-4">
+            <div class="text-2xl font-bold text-gray-900 cursor-pointer" onclick="window.location.href='/menu'">
+                Restaurant Store
+            </div>
+            <div class="flex items-center gap-4">
+                <span id="customerName" class="text-gray-600 text-sm"></span>
+                <button onclick="window.location.href='/login'" class="px-5 py-2 text-sm text-gray-700 hover:text-gray-900 transition-colors">
+                    Login
+                </button>
+                <button onclick="logout()" class="px-5 py-2 bg-gray-900 text-white text-sm rounded-md hover:bg-gray-800 transition-colors">
+                    Logout
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Filters -->
+    <section class="max-w-7xl mx-auto px-6 py-8">
+        <div class="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
+            <div class="flex-1 max-w-xs">
+                <label for="categoryFilter" class="block text-sm text-gray-600 mb-2 font-medium">Category</label>
+                <select id="categoryFilter" class="w-full px-4 py-2.5 border border-gray-300 rounded-md focus:outline-none focus:border-gray-900 focus:ring-1 focus:ring-gray-900 transition-colors bg-white">
+                    <option value="">All categories</option>
+                </select>
+            </div>
+            <div class="flex items-center pt-6">
+                <label class="flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" id="availableOnly" class="w-4 h-4 text-gray-900 rounded border-gray-300 focus:ring-gray-900">
+                    <span class="text-sm text-gray-600">Available only</span>
+                </label>
+            </div>
+        </div>
+    </section>
+
+    <!-- Menu Grid -->
+    <main class="max-w-7xl mx-auto px-6 pb-16">
+        <div id="menuContainer" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8"></div>
+        <div id="emptyState" class="hidden text-center py-20">
+            <p class="text-gray-400 text-base">No menu items found</p>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="text-center py-10 text-gray-400 text-sm border-t border-gray-100">
+        &copy; <span id="year"></span> Restaurant Store
+    </footer>
+
+    <script th:inline="javascript">
+        const API_BASE_URL = /*[[@{/api}]]*/ '/api';
+        const LOGIN_PAGE_URL = /*[[@{/login}]]*/ '/login';
+        const MENU_PAGE_URL = /*[[@{/menu}]]*/ '/menu';
+        const PRODUCT_PAGE_BASE = /*[[@{/products/}]]*/ '/products/';
+    </script>
+    <script>
+        async function fetchMenuItems() {
+            const category = document.getElementById('categoryFilter').value;
+            const availableOnly = document.getElementById('availableOnly').checked;
+
+            let url = `${API_BASE_URL}/products`;
+            const params = [];
+
+            if (category) params.push(`categoryId=${category}`);
+            if (availableOnly) params.push('availableOnly=true');
+
+            if (params.length) {
+                url += `?${params.join('&')}`;
+            }
+
+            const response = await fetch(url);
+            const data = await response.json();
+
+            if (response.ok && data.success && data.data) {
+                renderMenuCards(data.data);
+            } else {
+                renderMenuCards([]);
+            }
+        }
+
+        async function fetchCategories() {
+            const response = await fetch(`${API_BASE_URL}/categories`);
+            const data = await response.json();
+
+            if (response.ok && data.success && data.data) {
+                const categoryFilter = document.getElementById('categoryFilter');
+                data.data.forEach(category => {
+                    const option = document.createElement('option');
+                    option.value = category.id;
+                    option.textContent = category.name;
+                    categoryFilter.appendChild(option);
+                });
+            }
+        }
+
+        function renderMenuCards(items) {
+            const container = document.getElementById('menuContainer');
+            const emptyState = document.getElementById('emptyState');
+
+            container.innerHTML = '';
+
+            if (!items.length) {
+                emptyState.classList.remove('hidden');
+                return;
+            }
+
+            emptyState.classList.add('hidden');
+
+            items.forEach(item => {
+                const card = document.createElement('article');
+                card.className = 'group cursor-pointer';
+                card.addEventListener('click', () => openDetails(item));
+
+                card.innerHTML = `
+                    <div class="relative overflow-hidden rounded-lg mb-4 bg-gray-100">
+                        <img src="${item.imageUrl || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=800&q=80'}" 
+                             alt="${item.name}" 
+                             class="w-full h-56 object-cover transition-transform duration-300 group-hover:scale-105">
+                        <div class="absolute top-3 right-3">
+                            <span class="inline-block px-3 py-1 bg-white text-gray-700 text-xs font-medium rounded-full shadow-sm">
+                                ${item.categoryName || 'Special'}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="space-y-2">
+                        <h3 class="text-lg font-semibold text-gray-900 group-hover:text-gray-600 transition-colors">${item.name}</h3>
+                        <p class="text-gray-500 text-sm line-clamp-2">${item.description || 'No description available'}</p>
+                        <div class="text-xl font-bold text-gray-900">${item.price}</div>
+                    </div>
+                `;
+
+                container.appendChild(card);
+            });
+        }
+
+        function openDetails(item) {
+            localStorage.setItem('selectedProduct', JSON.stringify(item));
+            window.location.href = `${PRODUCT_PAGE_BASE}${item.id}`;
+        }
+
+        function logout() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('customer');
+            window.location.href = LOGIN_PAGE_URL;
+        }
+
+        function loadCustomer() {
+            const customer = JSON.parse(localStorage.getItem('customer'));
+            const customerName = document.getElementById('customerName');
+
+            if (customer) {
+                customerName.textContent = `Hi, ${customer.name}`;
+            } else {
+                customerName.textContent = '';
+            }
+        }
+
+        document.getElementById('categoryFilter').addEventListener('change', fetchMenuItems);
+        document.getElementById('availableOnly').addEventListener('change', fetchMenuItems);
+
+        document.getElementById('year').textContent = new Date().getFullYear();
+
+        loadCustomer();
+        fetchCategories();
+        fetchMenuItems();
+    </script>
+</body>
+</html>
