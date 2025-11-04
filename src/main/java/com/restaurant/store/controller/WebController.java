@@ -13,6 +13,11 @@ public class WebController {
         return "login";
     }
 
+    @GetMapping("/register")
+    public String register() {
+        return "register";
+    }
+
     @GetMapping({"/", "/menu"})
     public String menu() {
         return "menu";
@@ -22,5 +27,20 @@ public class WebController {
     public String productDetails(@PathVariable Long productId, Model model) {
         model.addAttribute("productId", productId);
         return "product-details";
+    }
+
+    @GetMapping("/cart")
+    public String cart() {
+        return "cart";
+    }
+
+    @GetMapping("/orders")
+    public String orders() {
+        return "orders";
+    }
+
+    @GetMapping("/profile")
+    public String profile() {
+        return "profile";
     }
 }

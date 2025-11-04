@@ -11,10 +11,31 @@
             <div class="text-2xl font-bold text-gray-900 cursor-pointer" onclick="window.location.href='/menu'">
                 Restaurant Store
             </div>
-            <div class="flex items-center gap-4">
-                <span id="customerName" class="text-gray-600 text-sm"></span>
+            
+            <!-- Unauthenticated State -->
+            <div id="unauthNav" class="hidden items-center gap-4">
                 <button onclick="window.location.href='/login'" class="px-5 py-2 text-sm text-gray-700 hover:text-gray-900 transition-colors">
                     Login
+                </button>
+                <button onclick="window.location.href='/register'" class="px-5 py-2 bg-gray-900 text-white text-sm rounded-md hover:bg-gray-800 transition-colors">
+                    Register
+                </button>
+            </div>
+            
+            <!-- Authenticated State -->
+            <div id="authNav" class="hidden items-center gap-4">
+                <span id="customerName" class="text-gray-600 text-sm font-medium"></span>
+                <button onclick="window.location.href='/cart'" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:text-gray-900 transition-colors">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                    </svg>
+                    Cart
+                </button>
+                <button onclick="window.location.href='/orders'" class="px-4 py-2 text-sm text-gray-700 hover:text-gray-900 transition-colors">
+                    Orders
+                </button>
+                <button onclick="window.location.href='/profile'" class="px-4 py-2 text-sm text-gray-700 hover:text-gray-900 transition-colors">
+                    Profile
                 </button>
                 <button onclick="logout()" class="px-5 py-2 bg-gray-900 text-white text-sm rounded-md hover:bg-gray-800 transition-colors">
                     Logout
@@ -48,8 +69,12 @@
         <script th:inline="javascript">
             const API_BASE_URL = /*[[@{/api}]]*/ '/api';
             const LOGIN_PAGE_URL = /*[[@{/login}]]*/ '/login';
+            const REGISTER_PAGE_URL = /*[[@{/register}]]*/ '/register';
             const MENU_PAGE_URL = /*[[@{/menu}]]*/ '/menu';
             const PRODUCT_PAGE_BASE = /*[[@{/products/}]]*/ '/products/';
+            const CART_PAGE_URL = /*[[@{/cart}]]*/ '/cart';
+            const ORDERS_PAGE_URL = /*[[@{/orders}]]*/ '/orders';
+            const PROFILE_PAGE_URL = /*[[@{/profile}]]*/ '/profile';
         </script>
     </th:block>
 
@@ -62,20 +87,43 @@
             }
 
             function loadCustomer() {
+                const token = localStorage.getItem('token');
                 const customer = JSON.parse(localStorage.getItem('customer'));
                 const customerName = document.getElementById('customerName');
+                const authNav = document.getElementById('authNav');
+                const unauthNav = document.getElementById('unauthNav');
 
-                if (customer && customerName) {
-                    customerName.textContent = `Hi, ${customer.name}`;
-                } else if (customerName) {
-                    customerName.textContent = '';
+                if (token && customer) {
+                    // User is authenticated
+                    if (customerName) {
+                        customerName.textContent = `Hi, ${customer.name}`;
+                    }
+                    if (authNav) {
+                        authNav.classList.remove('hidden');
+                        authNav.classList.add('flex');
+                    }
+                    if (unauthNav) {
+                        unauthNav.classList.add('hidden');
+                        unauthNav.classList.remove('flex');
+                    }
+                } else {
+                    // User is not authenticated
+                    if (customerName) {
+                        customerName.textContent = '';
+                    }
+                    if (authNav) {
+                        authNav.classList.add('hidden');
+                        authNav.classList.remove('flex');
+                    }
+                    if (unauthNav) {
+                        unauthNav.classList.remove('hidden');
+                        unauthNav.classList.add('flex');
+                    }
                 }
             }
 
             document.addEventListener('DOMContentLoaded', () => {
-                if (document.getElementById('customerName')) {
-                    loadCustomer();
-                }
+                loadCustomer();
             });
         </script>
     </th:block>

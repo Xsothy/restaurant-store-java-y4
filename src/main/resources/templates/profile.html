@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <th:block th:replace="~{fragments/layout :: head('My Profile - Restaurant Store')}"></th:block>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Kantumruy+Pro:wght@400;500;600;700&display=swap');
+        body {
+            font-family: 'Kantumruy Pro', sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-gray-50 to-gray-100 min-h-screen">
+    <th:block th:replace="~{fragments/layout :: header}"></th:block>
+
+    <main class="max-w-4xl mx-auto px-4 sm:px-6 py-8" x-data="profileApp()" x-init="init()">
+        <div class="mb-8">
+            <h1 class="text-3xl font-bold text-gray-800">My Profile</h1>
+            <p class="text-gray-600 mt-2">Manage your account information</p>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-md p-8">
+            <!-- Profile Header -->
+            <div class="flex items-center gap-6 mb-8 pb-8 border-b">
+                <div class="w-24 h-24 bg-gradient-to-br from-red-500 to-pink-500 rounded-full flex items-center justify-center text-white text-3xl font-bold">
+                    <span x-text="getInitials(customer.name)"></span>
+                </div>
+                <div>
+                    <h2 class="text-2xl font-bold text-gray-800" x-text="customer.name"></h2>
+                    <p class="text-gray-600" x-text="customer.email"></p>
+                </div>
+            </div>
+
+            <!-- Edit Form -->
+            <div id="errorMessage" class="hidden bg-red-50 text-red-600 px-4 py-3 rounded-lg mb-6"></div>
+            <div id="successMessage" class="hidden bg-green-50 text-green-600 px-4 py-3 rounded-lg mb-6"></div>
+
+            <form @submit.prevent="updateProfile" class="space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label for="name" class="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
+                        <input 
+                            type="text" 
+                            id="name" 
+                            x-model="customer.name"
+                            required 
+                            class="w-full px-4 py-2.5 border border-gray-300 rounded-md focus:outline-none focus:border-gray-900 focus:ring-1 focus:ring-gray-900 transition-colors"
+                        >
+                    </div>
+
+                    <div>
+                        <label for="email" class="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                        <input 
+                            type="email" 
+                            id="email" 
+                            x-model="customer.email"
+                            required 
+                            class="w-full px-4 py-2.5 border border-gray-300 rounded-md focus:outline-none focus:border-gray-900 focus:ring-1 focus:ring-gray-900 transition-colors"
+                        >
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label for="phone" class="block text-sm font-medium text-gray-700 mb-2">Phone Number</label>
+                        <input 
+                            type="tel" 
+                            id="phone" 
+                            x-model="customer.phone"
+                            required 
+                            class="w-full px-4 py-2.5 border border-gray-300 rounded-md focus:outline-none focus:border-gray-900 focus:ring-1 focus:ring-gray-900 transition-colors"
+                        >
+                    </div>
+
+                    <div>
+                        <label for="address" class="block text-sm font-medium text-gray-700 mb-2">Address</label>
+                        <input 
+                            type="text" 
+                            id="address" 
+                            x-model="customer.address"
+                            required 
+                            class="w-full px-4 py-2.5 border border-gray-300 rounded-md focus:outline-none focus:border-gray-900 focus:ring-1 focus:ring-gray-900 transition-colors"
+                        >
+                    </div>
+                </div>
+
+                <div class="pt-4">
+                    <button 
+                        type="submit" 
+                        :disabled="loading"
+                        class="px-6 py-3 bg-red-600 text-white font-medium rounded-lg hover:bg-red-700 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                    >
+                        <span x-show="!loading">Update Profile</span>
+                        <span x-show="loading">Updating...</span>
+                    </button>
+                </div>
+            </form>
+
+            <!-- Change Password Section -->
+            <div class="mt-12 pt-8 border-t">
+                <h3 class="text-xl font-bold text-gray-800 mb-6">Change Password</h3>
+                
+                <form @submit.prevent="changePassword" class="space-y-6">
+                    <div>
+                        <label for="currentPassword" class="block text-sm font-medium text-gray-700 mb-2">Current Password</label>
+                        <input 
+                            type="password" 
+                            id="currentPassword" 
+                            x-model="passwordForm.currentPassword"
+                            class="w-full px-4 py-2.5 border border-gray-300 rounded-md focus:outline-none focus:border-gray-900 focus:ring-1 focus:ring-gray-900 transition-colors"
+                        >
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label for="newPassword" class="block text-sm font-medium text-gray-700 mb-2">New Password</label>
+                            <input 
+                                type="password" 
+                                id="newPassword" 
+                                x-model="passwordForm.newPassword"
+                                minlength="6"
+                                class="w-full px-4 py-2.5 border border-gray-300 rounded-md focus:outline-none focus:border-gray-900 focus:ring-1 focus:ring-gray-900 transition-colors"
+                            >
+                        </div>
+
+                        <div>
+                            <label for="confirmPassword" class="block text-sm font-medium text-gray-700 mb-2">Confirm New Password</label>
+                            <input 
+                                type="password" 
+                                id="confirmPassword" 
+                                x-model="passwordForm.confirmPassword"
+                                class="w-full px-4 py-2.5 border border-gray-300 rounded-md focus:outline-none focus:border-gray-900 focus:ring-1 focus:ring-gray-900 transition-colors"
+                            >
+                        </div>
+                    </div>
+
+                    <div>
+                        <button 
+                            type="submit" 
+                            :disabled="loadingPassword"
+                            class="px-6 py-3 bg-gray-900 text-white font-medium rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                        >
+                            <span x-show="!loadingPassword">Change Password</span>
+                            <span x-show="loadingPassword">Changing...</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Account Stats -->
+            <div class="mt-12 pt-8 border-t grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="text-center p-6 bg-gradient-to-br from-red-50 to-pink-50 rounded-lg">
+                    <div class="text-3xl font-bold text-red-600 mb-2" x-text="stats.totalOrders"></div>
+                    <div class="text-sm text-gray-600">Total Orders</div>
+                </div>
+                <div class="text-center p-6 bg-gradient-to-br from-green-50 to-emerald-50 rounded-lg">
+                    <div class="text-3xl font-bold text-green-600 mb-2" x-text="formatPrice(stats.totalSpent)"></div>
+                    <div class="text-sm text-gray-600">Total Spent</div>
+                </div>
+                <div class="text-center p-6 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg">
+                    <div class="text-3xl font-bold text-blue-600 mb-2" x-text="formatDate(customer.createdAt)"></div>
+                    <div class="text-sm text-gray-600">Member Since</div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <th:block th:replace="~{fragments/layout :: footer}"></th:block>
+    <th:block th:replace="~{fragments/layout :: api-config}"></th:block>
+    <th:block th:replace="~{fragments/layout :: auth-utils}"></th:block>
+
+    <script>
+        function profileApp() {
+            return {
+                customer: {},
+                passwordForm: {
+                    currentPassword: '',
+                    newPassword: '',
+                    confirmPassword: ''
+                },
+                stats: {
+                    totalOrders: 0,
+                    totalSpent: 0
+                },
+                loading: false,
+                loadingPassword: false,
+                
+                init() {
+                    this.loadCustomer();
+                    this.loadStats();
+                },
+                
+                loadCustomer() {
+                    const token = localStorage.getItem('token');
+                    const customer = JSON.parse(localStorage.getItem('customer'));
+                    
+                    if (!token || !customer) {
+                        alert('Please login to view your profile');
+                        window.location.href = '/login';
+                        return;
+                    }
+                    
+                    this.customer = customer;
+                },
+                
+                async loadStats() {
+                    const token = localStorage.getItem('token');
+                    
+                    try {
+                        const response = await fetch(`${API_BASE_URL}/orders/my-orders`, {
+                            headers: {
+                                'Authorization': `Bearer ${token}`
+                            }
+                        });
+                        
+                        const data = await response.json();
+                        
+                        if (response.ok && data.success) {
+                            const orders = data.data || [];
+                            this.stats.totalOrders = orders.length;
+                            this.stats.totalSpent = orders.reduce((sum, order) => sum + order.totalAmount, 0);
+                        }
+                    } catch (error) {
+                        console.error('Error loading stats:', error);
+                    }
+                },
+                
+                async updateProfile() {
+                    const token = localStorage.getItem('token');
+                    const errorMessage = document.getElementById('errorMessage');
+                    const successMessage = document.getElementById('successMessage');
+                    
+                    errorMessage.classList.add('hidden');
+                    successMessage.classList.add('hidden');
+                    
+                    this.loading = true;
+                    
+                    try {
+                        const response = await fetch(`${API_BASE_URL}/customers/${this.customer.id}`, {
+                            method: 'PUT',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${token}`
+                            },
+                            body: JSON.stringify({
+                                name: this.customer.name,
+                                email: this.customer.email,
+                                phone: this.customer.phone,
+                                address: this.customer.address
+                            })
+                        });
+                        
+                        const data = await response.json();
+                        
+                        if (response.ok && data.success) {
+                            localStorage.setItem('customer', JSON.stringify(data.data));
+                            this.customer = data.data;
+                            
+                            successMessage.textContent = 'Profile updated successfully!';
+                            successMessage.classList.remove('hidden');
+                            
+                            // Reload customer display in header
+                            if (typeof loadCustomer === 'function') {
+                                loadCustomer();
+                            }
+                        } else {
+                            errorMessage.textContent = data.message || 'Failed to update profile.';
+                            errorMessage.classList.remove('hidden');
+                        }
+                    } catch (error) {
+                        errorMessage.textContent = 'Network error. Please try again.';
+                        errorMessage.classList.remove('hidden');
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+                
+                async changePassword() {
+                    const errorMessage = document.getElementById('errorMessage');
+                    const successMessage = document.getElementById('successMessage');
+                    
+                    errorMessage.classList.add('hidden');
+                    successMessage.classList.add('hidden');
+                    
+                    if (this.passwordForm.newPassword !== this.passwordForm.confirmPassword) {
+                        errorMessage.textContent = 'New passwords do not match.';
+                        errorMessage.classList.remove('hidden');
+                        return;
+                    }
+                    
+                    if (this.passwordForm.newPassword.length < 6) {
+                        errorMessage.textContent = 'New password must be at least 6 characters.';
+                        errorMessage.classList.remove('hidden');
+                        return;
+                    }
+                    
+                    this.loadingPassword = true;
+                    
+                    // Note: This endpoint might not exist in the backend yet
+                    alert('Password change functionality would be implemented here with backend support.');
+                    
+                    this.passwordForm = {
+                        currentPassword: '',
+                        newPassword: '',
+                        confirmPassword: ''
+                    };
+                    this.loadingPassword = false;
+                },
+                
+                getInitials(name) {
+                    if (!name) return '?';
+                    const parts = name.split(' ');
+                    if (parts.length >= 2) {
+                        return (parts[0][0] + parts[1][0]).toUpperCase();
+                    }
+                    return name.substring(0, 2).toUpperCase();
+                },
+                
+                formatPrice(price) {
+                    if (typeof price === 'number') {
+                        return `${price.toLocaleString()}៛`;
+                    }
+                    return '0៛';
+                },
+                
+                formatDate(dateString) {
+                    if (!dateString) return 'N/A';
+                    const date = new Date(dateString);
+                    return date.toLocaleDateString('en-US', { 
+                        year: 'numeric', 
+                        month: 'short'
+                    });
+                }
+            }
+        }
+    </script>
+</body>
+</html>
