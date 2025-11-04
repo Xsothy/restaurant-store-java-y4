@@ -2,37 +2,96 @@
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
     <th:block th:replace="~{fragments/layout :: head('Product Details - Restaurant Store')}"></th:block>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Kantumruy+Pro:wght@400;500;600;700&display=swap');
+        body {
+            font-family: 'Kantumruy Pro', sans-serif;
+        }
+        .gradient-border {
+            border: 4px solid;
+            border-image: linear-gradient(135deg, #ec4899 0%, #ef4444 100%) 1;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in {
+            animation: fadeIn 0.6s ease-out;
+        }
+    </style>
 </head>
-<body class="bg-white min-h-screen">
+<body class="bg-gradient-to-br from-gray-50 to-gray-100 min-h-screen">
     <th:block th:replace="~{fragments/layout :: header-simple}"></th:block>
 
-    <main class="max-w-7xl mx-auto px-6 py-12" id="productView" th:attr="data-product-id=${productId}">
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-12">
-            <div class="rounded-lg overflow-hidden bg-gray-100">
-                <img id="productImage" src="" alt="Product" class="w-full h-full object-cover">
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 py-8" id="productView" th:attr="data-product-id=${productId}" x-data="productDetails()" x-init="init()">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 fade-in">
+            <!-- Product Image -->
+            <div class="rounded-3xl overflow-hidden gradient-border bg-white shadow-xl">
+                <img id="productImage" src="" alt="Product" class="w-full h-[500px] object-cover">
             </div>
             
-            <div class="flex flex-col justify-center space-y-6">
+            <!-- Product Details -->
+            <div class="flex flex-col justify-center space-y-6 bg-white rounded-3xl p-8 shadow-xl">
+                <!-- Breadcrumb -->
                 <nav class="text-sm text-gray-500">
-                    <a href="/menu" class="text-gray-900 hover:underline">Menu</a> <span class="text-gray-400">/</span> <span id="breadcrumbCategory" class="text-gray-500"></span>
+                    <a href="/menu" class="text-red-600 hover:text-red-700 font-medium transition-colors">ម៉ឺនុយ</a> 
+                    <span class="text-gray-400 mx-2">/</span> 
+                    <span id="breadcrumbCategory" class="text-gray-600"></span>
                 </nav>
                 
-                <span id="categoryTag" class="inline-block px-3 py-1 bg-gray-100 text-gray-700 text-xs font-medium rounded-full w-fit"></span>
+                <!-- Category Badge -->
+                <span id="categoryTag" class="inline-block px-4 py-1.5 bg-gradient-to-r from-pink-100 to-red-100 text-red-700 text-sm font-medium rounded-full w-fit"></span>
                 
-                <h1 id="productName" class="text-4xl lg:text-5xl font-bold text-gray-900"></h1>
+                <!-- Product Name -->
+                <h1 id="productName" class="text-3xl lg:text-4xl font-bold text-gray-800"></h1>
                 
-                <div id="productPrice" class="text-4xl font-bold text-gray-900"></div>
+                <!-- Price -->
+                <div class="flex items-baseline gap-3">
+                    <span class="text-4xl lg:text-5xl font-bold text-red-600" id="productPrice"></span>
+                </div>
                 
+                <!-- Description -->
                 <p id="productDescription" class="text-gray-600 text-base leading-relaxed"></p>
                 
-                <div id="availabilityBadge" class="inline-block px-3 py-1.5 rounded-md text-xs font-medium w-fit"></div>
+                <!-- Availability Badge -->
+                <div id="availabilityBadge" class="inline-block px-4 py-2 rounded-lg text-sm font-medium w-fit"></div>
                 
-                <div class="pt-4">
+                <!-- Quantity Selector -->
+                <div class="flex items-center gap-4">
+                    <span class="text-gray-700 font-medium">ចំនួន:</span>
+                    <div class="flex items-center border-2 border-gray-200 rounded-lg overflow-hidden">
+                        <button @click="decreaseQuantity" class="px-4 py-2 hover:bg-gray-100 transition-colors">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"></path>
+                            </svg>
+                        </button>
+                        <span x-text="quantity" class="px-6 py-2 font-semibold text-lg"></span>
+                        <button @click="increaseQuantity" class="px-4 py-2 hover:bg-gray-100 transition-colors">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Action Buttons -->
+                <div class="flex gap-3 pt-4">
                     <button 
                         id="addToCartBtn" 
-                        class="w-full bg-gray-900 text-white font-medium py-3.5 px-8 rounded-md hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        @click="addToCart"
+                        class="flex-1 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white font-medium py-3.5 px-8 rounded-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg"
                     >
-                        Add to Cart
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                        </svg>
+                        បន្ថែមទៅកន្ត្រក
+                    </button>
+                    <button 
+                        @click="goBack"
+                        class="px-8 py-3.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium rounded-xl transition-colors duration-200"
+                    >
+                        ត្រឡប់
                     </button>
                 </div>
             </div>
@@ -42,69 +101,125 @@
     <th:block th:replace="~{fragments/layout :: api-config}"></th:block>
     <th:block th:replace="~{fragments/layout :: auth-utils}"></th:block>
     <script>
-        async function fetchProduct(productId) {
-            try {
-                const response = await fetch(`${API_BASE_URL}/products/${productId}`);
-                if (!response.ok) {
-                    return null;
+        function productDetails() {
+            return {
+                product: null,
+                quantity: 1,
+                
+                async init() {
+                    await this.loadProductDetails();
+                },
+                
+                async fetchProduct(productId) {
+                    try {
+                        const response = await fetch(`${API_BASE_URL}/products/${productId}`);
+                        if (!response.ok) return null;
+                        const payload = await response.json();
+                        return payload.success ? payload.data : null;
+                    } catch (error) {
+                        console.error('Failed to load product', error);
+                        return null;
+                    }
+                },
+                
+                async loadProductDetails() {
+                    const productView = document.getElementById('productView');
+                    const productId = productView?.dataset?.productId;
+                    
+                    if (productId) {
+                        this.product = await this.fetchProduct(productId);
+                    }
+                    
+                    if (!this.product) {
+                        this.product = JSON.parse(localStorage.getItem('selectedProduct'));
+                    }
+                    
+                    if (!this.product) {
+                        window.location.href = MENU_PAGE_URL;
+                        return;
+                    }
+                    
+                    // Update DOM elements
+                    document.getElementById('productImage').src = this.product.imageUrl || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=800&q=80';
+                    document.getElementById('productImage').alt = this.product.name;
+                    document.getElementById('breadcrumbCategory').textContent = this.product.categoryName || 'អាហារ';
+                    document.getElementById('categoryTag').textContent = this.product.categoryName || 'ពិសេស';
+                    document.getElementById('productName').textContent = this.product.name;
+                    document.getElementById('productPrice').textContent = this.formatPrice(this.product.price);
+                    document.getElementById('productDescription').textContent = this.product.description || 'អាហារឆ្ងាញ់របស់យើង';
+                    
+                    const availabilityBadge = document.getElementById('availabilityBadge');
+                    const addToCartBtn = document.getElementById('addToCartBtn');
+                    
+                    if (this.product.isAvailable !== false) {
+                        availabilityBadge.textContent = 'មាននៅក្នុងស្តុក';
+                        availabilityBadge.className = 'inline-block px-4 py-2 rounded-lg text-sm font-medium w-fit bg-green-100 text-green-700';
+                        addToCartBtn.disabled = false;
+                    } else {
+                        availabilityBadge.textContent = 'អស់ស្តុក';
+                        availabilityBadge.className = 'inline-block px-4 py-2 rounded-lg text-sm font-medium w-fit bg-gray-100 text-gray-600';
+                        addToCartBtn.disabled = true;
+                        addToCartBtn.innerHTML = `
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                            អស់ស្តុក
+                        `;
+                    }
+                },
+                
+                formatPrice(price) {
+                    if (typeof price === 'number') {
+                        return `${price.toLocaleString()}៛`;
+                    }
+                    return price || '0៛';
+                },
+                
+                increaseQuantity() {
+                    if (this.quantity < 99) {
+                        this.quantity++;
+                    }
+                },
+                
+                decreaseQuantity() {
+                    if (this.quantity > 1) {
+                        this.quantity--;
+                    }
+                },
+                
+                addToCart() {
+                    if (!this.product || this.product.isAvailable === false) return;
+                    
+                    let cart = JSON.parse(localStorage.getItem('cart') || '[]');
+                    const existingItem = cart.find(item => item.id === this.product.id);
+                    
+                    if (existingItem) {
+                        existingItem.quantity += this.quantity;
+                    } else {
+                        cart.push({
+                            ...this.product,
+                            quantity: this.quantity
+                        });
+                    }
+                    
+                    localStorage.setItem('cart', JSON.stringify(cart));
+                    
+                    // Show success with quantity
+                    const message = this.quantity > 1 
+                        ? `បានបន្ថែម ${this.quantity} "${this.product.name}" ទៅកន្ត្រកហើយ!`
+                        : `បានបន្ថែម "${this.product.name}" ទៅកន្ត្រកហើយ!`;
+                    
+                    alert(message);
+                    
+                    // Reset quantity
+                    this.quantity = 1;
+                },
+                
+                goBack() {
+                    window.location.href = '/menu';
                 }
-                const payload = await response.json();
-                if (payload.success) {
-                    return payload.data;
-                }
-            } catch (error) {
-                console.error('Failed to load product', error);
-            }
-            return null;
-        }
-
-        async function loadProductDetails() {
-            const productView = document.getElementById('productView');
-            const productId = productView?.dataset?.productId;
-            let product = null;
-
-            if (productId) {
-                product = await fetchProduct(productId);
-            }
-
-            if (!product) {
-                product = JSON.parse(localStorage.getItem('selectedProduct'));
-            }
-
-            if (!product) {
-                window.location.href = MENU_PAGE_URL;
-                return;
-            }
-
-            document.getElementById('productImage').src = product.imageUrl || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=800&q=80';
-            document.getElementById('productImage').alt = product.name;
-            document.getElementById('breadcrumbCategory').textContent = product.categoryName || 'Category';
-            document.getElementById('categoryTag').textContent = product.categoryName || 'Special';
-            document.getElementById('productName').textContent = product.name;
-            document.getElementById('productPrice').textContent = `${product.price}`;
-            document.getElementById('productDescription').textContent = product.description || 'No description available';
-
-            const availabilityBadge = document.getElementById('availabilityBadge');
-            const addToCartBtn = document.getElementById('addToCartBtn');
-            
-            if (product.isAvailable) {
-                availabilityBadge.textContent = 'In Stock';
-                availabilityBadge.className = 'inline-block px-3 py-1.5 rounded-md text-xs font-medium w-fit bg-green-50 text-green-700 border border-green-200';
-                addToCartBtn.disabled = false;
-                addToCartBtn.textContent = 'Add to Cart';
-            } else {
-                availabilityBadge.textContent = 'Out of Stock';
-                availabilityBadge.className = 'inline-block px-3 py-1.5 rounded-md text-xs font-medium w-fit bg-gray-100 text-gray-600 border border-gray-200';
-                addToCartBtn.disabled = true;
-                addToCartBtn.textContent = 'Out of Stock';
             }
         }
-
-        document.getElementById('addToCartBtn').addEventListener('click', () => {
-            alert('Cart functionality will be implemented in a future update!');
-        });
-
-        loadProductDetails();
     </script>
 </body>
 </html>
