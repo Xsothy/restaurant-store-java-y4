@@ -2,7 +2,7 @@
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
     <th:block th:replace="~{fragments/layout :: head('Redirecting... - Restaurant Store')}"></th:block>
-    <meta http-equiv="refresh" content="0;url=/login">
+    <meta http-equiv="refresh" content="0;url=/menu">
 </head>
 <body class="bg-gray-50 min-h-screen flex items-center justify-center">
     <div class="text-center">
@@ -11,7 +11,7 @@
     </div>
     <script>
         setTimeout(() => {
-            window.location.href = '/login';
+            window.location.href = '/menu';
         }, 100);
     </script>
 </body>

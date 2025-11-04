@@ -13,10 +13,6 @@
             color: white;
             font-weight: 600;
         }
-        .card-border {
-            border: 4px solid;
-            border-image: linear-gradient(135deg, #ec4899 0%, #ef4444 100%) 1;
-        }
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
@@ -64,9 +60,9 @@
             <template x-for="product in filteredProducts" :key="product.id">
                 <article 
                     @click="openDetails(product)"
-                    class="bg-white rounded-3xl overflow-hidden cursor-pointer transition-all duration-300 hover:shadow-2xl hover:-translate-y-1 card-border fade-in">
+                    class="bg-white rounded-3xl overflow-hidden cursor-pointer transition-all duration-300 hover:shadow-2xl hover:-translate-y-1 shadow-md fade-in">
                     <!-- Image Container -->
-                    <div class="relative overflow-hidden" style="height: 280px;">
+                    <div class="relative overflow-hidden aspect-square">
                         <img 
                             :src="product.imageUrl || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=800&q=80'" 
                             :alt="product.name"
@@ -210,6 +206,11 @@
                     
                     // Save cart to localStorage
                     localStorage.setItem('cart', JSON.stringify(cart));
+                    
+                    // Update cart badge
+                    if (typeof updateCartBadge === 'function') {
+                        updateCartBadge();
+                    }
                     
                     // Show success message
                     alert(`បានបន្ថែម "${product.name}" ទៅកន្ត្រកហើយ!`);

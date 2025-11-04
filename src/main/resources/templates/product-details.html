@@ -8,10 +8,6 @@
         body {
             font-family: 'Kantumruy Pro', sans-serif;
         }
-        .gradient-border {
-            border: 4px solid;
-            border-image: linear-gradient(135deg, #ec4899 0%, #ef4444 100%) 1;
-        }
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(20px); }
             to { opacity: 1; transform: translateY(0); }
@@ -22,12 +18,12 @@
     </style>
 </head>
 <body class="bg-gradient-to-br from-gray-50 to-gray-100 min-h-screen">
-    <th:block th:replace="~{fragments/layout :: header-simple}"></th:block>
+    <th:block th:replace="~{fragments/layout :: header}"></th:block>
 
     <main class="max-w-7xl mx-auto px-4 sm:px-6 py-8" id="productView" th:attr="data-product-id=${productId}" x-data="productDetails()" x-init="init()">
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 fade-in">
             <!-- Product Image -->
-            <div class="rounded-3xl overflow-hidden gradient-border bg-white shadow-xl">
+            <div class="rounded-3xl overflow-hidden bg-white shadow-xl">
                 <img id="productImage" src="" alt="Product" class="w-full h-[500px] object-cover">
             </div>
             
@@ -98,6 +94,7 @@
         </div>
     </main>
 
+    <th:block th:replace="~{fragments/layout :: footer}"></th:block>
     <th:block th:replace="~{fragments/layout :: api-config}"></th:block>
     <th:block th:replace="~{fragments/layout :: auth-utils}"></th:block>
     <script>
@@ -203,6 +200,11 @@
                     }
                     
                     localStorage.setItem('cart', JSON.stringify(cart));
+                    
+                    // Update cart badge
+                    if (typeof updateCartBadge === 'function') {
+                        updateCartBadge();
+                    }
                     
                     // Show success with quantity
                     const message = this.quantity > 1 
