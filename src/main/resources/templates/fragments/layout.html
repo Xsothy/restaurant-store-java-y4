@@ -1,0 +1,82 @@
+<div xmlns:th="http://www.thymeleaf.org">
+    <head th:fragment="head(title)">
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title th:text="${title}">Restaurant Store</title>
+        <link rel="stylesheet" th:href="@{/css/tailwind.css}">
+    </head>
+
+    <header th:fragment="header" class="bg-white border-b border-gray-200 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-6 py-5 flex flex-col md:flex-row items-center justify-between gap-4">
+            <div class="text-2xl font-bold text-gray-900 cursor-pointer" onclick="window.location.href='/menu'">
+                Restaurant Store
+            </div>
+            <div class="flex items-center gap-4">
+                <span id="customerName" class="text-gray-600 text-sm"></span>
+                <button onclick="window.location.href='/login'" class="px-5 py-2 text-sm text-gray-700 hover:text-gray-900 transition-colors">
+                    Login
+                </button>
+                <button onclick="logout()" class="px-5 py-2 bg-gray-900 text-white text-sm rounded-md hover:bg-gray-800 transition-colors">
+                    Logout
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <header th:fragment="header-simple" class="bg-white border-b border-gray-200 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-6 py-5 flex items-center justify-between">
+            <div class="text-2xl font-bold text-gray-900 cursor-pointer" onclick="window.location.href='/menu'">
+                Restaurant Store
+            </div>
+            <button onclick="window.location.href='/menu'" class="px-5 py-2 text-sm text-gray-700 hover:text-gray-900 transition-colors">
+                ← Back to Menu
+            </button>
+        </div>
+    </header>
+
+    <footer th:fragment="footer" class="text-center py-10 text-gray-400 text-sm border-t border-gray-100">
+        &copy; <span id="year"></span> Restaurant Store
+        <script>
+            const footerYearEl = document.getElementById('year');
+            if (footerYearEl) {
+                footerYearEl.textContent = new Date().getFullYear();
+            }
+        </script>
+    </footer>
+
+    <th:block th:fragment="api-config">
+        <script th:inline="javascript">
+            const API_BASE_URL = /*[[@{/api}]]*/ '/api';
+            const LOGIN_PAGE_URL = /*[[@{/login}]]*/ '/login';
+            const MENU_PAGE_URL = /*[[@{/menu}]]*/ '/menu';
+            const PRODUCT_PAGE_BASE = /*[[@{/products/}]]*/ '/products/';
+        </script>
+    </th:block>
+
+    <th:block th:fragment="auth-utils">
+        <script>
+            function logout() {
+                localStorage.removeItem('token');
+                localStorage.removeItem('customer');
+                window.location.href = LOGIN_PAGE_URL;
+            }
+
+            function loadCustomer() {
+                const customer = JSON.parse(localStorage.getItem('customer'));
+                const customerName = document.getElementById('customerName');
+
+                if (customer && customerName) {
+                    customerName.textContent = `Hi, ${customer.name}`;
+                } else if (customerName) {
+                    customerName.textContent = '';
+                }
+            }
+
+            document.addEventListener('DOMContentLoaded', () => {
+                if (document.getElementById('customerName')) {
+                    loadCustomer();
+                }
+            });
+        </script>
+    </th:block>
+</div>

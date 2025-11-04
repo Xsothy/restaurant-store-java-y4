@@ -1,10 +1,7 @@
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - Restaurant Store</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <th:block th:replace="~{fragments/layout :: head('Login - Restaurant Store')}"></th:block>
 </head>
 <body class="bg-gray-50 min-h-screen flex items-center justify-center p-4">
     <div class="bg-white rounded-lg border border-gray-200 p-10 w-full max-w-md">
@@ -57,10 +54,7 @@
         </div>
     </div>
 
-    <script th:inline="javascript">
-        const API_BASE_URL = /*[[@{/api/auth}]]*/ '/api/auth';
-        const MENU_PAGE_URL = /*[[@{/menu}]]*/ '/menu';
-    </script>
+    <th:block th:replace="~{fragments/layout :: api-config}"></th:block>
     <script>
         document.getElementById('loginForm').addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -77,7 +71,7 @@
             loginBtn.textContent = 'Logging in...';
 
             try {
-                const response = await fetch(`${API_BASE_URL}/login`, {
+                const response = await fetch(`${API_BASE_URL}/auth/login`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
