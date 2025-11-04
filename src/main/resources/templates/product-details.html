@@ -201,6 +201,11 @@
                     
                     localStorage.setItem('cart', JSON.stringify(cart));
                     
+                    // Update cart badge
+                    if (typeof updateCartBadge === 'function') {
+                        updateCartBadge();
+                    }
+                    
                     // Show success with quantity
                     const message = this.quantity > 1 
                         ? `បានបន្ថែម ${this.quantity} "${this.product.name}" ទៅកន្ត្រកហើយ!`

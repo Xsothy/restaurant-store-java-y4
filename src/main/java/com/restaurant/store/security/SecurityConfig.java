@@ -49,12 +49,14 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable())
             .cors(cors -> cors.configure(http))
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/", "/login", "/menu", "/products/**", "/product-details").permitAll()
+                .requestMatchers("/", "/login", "/register", "/menu", "/products/**", "/product-details", "/cart").permitAll()
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers("/api/categories/**", "/api/products/**").permitAll()
                 .requestMatchers("/css/**", "/js/**", "/images/**", "/*.html", "/static/**").permitAll()
+                .requestMatchers("/orders", "/profile").authenticated()
                 .requestMatchers("/api/orders/**").authenticated()
                 .requestMatchers("/api/deliveries/**").authenticated()
+                .requestMatchers("/api/customers/**").authenticated()
                 .anyRequest().authenticated()
             )
             .sessionManagement(session -> session

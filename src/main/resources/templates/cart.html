@@ -134,6 +134,10 @@
                 
                 saveCart() {
                     localStorage.setItem('cart', JSON.stringify(this.cartItems));
+                    // Update cart badge
+                    if (typeof updateCartBadge === 'function') {
+                        updateCartBadge();
+                    }
                 },
                 
                 increaseQuantity(index) {
@@ -199,6 +203,11 @@
                             // Clear cart
                             localStorage.removeItem('cart');
                             this.cartItems = [];
+                            
+                            // Update cart badge
+                            if (typeof updateCartBadge === 'function') {
+                                updateCartBadge();
+                            }
                             
                             alert('Order placed successfully!');
                             window.location.href = '/orders';
