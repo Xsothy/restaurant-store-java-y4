@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" th:fragment="base(pageTitle, bodyClass, contentFragment, scriptsFragment, extraHeadFragment)">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:replace="${pageTitle}">Restaurant Store</title>
+    <link rel="stylesheet" th:href="@{/css/tailwind.css}">
+    <th:block th:if="${extraHeadFragment} != null" th:replace="${extraHeadFragment}"></th:block>
+</head>
+<body th:attr="class=${bodyClass}">
+    <th:block th:replace="${contentFragment}"></th:block>
+    <th:block th:if="${scriptsFragment} != null" th:replace="${scriptsFragment}"></th:block>
+</body>
+</html>

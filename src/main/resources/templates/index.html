@@ -1,11 +1,8 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Redirecting... - Restaurant Store</title>
-    <meta http-equiv="refresh" content="0;url=login.html">
-    <script src="https://cdn.tailwindcss.com"></script>
+    <th:block th:replace="~{fragments/layout :: head('Redirecting... - Restaurant Store')}"></th:block>
+    <meta http-equiv="refresh" content="0;url=/login">
 </head>
 <body class="bg-gray-50 min-h-screen flex items-center justify-center">
     <div class="text-center">
@@ -14,7 +11,7 @@
     </div>
     <script>
         setTimeout(() => {
-            window.location.href = 'login.html';
+            window.location.href = '/login';
         }, 100);
     </script>
 </body>

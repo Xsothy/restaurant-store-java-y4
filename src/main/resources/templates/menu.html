@@ -1,31 +1,11 @@
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Menu - Restaurant Store</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <th:block th:replace="~{fragments/layout :: head('Menu - Restaurant Store')}"></th:block>
 </head>
 <body class="bg-white min-h-screen">
-    <!-- Header -->
-    <header class="bg-white border-b border-gray-200 sticky top-0 z-50">
-        <div class="max-w-7xl mx-auto px-6 py-5 flex flex-col md:flex-row items-center justify-between gap-4">
-            <div class="text-2xl font-bold text-gray-900 cursor-pointer" onclick="window.location.href='/menu'">
-                Restaurant Store
-            </div>
-            <div class="flex items-center gap-4">
-                <span id="customerName" class="text-gray-600 text-sm"></span>
-                <button onclick="window.location.href='/login'" class="px-5 py-2 text-sm text-gray-700 hover:text-gray-900 transition-colors">
-                    Login
-                </button>
-                <button onclick="logout()" class="px-5 py-2 bg-gray-900 text-white text-sm rounded-md hover:bg-gray-800 transition-colors">
-                    Logout
-                </button>
-            </div>
-        </div>
-    </header>
+    <th:block th:replace="~{fragments/layout :: header}"></th:block>
 
-    <!-- Filters -->
     <section class="max-w-7xl mx-auto px-6 py-8">
         <div class="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
             <div class="flex-1 max-w-xs">
@@ -43,7 +23,6 @@
         </div>
     </section>
 
-    <!-- Menu Grid -->
     <main class="max-w-7xl mx-auto px-6 pb-16">
         <div id="menuContainer" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8"></div>
         <div id="emptyState" class="hidden text-center py-20">
@@ -51,17 +30,10 @@
         </div>
     </main>
 
-    <!-- Footer -->
-    <footer class="text-center py-10 text-gray-400 text-sm border-t border-gray-100">
-        &copy; <span id="year"></span> Restaurant Store
-    </footer>
+    <th:block th:replace="~{fragments/layout :: footer}"></th:block>
 
-    <script th:inline="javascript">
-        const API_BASE_URL = /*[[@{/api}]]*/ '/api';
-        const LOGIN_PAGE_URL = /*[[@{/login}]]*/ '/login';
-        const MENU_PAGE_URL = /*[[@{/menu}]]*/ '/menu';
-        const PRODUCT_PAGE_BASE = /*[[@{/products/}]]*/ '/products/';
-    </script>
+    <th:block th:replace="~{fragments/layout :: api-config}"></th:block>
+    <th:block th:replace="~{fragments/layout :: auth-utils}"></th:block>
     <script>
         async function fetchMenuItems() {
             const category = document.getElementById('categoryFilter').value;
@@ -147,29 +119,9 @@
             window.location.href = `${PRODUCT_PAGE_BASE}${item.id}`;
         }
 
-        function logout() {
-            localStorage.removeItem('token');
-            localStorage.removeItem('customer');
-            window.location.href = LOGIN_PAGE_URL;
-        }
-
-        function loadCustomer() {
-            const customer = JSON.parse(localStorage.getItem('customer'));
-            const customerName = document.getElementById('customerName');
-
-            if (customer) {
-                customerName.textContent = `Hi, ${customer.name}`;
-            } else {
-                customerName.textContent = '';
-            }
-        }
-
         document.getElementById('categoryFilter').addEventListener('change', fetchMenuItems);
         document.getElementById('availableOnly').addEventListener('change', fetchMenuItems);
 
-        document.getElementById('year').textContent = new Date().getFullYear();
-
-        loadCustomer();
         fetchCategories();
         fetchMenuItems();
     </script>

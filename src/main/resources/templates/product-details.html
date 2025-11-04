@@ -1,25 +1,11 @@
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Product Details - Restaurant Store</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <th:block th:replace="~{fragments/layout :: head('Product Details - Restaurant Store')}"></th:block>
 </head>
 <body class="bg-white min-h-screen">
-    <!-- Header -->
-    <header class="bg-white border-b border-gray-200 sticky top-0 z-50">
-        <div class="max-w-7xl mx-auto px-6 py-5 flex items-center justify-between">
-            <div class="text-2xl font-bold text-gray-900 cursor-pointer" onclick="window.location.href='/menu'">
-                Restaurant Store
-            </div>
-            <button onclick="window.location.href='/menu'" class="px-5 py-2 text-sm text-gray-700 hover:text-gray-900 transition-colors">
-                ← Back to Menu
-            </button>
-        </div>
-    </header>
+    <th:block th:replace="~{fragments/layout :: header-simple}"></th:block>
 
-    <!-- Product Details -->
     <main class="max-w-7xl mx-auto px-6 py-12" id="productView" th:attr="data-product-id=${productId}">
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-12">
             <div class="rounded-lg overflow-hidden bg-gray-100">
@@ -53,10 +39,8 @@
         </div>
     </main>
 
-    <script th:inline="javascript">
-        const API_BASE_URL = /*[[@{/api}]]*/ '/api';
-        const MENU_PAGE_URL = /*[[@{/menu}]]*/ '/menu';
-    </script>
+    <th:block th:replace="~{fragments/layout :: api-config}"></th:block>
+    <th:block th:replace="~{fragments/layout :: auth-utils}"></th:block>
     <script>
         async function fetchProduct(productId) {
             try {
