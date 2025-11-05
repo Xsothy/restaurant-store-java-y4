@@ -21,10 +21,10 @@
                     </svg>
                     <span id="cartBadgeUnauth" class="hidden absolute -top-1 -right-1 bg-red-600 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center"></span>
                 </button>
-                <button onclick="window.location.href='/login'" class="px-5 py-2 text-sm text-gray-700 hover:text-gray-900 transition-colors">
+                <button onclick="window.location.href='/auth/login'" class="px-5 py-2 text-sm text-gray-700 hover:text-gray-900 transition-colors">
                     Login
                 </button>
-                <button onclick="window.location.href='/register'" class="px-5 py-2 bg-gray-900 text-white text-sm rounded-md hover:bg-gray-800 transition-colors">
+                <button onclick="window.location.href='/auth/register'" class="px-5 py-2 bg-gray-900 text-white text-sm rounded-md hover:bg-gray-800 transition-colors">
                     Register
                 </button>
             </div>
@@ -45,7 +45,7 @@
                 <button onclick="window.location.href='/profile'" class="px-4 py-2 text-sm text-gray-700 hover:text-gray-900 transition-colors">
                     Profile
                 </button>
-                <button onclick="logout()" class="px-5 py-2 bg-gray-900 text-white text-sm rounded-md hover:bg-gray-800 transition-colors">
+                <button onclick="window.location.href='/auth/logout'" class="px-5 py-2 bg-gray-900 text-white text-sm rounded-md hover:bg-gray-800 transition-colors">
                     Logout
                 </button>
             </div>
@@ -76,8 +76,8 @@
     <th:block th:fragment="api-config">
         <script th:inline="javascript">
             const API_BASE_URL = /*[[@{/api}]]*/ '/api';
-            const LOGIN_PAGE_URL = /*[[@{/login}]]*/ '/login';
-            const REGISTER_PAGE_URL = /*[[@{/register}]]*/ '/register';
+            const LOGIN_PAGE_URL = /*[[@{/auth/login}]]*/ '/auth/login';
+            const REGISTER_PAGE_URL = /*[[@{/auth/register}]]*/ '/auth/register';
             const MENU_PAGE_URL = /*[[@{/menu}]]*/ '/menu';
             const PRODUCT_PAGE_BASE = /*[[@{/products/}]]*/ '/products/';
             const CART_PAGE_URL = /*[[@{/cart}]]*/ '/cart';

@@ -1,5 +1,6 @@
 package com.restaurant.store.service;
 
+import com.restaurant.store.dto.response.CategoryResponse;
 import com.restaurant.store.dto.response.ProductResponse;
 import com.restaurant.store.entity.Category;
 import com.restaurant.store.entity.Product;
@@ -25,8 +26,11 @@ public class ProductService {
     @Autowired
     private ProductMapper productMapper;
 
-    public List<Category> getAllCategories() {
-        return categoryRepository.findAll();
+    public List<CategoryResponse> getAllCategories() {
+        return categoryRepository.findAll()
+                .stream()
+                .map(CategoryResponse::fromEntity)
+                .collect(Collectors.toList());
     }
 
     public List<ProductResponse> getAllProducts(Long categoryId, Boolean availableOnly) {

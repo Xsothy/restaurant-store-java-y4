@@ -2,7 +2,6 @@
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
     <th:block th:replace="~{fragments/layout :: head('Product Details - Restaurant Store')}"></th:block>
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Kantumruy+Pro:wght@400;500;600;700&display=swap');
         body {
@@ -18,209 +17,175 @@
     </style>
 </head>
 <body class="bg-gradient-to-br from-gray-50 to-gray-100 min-h-screen">
-    <th:block th:replace="~{fragments/layout :: header}"></th:block>
+    <th:block th:replace="~{fragments/layout :: header-simple}"></th:block>
 
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 py-8" id="productView" th:attr="data-product-id=${productId}" x-data="productDetails()" x-init="init()">
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 py-8" th:if="${product}">
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 fade-in">
             <!-- Product Image -->
             <div class="rounded-3xl overflow-hidden bg-white shadow-xl">
-                <img id="productImage" src="" alt="Product" class="w-full h-[500px] object-cover">
+                <img th:src="${product.imageUrl != null ? product.imageUrl : '/images/placeholder-food.jpg'}" 
+                     th:alt="${product.name}"
+                     class="w-full h-[500px] object-cover"
+                     onerror="this.src='/images/placeholder-food.jpg'" />
             </div>
             
             <!-- Product Details -->
-            <div class="flex flex-col justify-center space-y-6 bg-white rounded-3xl p-8 shadow-xl">
-                <!-- Breadcrumb -->
-                <nav class="text-sm text-gray-500">
-                    <a href="/menu" class="text-red-600 hover:text-red-700 font-medium transition-colors">ម៉ឺនុយ</a> 
-                    <span class="text-gray-400 mx-2">/</span> 
-                    <span id="breadcrumbCategory" class="text-gray-600"></span>
-                </nav>
-                
-                <!-- Category Badge -->
-                <span id="categoryTag" class="inline-block px-4 py-1.5 bg-gradient-to-r from-pink-100 to-red-100 text-red-700 text-sm font-medium rounded-full w-fit"></span>
-                
-                <!-- Product Name -->
-                <h1 id="productName" class="text-3xl lg:text-4xl font-bold text-gray-800"></h1>
-                
-                <!-- Price -->
-                <div class="flex items-baseline gap-3">
-                    <span class="text-4xl lg:text-5xl font-bold text-red-600" id="productPrice"></span>
+            <div class="flex flex-col justify-between space-y-6">
+                <!-- Header Info -->
+                <div>
+                    <div class="flex items-center gap-3 mb-4">
+                        <h1 th:text="${product.name}" class="text-4xl font-bold text-gray-900"></h1>
+                        <div th:if="${product.available}" class="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-semibold">
+                            Available
+                        </div>
+                        <div th:unless="${product.available}" class="bg-red-100 text-red-800 px-3 py-1 rounded-full text-sm font-semibold">
+                            Out of Stock
+                        </div>
+                    </div>
+                    
+                    <p th:text="${product.description}" class="text-lg text-gray-600 leading-relaxed mb-6"></p>
+                    
+                    <!-- Category -->
+                    <div th:if="${product.category}" class="mb-6">
+                        <span class="text-sm text-gray-500">Category:</span>
+                        <span th:text="${product.category.name}" class="ml-2 bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-sm font-medium"></span>
+                    </div>
                 </div>
-                
-                <!-- Description -->
-                <p id="productDescription" class="text-gray-600 text-base leading-relaxed"></p>
-                
-                <!-- Availability Badge -->
-                <div id="availabilityBadge" class="inline-block px-4 py-2 rounded-lg text-sm font-medium w-fit"></div>
-                
-                <!-- Quantity Selector -->
-                <div class="flex items-center gap-4">
-                    <span class="text-gray-700 font-medium">ចំនួន:</span>
-                    <div class="flex items-center border-2 border-gray-200 rounded-lg overflow-hidden">
-                        <button @click="decreaseQuantity" class="px-4 py-2 hover:bg-gray-100 transition-colors">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"></path>
-                            </svg>
+
+                <!-- Price and Actions -->
+                <div class="border-t border-gray-200 pt-6">
+                    <div class="flex items-baseline gap-2 mb-6">
+                        <span th:text="${#numbers.formatDecimal(product.price, 0, 0) + '៛'}" 
+                              class="text-5xl font-bold text-red-600"></span>
+                        <span class="text-gray-500 text-lg">per serving</span>
+                    </div>
+
+                    <!-- Quantity Selector -->
+                    <div class="flex items-center gap-4 mb-6">
+                        <label class="text-gray-700 font-medium">Quantity:</label>
+                        <div class="flex items-center border border-gray-300 rounded-lg">
+                            <button type="button" onclick="decrementQuantity()" class="px-3 py-2 text-gray-600 hover:bg-gray-100 transition-colors">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"></path>
+                                </svg>
+                            </button>
+                            <input type="number" id="quantity" value="1" min="1" max="99" readonly class="w-16 text-center py-2 border-x border-gray-300">
+                            <button type="button" onclick="incrementQuantity()" class="px-3 py-2 text-gray-600 hover:bg-gray-100 transition-colors">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="flex gap-4">
+                        <button th:onclick="'addToCart(' + ${product.id} + ')'"
+                                th:disabled="${!product.available}"
+                                th:class="${product.available} ? 'flex-1 bg-red-600 text-white py-4 px-6 rounded-xl font-semibold text-lg hover:bg-red-700 transition-colors shadow-lg' : 'flex-1 bg-gray-300 text-gray-500 py-4 px-6 rounded-xl font-semibold text-lg cursor-not-allowed shadow-lg'">
+                            <span th:if="${product.available}">Add to Cart</span>
+                            <span th:unless="${product.available}">Out of Stock</span>
                         </button>
-                        <span x-text="quantity" class="px-6 py-2 font-semibold text-lg"></span>
-                        <button @click="increaseQuantity" class="px-4 py-2 hover:bg-gray-100 transition-colors">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-                            </svg>
+                        
+                        <button onclick="window.location.href='/menu'" class="px-6 py-4 border-2 border-gray-300 text-gray-700 rounded-xl font-semibold text-lg hover:bg-gray-50 transition-colors">
+                            Back to Menu
                         </button>
                     </div>
                 </div>
-                
-                <!-- Action Buttons -->
-                <div class="flex gap-3 pt-4">
-                    <button 
-                        id="addToCartBtn" 
-                        @click="addToCart"
-                        class="flex-1 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white font-medium py-3.5 px-8 rounded-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg"
-                    >
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path>
-                        </svg>
-                        បន្ថែមទៅកន្ត្រក
-                    </button>
-                    <button 
-                        @click="goBack"
-                        class="px-8 py-3.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium rounded-xl transition-colors duration-200"
-                    >
-                        ត្រឡប់
-                    </button>
+
+                <!-- Additional Info -->
+                <div class="border-t border-gray-200 pt-6">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-3">Product Information</h3>
+                    <div class="grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                            <span class="text-gray-500">Product ID:</span>
+                            <span th:text="${product.id}" class="ml-2 text-gray-900 font-medium"></span>
+                        </div>
+                        <div>
+                            <span class="text-gray-500">Availability:</span>
+                            <span th:text="${product.available ? 'In Stock' : 'Out of Stock'}" class="ml-2 text-gray-900 font-medium"></span>
+                        </div>
+                    </div>
                 </div>
             </div>
+        </div>
+    </main>
+
+    <!-- Product Not Found -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 py-8" th:unless="${product}">
+        <div class="text-center py-12">
+            <div class="text-gray-400 mb-4">
+                <svg class="w-24 h-24 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+            </div>
+            <h3 class="text-xl font-semibold text-gray-600 mb-2">Product Not Found</h3>
+            <p class="text-gray-500 mb-6">The product you're looking for doesn't exist or has been removed.</p>
+            <button onclick="window.location.href='/menu'" class="bg-gray-900 text-white px-6 py-3 rounded-md font-medium hover:bg-gray-800 transition-colors">
+                Back to Menu
+            </button>
         </div>
     </main>
 
     <th:block th:replace="~{fragments/layout :: footer}"></th:block>
     <th:block th:replace="~{fragments/layout :: api-config}"></th:block>
     <th:block th:replace="~{fragments/layout :: auth-utils}"></th:block>
-    <script>
-        function productDetails() {
-            return {
-                product: null,
-                quantity: 1,
-                
-                async init() {
-                    await this.loadProductDetails();
-                },
-                
-                async fetchProduct(productId) {
-                    try {
-                        const response = await fetch(`${API_BASE_URL}/products/${productId}`);
-                        if (!response.ok) return null;
-                        const payload = await response.json();
-                        return payload.success ? payload.data : null;
-                    } catch (error) {
-                        console.error('Failed to load product', error);
-                        return null;
-                    }
-                },
-                
-                async loadProductDetails() {
-                    const productView = document.getElementById('productView');
-                    const productId = productView?.dataset?.productId;
-                    
-                    if (productId) {
-                        this.product = await this.fetchProduct(productId);
-                    }
-                    
-                    if (!this.product) {
-                        this.product = JSON.parse(localStorage.getItem('selectedProduct'));
-                    }
-                    
-                    if (!this.product) {
-                        window.location.href = MENU_PAGE_URL;
-                        return;
-                    }
-                    
-                    // Update DOM elements
-                    document.getElementById('productImage').src = this.product.imageUrl || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=800&q=80';
-                    document.getElementById('productImage').alt = this.product.name;
-                    document.getElementById('breadcrumbCategory').textContent = this.product.categoryName || 'អាហារ';
-                    document.getElementById('categoryTag').textContent = this.product.categoryName || 'ពិសេស';
-                    document.getElementById('productName').textContent = this.product.name;
-                    document.getElementById('productPrice').textContent = this.formatPrice(this.product.price);
-                    document.getElementById('productDescription').textContent = this.product.description || 'អាហារឆ្ងាញ់របស់យើង';
-                    
-                    const availabilityBadge = document.getElementById('availabilityBadge');
-                    const addToCartBtn = document.getElementById('addToCartBtn');
-                    
-                    if (this.product.isAvailable !== false) {
-                        availabilityBadge.textContent = 'មាននៅក្នុងស្តុក';
-                        availabilityBadge.className = 'inline-block px-4 py-2 rounded-lg text-sm font-medium w-fit bg-green-100 text-green-700';
-                        addToCartBtn.disabled = false;
-                    } else {
-                        availabilityBadge.textContent = 'អស់ស្តុក';
-                        availabilityBadge.className = 'inline-block px-4 py-2 rounded-lg text-sm font-medium w-fit bg-gray-100 text-gray-600';
-                        addToCartBtn.disabled = true;
-                        addToCartBtn.innerHTML = `
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                            </svg>
-                            អស់ស្តុក
-                        `;
-                    }
-                },
-                
-                formatPrice(price) {
-                    if (typeof price === 'number') {
-                        return `${price.toLocaleString()}៛`;
-                    }
-                    return price || '0៛';
-                },
-                
-                increaseQuantity() {
-                    if (this.quantity < 99) {
-                        this.quantity++;
-                    }
-                },
-                
-                decreaseQuantity() {
-                    if (this.quantity > 1) {
-                        this.quantity--;
-                    }
-                },
-                
-                addToCart() {
-                    if (!this.product || this.product.isAvailable === false) return;
-                    
-                    let cart = JSON.parse(localStorage.getItem('cart') || '[]');
-                    const existingItem = cart.find(item => item.id === this.product.id);
-                    
-                    if (existingItem) {
-                        existingItem.quantity += this.quantity;
-                    } else {
-                        cart.push({
-                            ...this.product,
-                            quantity: this.quantity
-                        });
-                    }
-                    
-                    localStorage.setItem('cart', JSON.stringify(cart));
-                    
-                    // Update cart badge
-                    if (typeof updateCartBadge === 'function') {
-                        updateCartBadge();
-                    }
-                    
-                    // Show success with quantity
-                    const message = this.quantity > 1 
-                        ? `បានបន្ថែម ${this.quantity} "${this.product.name}" ទៅកន្ត្រកហើយ!`
-                        : `បានបន្ថែម "${this.product.name}" ទៅកន្ត្រកហើយ!`;
-                    
-                    alert(message);
-                    
-                    // Reset quantity
-                    this.quantity = 1;
-                },
-                
-                goBack() {
-                    window.location.href = '/menu';
-                }
+
+    <script th:inline="javascript">
+        // Product data from server
+        const product = /*[[${product}]]*/ null;
+
+        function incrementQuantity() {
+            const input = document.getElementById('quantity');
+            if (input.value < 99) {
+                input.value = parseInt(input.value) + 1;
             }
+        }
+
+        function decrementQuantity() {
+            const input = document.getElementById('quantity');
+            if (input.value > 1) {
+                input.value = parseInt(input.value) - 1;
+            }
+        }
+
+        function addToCart(productId) {
+            if (!product || !product.available) return;
+
+            const quantity = parseInt(document.getElementById('quantity').value);
+            let cart = JSON.parse(localStorage.getItem('cart') || '[]');
+            
+            // Check if product already exists in cart
+            const existingItem = cart.find(item => item.id === productId);
+            
+            if (existingItem) {
+                existingItem.quantity += quantity;
+            } else {
+                cart.push({
+                    id: product.id,
+                    name: product.name,
+                    price: product.price,
+                    quantity: quantity,
+                    imageUrl: product.imageUrl
+                });
+            }
+            
+            localStorage.setItem('cart', JSON.stringify(cart));
+            updateCartBadge();
+            
+            // Show success message
+            showNotification(`Added ${quantity} × ${product.name} to cart!`);
+        }
+
+        function showNotification(message) {
+            const notification = document.createElement('div');
+            notification.className = 'fixed bottom-4 right-4 bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg z-50 fade-in';
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.remove();
+            }, 3000);
         }
     </script>
 </body>
