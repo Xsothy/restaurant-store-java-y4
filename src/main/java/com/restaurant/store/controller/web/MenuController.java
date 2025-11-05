@@ -1,15 +1,15 @@
 package com.restaurant.store.controller.web;
 
 import com.restaurant.store.dto.response.CategoryResponse;
+import com.restaurant.store.dto.response.CustomerResponse;
 import com.restaurant.store.dto.response.ProductResponse;
 import com.restaurant.store.service.ProductService;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -24,15 +24,24 @@ public class MenuController {
     public String menu(
             @RequestParam(required = false) Long categoryId,
             @RequestParam(required = false) Boolean availableOnly,
+            HttpServletRequest request,
             Model model) {
         
         List<CategoryResponse> categories = productService.getAllCategories();
         List<ProductResponse> products = productService.getAllProducts(categoryId, availableOnly);
         
+        // Get customer from session for cart functionality
+        HttpSession session = request.getSession(false);
+        CustomerResponse customer = null;
+        if (session != null) {
+            customer = (CustomerResponse) session.getAttribute("customer");
+        }
+        
         model.addAttribute("categories", categories);
         model.addAttribute("products", products);
         model.addAttribute("selectedCategoryId", categoryId);
         model.addAttribute("availableOnly", availableOnly != null ? availableOnly : false);
+        model.addAttribute("customer", customer);
         
         return "menu";
     }
