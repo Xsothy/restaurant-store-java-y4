@@ -40,7 +40,6 @@ public class MenuController {
         model.addAttribute("categories", categories);
         model.addAttribute("products", products);
         model.addAttribute("selectedCategoryId", categoryId);
-        model.addAttribute("availableOnly", availableOnly != null ? availableOnly : false);
         model.addAttribute("customer", customer);
         
         return "menu";

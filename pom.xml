@@ -49,9 +49,9 @@
             <artifactId>spring-boot-starter-hateoas</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.webjars.npm</groupId>
-            <artifactId>htmx.org</artifactId>
-            <version>1.9.12</version>
+            <groupId>io.github.wimdeblauwe</groupId>
+            <artifactId>htmx-spring-boot</artifactId>
+            <version>4.0.1</version>
         </dependency>
 
         <!-- Database -->
@@ -183,6 +183,35 @@
                         </configuration>
                     </execution>
                 </executions>
+            </plugin>
+            <plugin>
+                <groupId>cz.habarta.typescript-generator</groupId>
+                <artifactId>typescript-generator-maven-plugin</artifactId>
+                <version>3.2.1263</version>
+                <executions>
+                    <execution>
+                        <id>generate</id>
+                        <goals>
+                            <goal>generate</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <jsonLibrary>jackson2</jsonLibrary>
+                    <classes>
+                        <class>com.restaurant.store.dto.response.CategoryResponse</class>
+                        <class>com.restaurant.store.dto.response.CustomerResponse</class>
+                        <class>com.restaurant.store.dto.response.DeliveryResponse</class>
+                        <class>com.restaurant.store.dto.response.OrderResponse</class>
+                        <class>com.restaurant.store.dto.response.ProductResponse</class>
+                    </classes>
+                    <customTypeMappings>
+                        <mapping>java.time.Instant:Date</mapping>
+                    </customTypeMappings>
+                    <outputFile>app/src/endpoints.d.ts</outputFile>
+                    <outputKind>global</outputKind>
+                    <namespace>endpoint</namespace>
+                </configuration>
             </plugin>
         </plugins>
     </build>

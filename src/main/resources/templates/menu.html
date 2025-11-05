@@ -25,31 +25,16 @@
     <th:block th:replace="~{fragments/layout :: header}"></th:block>
 
     <main class="max-w-7xl mx-auto px-4 sm:px-6 py-8">
-        
-        <!-- Header Section -->
-        <div class="text-center mb-8">
-            <h1 class="text-4xl font-bold text-gray-800 mb-2">ឧសាបុកល្ហុង</h1>
-            <p class="text-xl text-gray-600">Ousa Boklahong</p>
-        </div>
 
         <!-- Filter Options -->
         <div class="flex justify-center gap-4 mb-8">
             <form th:action="@{/menu}" method="get" class="flex gap-4 items-center">
                 <input type="hidden" name="categoryId" th:value="${selectedCategoryId}" />
-                <label class="flex items-center gap-2">
-                    <input type="checkbox" 
-                           name="availableOnly" 
-                           value="true"
-                           th:checked="${availableOnly}"
-                           onchange="this.form.submit()"
-                           class="w-4 h-4 text-red-600 rounded focus:ring-red-500" />
-                    <span class="text-gray-700">Available Only</span>
-                </label>
             </form>
         </div>
 
         <!-- Categories Navigation -->
-        <div th:if="${categories.size() > 0}" class="mb-8 overflow-x-auto">
+        <div th:if="${categories.size() > 0}" class="mb-8 pb-2 overflow-x-auto">
             <div class="flex gap-3 justify-center flex-wrap min-w-max mx-auto">
                 <a th:href="@{/menu}" 
                    th:class="${selectedCategoryId == null} ? 'tab-active px-6 py-3 rounded-full text-base font-medium transition-all duration-300 shadow-md hover:shadow-lg whitespace-nowrap' : 'bg-white text-gray-700 hover:bg-gray-100 px-6 py-3 rounded-full text-base font-medium transition-all duration-300 shadow-md hover:shadow-lg whitespace-nowrap'">
@@ -74,11 +59,11 @@
                          onerror="this.src='/images/placeholder-food.jpg'" />
                     
                     <!-- Availability Badge -->
-                    <div th:if="${product.available}" class="absolute top-3 right-3 bg-green-500 text-white px-2 py-1 rounded-full text-xs font-semibold">
+                    <div th:if="${product.isAvailable}" class="absolute top-3 right-3 bg-green-500 text-white px-2 py-1 rounded-full text-xs font-semibold">
                         Available
                     </div>
-                    <div th:unless="${product.available}" class="absolute top-3 right-3 bg-red-500 text-white px-2 py-1 rounded-full text-xs font-semibold">
-                        Out of Stock
+                    <div th:unless="${product.isAvailable}" class="absolute top-3 right-3 bg-red-500 text-white px-2 py-1 rounded-full text-xs font-semibold">
+                        Not Available
                     </div>
                 </div>
 
@@ -90,8 +75,8 @@
                     <div class="flex items-center justify-between mb-3">
                         <span th:text="${#numbers.formatDecimal(product.price, 0, 0) + '៛'}" 
                               class="text-xl font-bold text-red-600"></span>
-                        <span th:if="${product.category}" 
-                              th:text="${product.category.name}" 
+                        <span th:if="${product.categoryId != null}"
+                              th:text="${product.categoryName}"
                               class="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full"></span>
                     </div>
 
@@ -102,10 +87,10 @@
                             View Details
                         </button>
                         <button th:onclick="'addToCart(' + ${product.id} + ')'"
-                                th:disabled="${!product.available}"
-                                th:class="${product.available} ? 'flex-1 bg-red-600 text-white px-3 py-2 rounded-md text-sm font-medium hover:bg-red-700 transition-colors' : 'flex-1 bg-gray-300 text-gray-500 px-3 py-2 rounded-md text-sm font-medium cursor-not-allowed'">
-                            <span th:if="${product.available}">Add to Cart</span>
-                            <span th:unless="${product.available}">Out of Stock</span>
+                                th:disabled="${!product.isAvailable}"
+                                th:class="${product.isAvailable} ? 'flex-1 bg-red-600 text-white px-3 py-2 rounded-md text-sm font-medium hover:bg-red-700 transition-colors' : 'flex-1 bg-gray-300 text-gray-500 px-3 py-2 rounded-md text-sm font-medium cursor-not-allowed'">
+                            <span th:if="${product.isAvailable}">Add to Cart</span>
+                            <span th:unless="${product.isAvailable}">Out of Stock</span>
                         </button>
                     </div>
                 </div>
@@ -131,6 +116,16 @@
     <script>
         // Product data for JavaScript functions
         const products = /*[[${products}]]*/ [];
+        /** @var {Map<number,  {
+             id: number;
+             name: string;
+             description: string;
+             price: number;
+             imageUrl: string;
+             isAvailable: boolean;
+             categoryId: number;
+             categoryName: string;
+         }>} productMap */
         const productMap = new Map(products.map(p => [p.id, p]));
 
         function openDetails(productId) {
@@ -143,7 +138,7 @@
 
         function addToCart(productId) {
             const product = productMap.get(productId);
-            if (!product || !product.available) return;
+            if (!product || !product.isAvailable) return;
 
             let cart = JSON.parse(localStorage.getItem('cart') || '[]');
             const existingItem = cart.find(item => item.id === productId);
