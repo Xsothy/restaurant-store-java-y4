@@ -36,12 +36,6 @@ public class DataSeeder implements CommandLineRunner {
     public void run(String... args) throws Exception {
         log.info("Starting data seeding from external API...");
 
-        // Check if data already exists
-        if (categoryRepository.count() > 0 || productRepository.count() > 0) {
-            log.info("Data already exists. Skipping seeding.");
-            return;
-        }
-
         try {
             // Fetch data from external API
             HttpClient client = HttpClient.newHttpClient();
@@ -73,10 +67,16 @@ public class DataSeeder implements CommandLineRunner {
             return;
         }
 
+        // Check if data already exists
+        if (categoryRepository.count() > 0) {
+            log.info("Data already exists. Skipping seeding.");
+            return;
+        }
+
         Map<String, Category> categoryMap = new HashMap<>();
 
         for (JsonNode node : categoriesNode) {
-            String nameEn = node.get("name_en").asText();
+            String nameEn = node.get("name_kh").asText();
             String description = node.has("description") ? node.get("description").asText() : "";
 
             Category category = new Category(nameEn, description);
@@ -101,12 +101,19 @@ public class DataSeeder implements CommandLineRunner {
             return;
         }
 
+        // Check if data already exists
+        if (productRepository.count() > 0) {
+            log.info("Products Data already exists. Skipping seeding.");
+            return;
+        }
+
         for (JsonNode node : productsNode) {
-            String nameEn = node.get("name_en").asText();
-            String descriptionEn = node.has("description_en") ? node.get("description_en").asText() : "";
-            BigDecimal price = BigDecimal.valueOf(node.get("price").asDouble());
-            String imageUrl = node.has("image_url") ? node.get("image_url").asText() : null;
-            Boolean isActive = node.has("active") ? node.get("active").asBoolean() : true;
+            String nameEn = node.get("name_kh").asText();
+            String descriptionEn = node.get("description_kh").asText("");
+            BigDecimal price = BigDecimal.valueOf(node.get("price").asDouble())
+                    .multiply(BigDecimal.valueOf(4000));
+            String imageUrl = node.get("image_url").asText();
+            Boolean isActive = node.get("active").asBoolean();
             String categoryExternalId = node.get("category_id").asText();
 
             // Find the corresponding category

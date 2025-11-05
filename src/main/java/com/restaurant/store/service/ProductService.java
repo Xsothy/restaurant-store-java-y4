@@ -1,9 +1,10 @@
 package com.restaurant.store.service;
 
+import com.restaurant.store.dto.response.CategoryResponse;
 import com.restaurant.store.dto.response.ProductResponse;
-import com.restaurant.store.entity.Category;
 import com.restaurant.store.entity.Product;
 import com.restaurant.store.exception.ResourceNotFoundException;
+import com.restaurant.store.mapper.CategoryMapper;
 import com.restaurant.store.mapper.ProductMapper;
 import com.restaurant.store.repository.CategoryRepository;
 import com.restaurant.store.repository.ProductRepository;
@@ -25,8 +26,14 @@ public class ProductService {
     @Autowired
     private ProductMapper productMapper;
 
-    public List<Category> getAllCategories() {
-        return categoryRepository.findAll();
+    @Autowired
+    private CategoryMapper categoryMapper;
+
+    public List<CategoryResponse> getAllCategories() {
+        return categoryRepository.findAll()
+                .stream()
+                .map(categoryMapper::toResponse)
+                .collect(Collectors.toList());
     }
 
     public List<ProductResponse> getAllProducts(Long categoryId, Boolean availableOnly) {

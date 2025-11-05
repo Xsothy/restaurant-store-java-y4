@@ -4,6 +4,7 @@ import com.restaurant.store.dto.response.ApiResponse;
 import com.restaurant.store.dto.response.ProductResponse;
 import com.restaurant.store.entity.Category;
 import com.restaurant.store.service.ProductService;
+import com.restaurant.store.dto.response.CategoryResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -19,10 +20,10 @@ public class ProductController {
     private ProductService productService;
     
     @GetMapping("/categories")
-    public ResponseEntity<ApiResponse<List<Category>>> getAllCategories() {
+    public ResponseEntity<List<CategoryResponse>> getAllCategories() {
         
-        List<Category> categories = productService.getAllCategories();
-        return ResponseEntity.ok(ApiResponse.success("Categories retrieved successfully", categories));
+        List<CategoryResponse> categories = productService.getAllCategories();
+        return ResponseEntity.ok(categories);
     }
 
 

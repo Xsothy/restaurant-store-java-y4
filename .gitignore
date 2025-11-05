@@ -49,3 +49,8 @@ vite.config.js.timestamp-*
 
 ### Database files ###
 *.db
+*.sqlite
+
+### Generated Frontend Assets ###
+src/main/resources/static/css/tailwind.css
+src/endpoints.d.ts

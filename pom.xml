@@ -50,9 +50,15 @@
             <groupId>org.xerial</groupId>
             <artifactId>sqlite-jdbc</artifactId>
         </dependency>
+
         <dependency>
             <groupId>org.hibernate.orm</groupId>
             <artifactId>hibernate-community-dialects</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <scope>runtime</scope>
         </dependency>
 
         <!-- JWT -->
@@ -174,6 +180,31 @@
                         </configuration>
                     </execution>
                 </executions>
+            </plugin>
+            <plugin>
+                <groupId>cz.habarta.typescript-generator</groupId>
+                <artifactId>typescript-generator-maven-plugin</artifactId>
+                <version>3.2.1263</version>
+                <executions>
+                    <execution>
+                        <id>generate</id>
+                        <goals>
+                            <goal>generate</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <jsonLibrary>jackson2</jsonLibrary>
+                    <classes>
+                        <class>com.restaurant.store.dto.response.CategoryResponse</class>
+                    </classes>
+                    <customTypeMappings>
+                        <mapping>java.time.Instant:Date</mapping>
+                    </customTypeMappings>
+                    <outputFile>app/src/endpoints.d.ts</outputFile>
+                    <outputKind>global</outputKind>
+                    <namespace>endpoint</namespace>
+                </configuration>
             </plugin>
         </plugins>
     </build>
