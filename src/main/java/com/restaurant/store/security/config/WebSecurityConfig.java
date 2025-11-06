@@ -37,8 +37,7 @@ public class WebSecurityConfig {
             .csrf(csrf -> csrf.disable())
             .cors(cors -> cors.configure(http))
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/", "/login", "/register", "/menu", "/products/**").permitAll()
-                .requestMatchers("/css/**", "/js/**", "/images/**", "/*.html", "/static/**").permitAll()
+                .requestMatchers("/", "/register", "/menu", "/products/**", "/css/**", "/js/**", "/images/**", "/*.html", "/static/**").permitAll()
                 .requestMatchers("/auth/login", "/auth/register").permitAll()
                 .requestMatchers("/cart", "/orders/**", "/profile").authenticated()
                 .anyRequest().authenticated()
