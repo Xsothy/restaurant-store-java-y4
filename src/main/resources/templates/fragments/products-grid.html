@@ -1,0 +1,45 @@
+    <div  th:fragment="productsGrid(products)"  th:if="${products.size() > 0}" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <div th:each="product : ${products}" class="bg-white rounded-lg shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden fade-in">
+            <!-- image, badge, info same as before -->
+            <div class="relative h-48 bg-gray-100">
+                <img th:src="${product.imageUrl != null ? product.imageUrl : '/images/placeholder-food.jpg'}"
+                     th:alt="${product.name}"
+                     class="w-full h-full object-cover"
+                     onerror="this.src='/images/placeholder-food.jpg'" />
+                <div th:if="${product.isAvailable}" class="absolute top-3 right-3 bg-green-500 text-white px-2 py-1 rounded-full text-xs font-semibold">
+                    Available
+                </div>
+                <div th:unless="${product.isAvailable}" class="absolute top-3 right-3 bg-red‑500 text-white px-2 py-1 rounded-full text-xs font-semibold">
+                    Not Available
+                </div>
+            </div>
+            <div class="p-4">
+                <h3 th:text="${product.name}" class="text-lg font-semibold text-gray-800 mb-2"></h3>
+                <p th:text="${product.description}" class="text-gray-600 text-sm mb-3 line-clamp-2"></p>
+                <div class="flex items-center justify-between mb-3">
+                    <span th:text="${#numbers.formatDecimal(product.price, 0, 0) + '៛'}" class="text-xl font-bold text-red-600"></span>
+                    <span th:if="${product.categoryId != null}"
+                          th:text="${product.categoryName}"
+                          class="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full"></span>
+                </div>
+                <div class="flex gap-2">
+                    <button hx:get="@{'/products/' + ${product.id}}" hx-target="#product-details" class="flex‑1 bg-gray‑100 text‑gray‑700 px‑3 py‑2 rounded‑md text‑sm font‑medium hover:bg‑gray‑200 transition‑colors">
+                        View Details
+                    </button>
+                    <form th:action="@{'/cart/add/' + ${product.id}}" method="post" class="flex‑1">
+                        <button type="submit"
+                                th:disabled="${!product.isAvailable}"
+                                th:class="${product.isAvailable} ? 'w-full bg-red‑600 text‑white px‑3 py‑2 rounded‑md text‑sm font‑medium hover:bg‑red‑700 transition‑colors' : 'w-full bg-gray‑300 text‑gray‑500 px‑3 py‑2 rounded‑md text‑sm font‑medium cursor-not-allowed'">
+                            <span th:if="${product.isAvailable}">Add to Cart</span>
+                            <span th:unless="${product.isAvailable}">Out of Stock</span>
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div th:if="${products.size() == 0}" class="text-center py-12">
+        <div class="text-gray‑400 mb‑4"> … </div>
+        <h3 class="text-xl font-semibold text-gray‑600 mb‑2">No products found</h3>
+        <p class="text-gray‑500">Try adjusting your filters or check back later.</p>
+    </div>

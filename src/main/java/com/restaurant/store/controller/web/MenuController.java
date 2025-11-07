@@ -4,6 +4,7 @@ import com.restaurant.store.dto.response.CategoryResponse;
 import com.restaurant.store.dto.response.CustomerResponse;
 import com.restaurant.store.dto.response.ProductResponse;
 import com.restaurant.store.service.ProductService;
+import io.github.wimdeblauwe.htmx.spring.boot.mvc.HxRequest;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,12 +24,11 @@ public class MenuController {
     @GetMapping({"/", "/menu"})
     public String menu(
             @RequestParam(required = false) Long categoryId,
-            @RequestParam(required = false) Boolean availableOnly,
             HttpServletRequest request,
             Model model) {
         
         List<CategoryResponse> categories = productService.getAllCategories();
-        List<ProductResponse> products = productService.getAllProducts(categoryId, availableOnly);
+        List<ProductResponse> products = productService.getAllProducts(categoryId);
         
         // Get customer from session for cart functionality
         HttpSession session = request.getSession(false);
@@ -43,6 +43,14 @@ public class MenuController {
         model.addAttribute("customer", customer);
         
         return "menu";
+    }
+
+    @HxRequest
+    @GetMapping("/products-grid")
+    public String showMenuPartial(@RequestParam(required=false) Long category, Model model) {
+        List<ProductResponse> products = productService.getAllProducts(category);
+        model.addAttribute("products", products);
+        return "fragments/products‑grid :: productsGrid";
     }
     
     @GetMapping("/products/{productId}")

@@ -23,10 +23,9 @@ public class ProductController {
 
     @GetMapping("/products")
     public List<ProductResponse> getAllProducts(
-            @RequestParam(required = false) Long categoryId,
-            @RequestParam(required = false) Boolean availableOnly) {
+            @RequestParam(required = false) Long categoryId) {
         
-        return productService.getAllProducts(categoryId, availableOnly);
+        return productService.getAllProducts(categoryId);
     }
     
     @GetMapping("/products/{productId}")

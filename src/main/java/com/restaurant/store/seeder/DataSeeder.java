@@ -102,11 +102,12 @@ public class DataSeeder implements CommandLineRunner {
         }
 
         for (JsonNode node : productsNode) {
-            String nameEn = node.get("name_en").asText();
-            String descriptionEn = node.has("description_en") ? node.get("description_en").asText() : "";
-            BigDecimal price = BigDecimal.valueOf(node.get("price").asDouble());
-            String imageUrl = node.has("image_url") ? node.get("image_url").asText() : null;
-            Boolean isActive = node.has("active") ? node.get("active").asBoolean() : true;
+            String nameEn = node.get("name_kh").asText();
+            String descriptionEn = node.get("description_kh").asText();
+            BigDecimal price = BigDecimal.valueOf(node.get("price").asDouble())
+                    .multiply(BigDecimal.valueOf(4000));
+            String imageUrl =  node.get("image_url").asText();
+            Boolean isActive = node.get("active").asBoolean();
             String categoryExternalId = node.get("category_id").asText();
 
             // Find the corresponding category

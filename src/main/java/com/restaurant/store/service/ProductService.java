@@ -33,15 +33,11 @@ public class ProductService {
                 .collect(Collectors.toList());
     }
 
-    public List<ProductResponse> getAllProducts(Long categoryId, Boolean availableOnly) {
+    public List<ProductResponse> getAllProducts(Long categoryId) {
         List<Product> products;
 
-        if (categoryId != null && availableOnly != null && availableOnly) {
-            products = productRepository.findByIsAvailableTrueAndCategoryId(categoryId);
-        } else if (categoryId != null) {
+        if (categoryId != null) {
             products = productRepository.findByCategoryId(categoryId);
-        } else if (availableOnly != null && availableOnly) {
-            products = productRepository.findByIsAvailableTrue();
         } else {
             products = productRepository.findAll();
         }
