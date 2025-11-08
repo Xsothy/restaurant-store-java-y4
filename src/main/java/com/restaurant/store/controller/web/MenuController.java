@@ -44,13 +44,6 @@ public class MenuController {
         
         return "menu";
     }
-
-    @GetMapping("/products-grid")
-    public String showMenuPartial(@RequestParam(required=false) Long category, Model model) {
-        List<ProductResponse> products = productService.getAllProducts(category, null);
-        model.addAttribute("products", products);
-        return "fragments/products-grid :: productsGrid";
-    }
     
     @GetMapping("/products/{productId}")
     public String productDetails(@PathVariable Long productId, Model model) {

@@ -48,23 +48,6 @@ public class WebController {
         return "register";
     }
 
-    @GetMapping({"/", "/menu"})
-    public String menu(Model model) {
-        List<CategoryResponse> categories = productService.getAllCategories();
-        List<ProductResponse> products = productService.getAllProducts(null, true);
-        
-        model.addAttribute("categories", categories);
-        model.addAttribute("products", products);
-        return "menu";
-    }
-
-    @GetMapping("/products/{productId}")
-    public String productDetails(@PathVariable Long productId, Model model) {
-        ProductResponse product = productService.getProductById(productId);
-        model.addAttribute("product", product);
-        return "product-details";
-    }
-
     @GetMapping("/cart")
     public String cart(Model model, @CookieValue(value = "jwt", required = false) String jwtCookie) {
         try {
@@ -91,19 +74,6 @@ public class WebController {
             return "redirect:/cart";
         }
         return "checkout";
-    }
-
-    @GetMapping("/orders")
-    public String orders(Model model, @CookieValue(value = "jwt", required = false) String jwtCookie) {
-        try {
-            String token = getAuthToken(jwtCookie);
-            List<OrderResponse> customerOrders = orderService.getMyOrders(token);
-            model.addAttribute("orders", customerOrders);
-        } catch (Exception e) {
-            log.warn("Failed to load orders: {}", e.getMessage());
-            model.addAttribute("orders", List.of());
-        }
-        return "orders";
     }
 
     @GetMapping("/profile")
