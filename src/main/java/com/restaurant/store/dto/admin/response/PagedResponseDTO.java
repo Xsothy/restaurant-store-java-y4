@@ -1,4 +1,4 @@
-package com.restaurant.store.dto.admin;
+package com.restaurant.store.dto.admin.response;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

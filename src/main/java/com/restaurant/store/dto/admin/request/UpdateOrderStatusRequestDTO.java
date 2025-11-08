@@ -1,6 +1,6 @@
-package com.restaurant.store.dto.admin;
+package com.restaurant.store.dto.admin.request;
 
-import com.resadmin.res.entity.Order;
+import com.restaurant.store.entity.OrderStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -14,5 +14,5 @@ import jakarta.validation.constraints.NotNull;
 @AllArgsConstructor
 public class UpdateOrderStatusRequestDTO {
     @NotNull(message = "Status is required")
-    private Order.OrderStatus status;
+    private OrderStatus status;
 }
