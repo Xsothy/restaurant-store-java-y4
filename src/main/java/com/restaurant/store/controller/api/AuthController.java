@@ -1,8 +1,7 @@
-package com.restaurant.store.controller;
+package com.restaurant.store.controller.api;
 
 import com.restaurant.store.dto.request.CustomerRegisterRequest;
 import com.restaurant.store.dto.request.LoginRequest;
-import com.restaurant.store.dto.response.ApiResponse;
 import com.restaurant.store.dto.response.AuthResponse;
 import com.restaurant.store.service.AuthService;
 import jakarta.validation.Valid;
@@ -20,27 +19,26 @@ public class AuthController {
     private AuthService authService;
     
     @PostMapping("/register")
-    public ResponseEntity<ApiResponse<AuthResponse>> register(
+    public ResponseEntity<AuthResponse> register(
             @Valid @RequestBody CustomerRegisterRequest request) {
         
         AuthResponse response = authService.register(request);
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.success("Customer registered successfully", response));
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
     
     @PostMapping("/login")
-    public ResponseEntity<ApiResponse<AuthResponse>> login(
+    public ResponseEntity<AuthResponse> login(
             @Valid @RequestBody LoginRequest request) {
         
         AuthResponse response = authService.login(request);
-        return ResponseEntity.ok(ApiResponse.success("Login successful", response));
+        return ResponseEntity.ok(response);
     }
     
     @PostMapping("/logout")
-    public ResponseEntity<ApiResponse<String>> logout(
+    public ResponseEntity<Void> logout(
             @RequestHeader("Authorization") String authToken) {
         
         // Logout is handled client-side by discarding JWT token
-        return ResponseEntity.ok(ApiResponse.success("Logout successful", null));
+        return ResponseEntity.ok().build();
     }
 }

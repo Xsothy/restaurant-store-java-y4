@@ -8,16 +8,22 @@
         <h1 class="text-3xl font-bold text-center text-gray-900 mb-2">Restaurant Store</h1>
         <p class="text-center text-gray-500 mb-8">Create your account</p>
         
-        <div id="errorMessage" class="hidden bg-red-50 text-red-600 px-4 py-3 rounded-lg mb-4"></div>
-        <div id="successMessage" class="hidden bg-green-50 text-green-600 px-4 py-3 rounded-lg mb-4"></div>
+        <!-- Error Message -->
+        <div th:if="${error}" class="bg-red-50 text-red-600 px-4 py-3 rounded-lg mb-4" th:text="${error}">
+        </div>
+        
+        <!-- Success Message -->
+        <div th:if="${message}" class="bg-green-50 text-green-600 px-4 py-3 rounded-lg mb-4" th:text="${message}">
+        </div>
 
-        <form id="registerForm" class="space-y-6">
+        <form th:action="@{/auth/register}" method="post" th:object="${registerRequest}" class="space-y-6">
             <div>
                 <label for="name" class="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
                 <input 
                     type="text" 
                     id="name" 
                     name="name" 
+                    th:field="*{name}"
                     required 
                     placeholder="Enter your full name"
                     class="w-full px-4 py-2.5 border border-gray-300 rounded-md focus:outline-none focus:border-gray-900 focus:ring-1 focus:ring-gray-900 transition-colors"
@@ -30,6 +36,7 @@
                     type="email" 
                     id="email" 
                     name="email" 
+                    th:field="*{email}"
                     required 
                     placeholder="Enter your email"
                     class="w-full px-4 py-2.5 border border-gray-300 rounded-md focus:outline-none focus:border-gray-900 focus:ring-1 focus:ring-gray-900 transition-colors"
@@ -42,6 +49,7 @@
                     type="tel" 
                     id="phone" 
                     name="phone" 
+                    th:field="*{phone}"
                     required 
                     placeholder="Enter your phone number"
                     class="w-full px-4 py-2.5 border border-gray-300 rounded-md focus:outline-none focus:border-gray-900 focus:ring-1 focus:ring-gray-900 transition-colors"
@@ -53,10 +61,11 @@
                 <textarea 
                     id="address" 
                     name="address" 
+                    th:field="*{address}"
                     required 
-                    rows="2"
-                    placeholder="Enter your delivery address"
-                    class="w-full px-4 py-2.5 border border-gray-300 rounded-md focus:outline-none focus:border-gray-900 focus:ring-1 focus:ring-gray-900 transition-colors resize-none"
+                    rows="3"
+                    placeholder="Enter your address"
+                    class="w-full px-4 py-2.5 border border-gray-300 rounded-md focus:outline-none focus:border-gray-900 focus:ring-1 focus:ring-gray-900 transition-colors"
                 ></textarea>
             </div>
 
@@ -66,21 +75,10 @@
                     type="password" 
                     id="password" 
                     name="password" 
+                    th:field="*{password}"
                     required 
+                    placeholder="Enter your password"
                     minlength="6"
-                    placeholder="Enter your password (min. 6 characters)"
-                    class="w-full px-4 py-2.5 border border-gray-300 rounded-md focus:outline-none focus:border-gray-900 focus:ring-1 focus:ring-gray-900 transition-colors"
-                >
-            </div>
-
-            <div>
-                <label for="confirmPassword" class="block text-sm font-medium text-gray-700 mb-2">Confirm Password</label>
-                <input 
-                    type="password" 
-                    id="confirmPassword" 
-                    name="confirmPassword" 
-                    required 
-                    placeholder="Confirm your password"
                     class="w-full px-4 py-2.5 border border-gray-300 rounded-md focus:outline-none focus:border-gray-900 focus:ring-1 focus:ring-gray-900 transition-colors"
                 >
             </div>
@@ -88,82 +86,29 @@
             <button 
                 type="submit" 
                 id="registerBtn"
-                class="w-full bg-gray-900 text-white font-medium py-2.5 px-4 rounded-md hover:bg-gray-800 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                class="w-full bg-gray-900 text-white py-3 px-4 rounded-md hover:bg-gray-800 transition-colors font-medium"
             >
                 Register
             </button>
         </form>
 
-        <div class="text-center my-6 text-gray-400 text-sm">or</div>
-
-        <div class="text-center">
-            <a href="/login" class="text-sm text-gray-600 hover:text-gray-900 transition-colors">
-                Already have an account? <span class="font-medium">Login</span>
+        <div class="mt-6 text-center">
+            <p class="text-gray-600">
+                Already have an account? 
+                <a th:href="@{/auth/login}" class="text-gray-900 hover:text-gray-700 font-medium">
+                    Login here
+                </a>
+            </p>
+        </div>
+        
+        <div class="mt-4 text-center">
+            <a th:href="@{/menu}" class="text-gray-500 hover:text-gray-700 text-sm">
+                ← Back to Menu
             </a>
         </div>
     </div>
 
     <th:block th:replace="~{fragments/layout :: api-config}"></th:block>
-    <script>
-        document.getElementById('registerForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-
-            const name = document.getElementById('name').value;
-            const email = document.getElementById('email').value;
-            const phone = document.getElementById('phone').value;
-            const address = document.getElementById('address').value;
-            const password = document.getElementById('password').value;
-            const confirmPassword = document.getElementById('confirmPassword').value;
-            const registerBtn = document.getElementById('registerBtn');
-            const errorMessage = document.getElementById('errorMessage');
-            const successMessage = document.getElementById('successMessage');
-
-            errorMessage.classList.add('hidden');
-            successMessage.classList.add('hidden');
-
-            // Validate password match
-            if (password !== confirmPassword) {
-                errorMessage.textContent = 'Passwords do not match.';
-                errorMessage.classList.remove('hidden');
-                return;
-            }
-
-            registerBtn.disabled = true;
-            registerBtn.textContent = 'Creating account...';
-
-            try {
-                const response = await fetch(`${API_BASE_URL}/auth/register`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ name, email, phone, address, password }),
-                });
-
-                const data = await response.json();
-
-                if (response.ok && data.success) {
-                    localStorage.setItem('token', data.data.token);
-                    localStorage.setItem('customer', JSON.stringify(data.data.customer));
-                    
-                    successMessage.textContent = 'Registration successful! Redirecting...';
-                    successMessage.classList.remove('hidden');
-
-                    setTimeout(() => {
-                        window.location.href = MENU_PAGE_URL;
-                    }, 1000);
-                } else {
-                    errorMessage.textContent = data.message || 'Registration failed. Please try again.';
-                    errorMessage.classList.remove('hidden');
-                }
-            } catch (error) {
-                errorMessage.textContent = 'Network error. Please check your connection and try again.';
-                errorMessage.classList.remove('hidden');
-            } finally {
-                registerBtn.disabled = false;
-                registerBtn.textContent = 'Register';
-            }
-        });
-    </script>
+    <th:block th:replace="~{fragments/layout :: auth-utils}"></th:block>
 </body>
 </html>
