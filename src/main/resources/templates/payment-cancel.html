@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <th:block th:replace="~{fragments/layout :: head('Payment Cancelled - Restaurant Store')}"></th:block>
+</head>
+<body class="bg-gradient-to-br from-gray-50 to-gray-100 min-h-screen">
+    <th:block th:replace="~{fragments/layout :: header}"></th:block>
+
+    <main class="max-w-2xl mx-auto px-4 sm:px-6 py-16">
+        <div class="bg-white rounded-xl shadow-md p-8 text-center">
+            <div class="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                <svg class="w-12 h-12 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </div>
+            
+            <h1 class="text-3xl font-bold text-gray-800 mb-4">Payment Cancelled</h1>
+            <p class="text-gray-600 mb-8">
+                Your payment was cancelled. Your order has not been placed.
+            </p>
+            
+            <div class="space-y-4">
+                <a href="/checkout" class="block w-full bg-red-600 text-white font-medium py-3 rounded-lg hover:bg-red-700 transition-colors">
+                    Try Again
+                </a>
+                <a href="/cart" class="block w-full bg-gray-100 text-gray-700 font-medium py-3 rounded-lg hover:bg-gray-200 transition-colors">
+                    Back to Cart
+                </a>
+            </div>
+        </div>
+    </main>
+
+    <th:block th:replace="~{fragments/layout :: footer}"></th:block>
+    <th:block th:replace="~{fragments/layout :: api-config}"></th:block>
+    <th:block th:replace="~{fragments/layout :: auth-utils}"></th:block>
+</body>
+</html>
