@@ -54,6 +54,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         // Web/Static paths allowed for everyone
                         .requestMatchers("/", "/login", "/register", "/menu", "/products/**", "/product-details", "/cart").permitAll()
+                        .requestMatchers("/payment/success", "/payment/cancel").permitAll()
                         .requestMatchers("/css/**", "/js/**", "/images/**", "/*.html", "/static/**").permitAll()
                         // Swagger/OpenAPI paths
                         .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**", "/swagger-resources/**", "/webjars/**").permitAll()
@@ -66,9 +67,10 @@ public class SecurityConfig {
                         .requestMatchers("/ws/**").permitAll()
 
                         // SECURE WEB PATHS: Require authentication
-                        .requestMatchers("/orders", "/profile").authenticated()
+                        .requestMatchers("/orders", "/profile", "/checkout").authenticated()
                         // SECURE API PATHS: Require authentication
                         .requestMatchers("/api/orders/**", "/api/deliveries/**", "/api/customers/**").authenticated()
+                        .requestMatchers("/api/web/payment/**", "/api/cart/**").authenticated()
 
                         // Default rule
                         .anyRequest().authenticated()

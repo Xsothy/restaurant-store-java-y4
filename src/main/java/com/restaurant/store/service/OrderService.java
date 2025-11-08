@@ -37,7 +37,7 @@ public class OrderService {
     private final DeliveryRepository deliveryRepository;
     private final JwtUtil jwtUtil;
     private final OrderMapper orderMapper;
-    private final StripePaymentService stripePaymentService;
+    private final PaymentIntentService paymentIntentService;
     private final AdminApiClient adminApiClient;
     private final CartService cartService;
 
@@ -167,7 +167,8 @@ public class OrderService {
         }
 
         try {
-            return stripePaymentService.createPaymentIntent(order);
+            return paymentIntentService.createPayment(order)
+                    .toMap();
         } catch (Exception e) {
             log.error("Error creating payment intent for order {}", orderId, e);
             throw new BadRequestException("Failed to create payment intent: " + e.getMessage());
@@ -216,7 +217,7 @@ public class OrderService {
 
         // For Stripe payments, confirm the payment intent
         try {
-            stripePaymentService.confirmPayment(request.getTransactionId());
+            paymentIntentService.handlePaymentSuccess(request.getTransactionId());
             order.setStatus(OrderStatus.CONFIRMED);
             orderRepository.save(order);
             return "Payment processed successfully";

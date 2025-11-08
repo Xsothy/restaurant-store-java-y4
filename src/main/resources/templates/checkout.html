@@ -326,10 +326,17 @@
                         const orderId = orderData.data.id;
                         
                         // Process payment
+                        let redirected = false;
                         if (this.paymentMethod === 'CARD') {
-                            await this.processCardPayment(orderId, token);
+                            redirected = await this.processCardPayment(orderId, token);
                         } else {
                             await this.processCashPayment(orderId, token);
+                        }
+                        
+                        // If redirected to Stripe (session mode), don't clear cart or show message
+                        // Cart will be cleared on success page
+                        if (redirected) {
+                            return;
                         }
                         
                         // Clear cart
@@ -357,46 +364,57 @@
                 },
                 
                 async processCardPayment(orderId, token) {
-                    // Create payment intent
-                    const intentResponse = await fetch(`${API_BASE_URL}/orders/${orderId}/payment-intent`, {
+                    // Create payment using web payment endpoint (supports both intent and session)
+                    const paymentResponse = await fetch(`${API_BASE_URL}/web/payment/create/${orderId}`, {
                         method: 'POST',
                         headers: {
                             'Authorization': `Bearer ${token}`
                         }
                     });
                     
-                    const intentData = await intentResponse.json();
+                    const paymentData = await paymentResponse.json();
                     
-                    if (!intentResponse.ok || !intentData.success) {
-                        throw new Error('Failed to create payment intent');
+                    if (!paymentResponse.ok || !paymentData.success) {
+                        throw new Error('Failed to create payment');
                     }
                     
-                    const clientSecret = intentData.data.clientSecret;
+                    const payment = paymentData.data;
                     
-                    // Confirm card payment
-                    const {error, paymentIntent} = await this.stripe.confirmCardPayment(clientSecret, {
-                        payment_method: {
-                            card: this.cardElement
-                        }
-                    });
-                    
-                    if (error) {
-                        throw new Error(error.message);
-                    }
-                    
-                    if (paymentIntent.status === 'succeeded') {
-                        // Confirm payment on backend
-                        await fetch(`${API_BASE_URL}/orders/${orderId}/pay`, {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'Authorization': `Bearer ${token}`
-                            },
-                            body: JSON.stringify({
-                                paymentMethod: 'STRIPE',
-                                transactionId: paymentIntent.id
-                            })
+                    // Check payment type and handle accordingly
+                    if (payment.type === 'session') {
+                        // Redirect to Stripe Checkout
+                        window.location.href = payment.sessionUrl;
+                        return true; // Indicate that user was redirected
+                    } else {
+                        // Payment Intent - process with custom UI
+                        const clientSecret = payment.clientSecret;
+                        
+                        // Confirm card payment
+                        const {error, paymentIntent} = await this.stripe.confirmCardPayment(clientSecret, {
+                            payment_method: {
+                                card: this.cardElement
+                            }
                         });
+                        
+                        if (error) {
+                            throw new Error(error.message);
+                        }
+                        
+                        if (paymentIntent.status === 'succeeded') {
+                            // Confirm payment on backend
+                            await fetch(`${API_BASE_URL}/orders/${orderId}/pay`, {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'Authorization': `Bearer ${token}`
+                                },
+                                body: JSON.stringify({
+                                    paymentMethod: 'STRIPE',
+                                    transactionId: paymentIntent.id
+                                })
+                            });
+                        }
+                        return false; // Not redirected
                     }
                 },
                 

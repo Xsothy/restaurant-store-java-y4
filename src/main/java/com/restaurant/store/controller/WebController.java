@@ -68,4 +68,16 @@ public class WebController {
     public String profile() {
         return "profile";
     }
+    
+    @GetMapping("/payment/success")
+    public String paymentSuccess(@RequestParam(required = false) String session_id, Model model) {
+        model.addAttribute("sessionId", session_id);
+        return "payment-success";
+    }
+    
+    @GetMapping("/payment/cancel")
+    public String paymentCancel(@RequestParam(required = false) String session_id, Model model) {
+        model.addAttribute("sessionId", session_id);
+        return "payment-cancel";
+    }
 }
