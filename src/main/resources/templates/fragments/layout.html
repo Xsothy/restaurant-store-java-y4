@@ -80,6 +80,8 @@
             function logout() {
                 localStorage.removeItem('token');
                 localStorage.removeItem('customer');
+                // Also clear JWT cookie
+                document.cookie = 'jwt=; path=/; max-age=0';
                 window.location.href = LOGIN_PAGE_URL;
             }
             

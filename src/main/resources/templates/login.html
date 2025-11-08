@@ -85,6 +85,9 @@
                     localStorage.setItem('token', data.data.token);
                     localStorage.setItem('customer', JSON.stringify(data.data.customer));
                     
+                    // Also set JWT in cookie for server-side rendering
+                    document.cookie = `jwt=${data.data.token}; path=/; max-age=86400; SameSite=Lax`;
+                    
                     successMessage.textContent = 'Login successful! Redirecting...';
                     successMessage.classList.remove('hidden');
 
