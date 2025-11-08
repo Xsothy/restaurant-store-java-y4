@@ -68,6 +68,14 @@ After the merge, the following compatibility fixes were made:
    - Updated `api/ProductController.java` to accept both `categoryId` and `availableOnly` parameters
    - Updated `web/MenuController.java` to pass `null` for `availableOnly` parameter
 
+3. **Fixed Ambiguous Mapping Conflicts** (2025-11-08):
+   - **Removed** `controller/web/MenuController.java` - conflicted with `WebController` for `/` and `/menu` routes
+   - **Removed** `controller/web/OrderWebController.java` - conflicted with `WebController` for `/orders` route
+   - **Removed** `controller/web/AuthWebController.java` - used inconsistent session-based auth vs JWT approach
+   - **Removed** `templates/fragments/products-grid.html` - no longer referenced after MenuController removal
+   - **Removed** empty `controller/web/` directory
+   - **Reason**: The web subdirectory controllers were brought in from main branch but duplicated existing WebController functionality with an incompatible authentication mechanism (HttpSession vs JWT cookies)
+
 ## Merge Strategy
 
 Used `git merge origin/main --allow-unrelated-histories` because the branches had separate origins.
