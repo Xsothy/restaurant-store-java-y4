@@ -83,29 +83,45 @@
                 window.location.href = LOGIN_PAGE_URL;
             }
             
-            function updateCartBadge() {
-                const cart = JSON.parse(localStorage.getItem('cart') || '[]');
-                const totalItems = cart.reduce((sum, item) => sum + (item.quantity || 0), 0);
-                
+            async function updateCartBadge() {
+                const token = localStorage.getItem('token');
                 const badgeAuth = document.getElementById('cartBadgeAuth');
                 const badgeUnauth = document.getElementById('cartBadgeUnauth');
                 
-                if (totalItems > 0) {
-                    if (badgeAuth) {
-                        badgeAuth.textContent = totalItems > 99 ? '99+' : totalItems;
-                        badgeAuth.classList.remove('hidden');
+                if (!token) {
+                    if (badgeAuth) badgeAuth.classList.add('hidden');
+                    if (badgeUnauth) badgeUnauth.classList.add('hidden');
+                    return;
+                }
+                
+                try {
+                    const response = await fetch(`${API_BASE_URL}/cart`, {
+                        headers: {
+                            'Authorization': `Bearer ${token}`
+                        }
+                    });
+                    
+                    if (response.ok) {
+                        const data = await response.json();
+                        const totalItems = data.data?.itemCount || 0;
+                        
+                        if (totalItems > 0) {
+                            const displayCount = totalItems > 99 ? '99+' : totalItems;
+                            if (badgeAuth) {
+                                badgeAuth.textContent = displayCount;
+                                badgeAuth.classList.remove('hidden');
+                            }
+                            if (badgeUnauth) {
+                                badgeUnauth.textContent = displayCount;
+                                badgeUnauth.classList.remove('hidden');
+                            }
+                        } else {
+                            if (badgeAuth) badgeAuth.classList.add('hidden');
+                            if (badgeUnauth) badgeUnauth.classList.add('hidden');
+                        }
                     }
-                    if (badgeUnauth) {
-                        badgeUnauth.textContent = totalItems > 99 ? '99+' : totalItems;
-                        badgeUnauth.classList.remove('hidden');
-                    }
-                } else {
-                    if (badgeAuth) {
-                        badgeAuth.classList.add('hidden');
-                    }
-                    if (badgeUnauth) {
-                        badgeUnauth.classList.add('hidden');
-                    }
+                } catch (error) {
+                    console.error('Error updating cart badge:', error);
                 }
             }
 

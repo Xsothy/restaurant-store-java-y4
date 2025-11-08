@@ -112,52 +112,117 @@
     <script>
         function cartApp() {
             return {
+                cart: null,
                 cartItems: [],
-                deliveryFee: 2000,
+                deliveryFee: 0,
+                subtotal: 0,
+                total: 0,
                 
-                get subtotal() {
-                    return this.cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+                async init() {
+                    const token = localStorage.getItem('token');
+                    
+                    if (!token) {
+                        alert('Please login to view your cart');
+                        window.location.href = '/login';
+                        return;
+                    }
+                    
+                    await this.loadCart();
                 },
                 
-                get total() {
-                    return this.subtotal + this.deliveryFee;
-                },
-                
-                init() {
-                    this.loadCart();
-                },
-                
-                loadCart() {
-                    const cart = JSON.parse(localStorage.getItem('cart') || '[]');
-                    this.cartItems = cart;
-                },
-                
-                saveCart() {
-                    localStorage.setItem('cart', JSON.stringify(this.cartItems));
-                    // Update cart badge
-                    if (typeof updateCartBadge === 'function') {
-                        updateCartBadge();
+                async loadCart() {
+                    const token = localStorage.getItem('token');
+                    
+                    try {
+                        const response = await fetch(`${API_BASE_URL}/cart`, {
+                            headers: {
+                                'Authorization': `Bearer ${token}`
+                            }
+                        });
+                        
+                        const data = await response.json();
+                        
+                        if (response.ok && data.success && data.data) {
+                            this.cart = data.data;
+                            this.cartItems = data.data.items.map(item => ({
+                                id: item.id,
+                                productId: item.productId,
+                                name: item.productName,
+                                imageUrl: item.productImageUrl,
+                                price: item.price,
+                                quantity: item.quantity
+                            }));
+                            this.subtotal = data.data.subtotal;
+                            this.deliveryFee = data.data.deliveryFee;
+                            this.total = data.data.total;
+                        }
+                    } catch (error) {
+                        console.error('Load cart error:', error);
                     }
                 },
                 
-                increaseQuantity(index) {
-                    if (this.cartItems[index].quantity < 99) {
-                        this.cartItems[index].quantity++;
-                        this.saveCart();
+                async increaseQuantity(index) {
+                    const item = this.cartItems[index];
+                    if (item.quantity < 99) {
+                        await this.updateQuantity(item.id, item.quantity + 1);
                     }
                 },
                 
-                decreaseQuantity(index) {
-                    if (this.cartItems[index].quantity > 1) {
-                        this.cartItems[index].quantity--;
-                        this.saveCart();
+                async decreaseQuantity(index) {
+                    const item = this.cartItems[index];
+                    if (item.quantity > 1) {
+                        await this.updateQuantity(item.id, item.quantity - 1);
                     }
                 },
                 
-                removeItem(index) {
-                    if (confirm('Are you sure you want to remove this item?')) {
-                        this.cartItems.splice(index, 1);
-                        this.saveCart();
+                async updateQuantity(cartItemId, newQuantity) {
+                    const token = localStorage.getItem('token');
+                    
+                    try {
+                        const response = await fetch(`${API_BASE_URL}/cart/items/${cartItemId}`, {
+                            method: 'PUT',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${token}`
+                            },
+                            body: JSON.stringify({ quantity: newQuantity })
+                        });
+                        
+                        if (response.ok) {
+                            await this.loadCart();
+                            if (typeof updateCartBadge === 'function') {
+                                updateCartBadge();
+                            }
+                        }
+                    } catch (error) {
+                        console.error('Update quantity error:', error);
+                    }
+                },
+                
+                async removeItem(index) {
+                    if (!confirm('Are you sure you want to remove this item?')) {
+                        return;
+                    }
+                    
+                    const item = this.cartItems[index];
+                    const token = localStorage.getItem('token');
+                    
+                    try {
+                        const response = await fetch(`${API_BASE_URL}/cart/items/${item.id}`, {
+                            method: 'DELETE',
+                            headers: {
+                                'Authorization': `Bearer ${token}`
+                            }
+                        });
+                        
+                        if (response.ok) {
+                            await this.loadCart();
+                            if (typeof updateCartBadge === 'function') {
+                                updateCartBadge();
+                            }
+                        }
+                    } catch (error) {
+                        console.error('Remove item error:', error);
                     }
                 },
                 
@@ -168,56 +233,13 @@
                     return price;
                 },
                 
-                async checkout() {
-                    const token = localStorage.getItem('token');
-                    
-                    if (!token) {
-                        alert('Please login to place an order');
-                        window.location.href = '/login';
+                checkout() {
+                    if (this.cartItems.length === 0) {
+                        alert('Your cart is empty');
                         return;
                     }
                     
-                    try {
-                        // Prepare order items
-                        const orderItems = this.cartItems.map(item => ({
-                            productId: item.id,
-                            quantity: item.quantity,
-                            price: item.price
-                        }));
-                        
-                        const response = await fetch(`${API_BASE_URL}/orders`, {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'Authorization': `Bearer ${token}`
-                            },
-                            body: JSON.stringify({
-                                orderItems: orderItems,
-                                paymentType: 'CASH'
-                            })
-                        });
-                        
-                        const data = await response.json();
-                        
-                        if (response.ok && data.success) {
-                            // Clear cart
-                            localStorage.removeItem('cart');
-                            this.cartItems = [];
-                            
-                            // Update cart badge
-                            if (typeof updateCartBadge === 'function') {
-                                updateCartBadge();
-                            }
-                            
-                            alert('Order placed successfully!');
-                            window.location.href = '/orders';
-                        } else {
-                            alert(data.message || 'Failed to place order. Please try again.');
-                        }
-                    } catch (error) {
-                        console.error('Checkout error:', error);
-                        alert('Network error. Please check your connection and try again.');
-                    }
+                    window.location.href = '/checkout';
                 }
             }
         }
