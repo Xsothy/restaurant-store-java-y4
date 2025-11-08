@@ -1,4 +1,4 @@
-package com.restaurant.store.controller;
+package com.restaurant.store.controller.api;
 
 import com.restaurant.store.dto.response.ApiResponse;
 import com.restaurant.store.dto.response.DeliveryResponse;

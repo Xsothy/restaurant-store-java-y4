@@ -1,4 +1,4 @@
-package com.restaurant.store.controller;
+package com.restaurant.store.controller.web;
 
 import com.restaurant.store.dto.response.CartResponse;
 import com.restaurant.store.dto.response.CategoryResponse;
@@ -56,7 +56,6 @@ public class WebController {
             model.addAttribute("cart", cart);
         } catch (Exception e) {
             log.warn("Failed to load cart: {}", e.getMessage());
-            // Pass empty cart data
             model.addAttribute("cart", null);
         }
         return "cart";
@@ -83,7 +82,6 @@ public class WebController {
             Customer customer = getCustomerFromAuth();
             List<OrderResponse> customerOrders = orderService.getMyOrders(token);
             
-            // Calculate stats
             int totalOrders = customerOrders.size();
             BigDecimal totalSpent = customerOrders.stream()
                     .map(OrderResponse::getTotalPrice)
@@ -111,9 +109,6 @@ public class WebController {
         return "payment-cancel";
     }
     
-    /**
-     * Get JWT token from cookie or create Bearer token format for services
-     */
     private String getAuthToken(String jwtCookie) {
         if (jwtCookie != null && !jwtCookie.isEmpty()) {
             return "Bearer " + jwtCookie;
@@ -121,9 +116,6 @@ public class WebController {
         throw new UnauthorizedException("Authentication required");
     }
     
-    /**
-     * Get authenticated customer from Spring Security context
-     */
     private Customer getCustomerFromAuth() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication != null && authentication.isAuthenticated()) {
