@@ -29,37 +29,29 @@
         <!-- Categories Navigation -->
         <div
             th:if="${categories.size() > 0}" class="mb-8 pb-2 overflow-x-auto"
-            hx-get="@{/products-grid}"
-            hx-target="#products-grid"
-            hx-swap="innerHTML"
-            hx-trigger="load"
         >
             <div class="flex gap-3 justify-center flex-wrap min-w-max mx-auto" hx-swap-oob="true">
 
                 <!-- All Categories Button -->
-                <button
-                        hx:get="@{/products-grid}"
-                        hx-target="#products-grid"
-                        hx-swap="innerHTML"
+                <a
+                        th:href="@{/menu}"
                         th:class="${selectedCategoryId == null} ? 'tab-active px-6 py-3 rounded-full text-base font-medium transition-all duration-300 shadow-md hover:shadow-lg whitespace-nowrap' : 'bg-white text-gray-700 hover:bg-gray-100 px-6 py-3 rounded-full text-base font-medium transition-all duration-300 shadow-md hover:shadow-lg whitespace-nowrap'"
                 >
                     All Categories
-                </button>
+                </a>
 
                 <!-- Individual Category Buttons -->
-                <button th:each="category : ${categories}"
-                        hx:get="@{/products-grid(categoryId=${category.id})}"
-                        hx-target="#products-grid"
-                        hx-swap="innerHTML"
+                <a th:each="category : ${categories}"
+                        th:href="@{/menu(categoryId=${category.id})}"
                         th:class="${selectedCategoryId != null and selectedCategoryId == category.id} ? 'tab-active px-6 py-3 rounded-full text-base font-medium transition-all duration-300 shadow-md hover:shadow-lg whitespace-nowrap' : 'bg-white text-gray-700 hover:bg-gray-100 px-6 py-3 rounded-full text-base font-medium transition-all duration-300 shadow-md hover:shadow-lg whitespace-nowrap'"
                         th:text="${category.name}">
-                </button>
+                </a>
 
             </div>
         </div>
 
         <div id="products-grid">
-            <div th:replace="~{fragments/products-grid :: productsGrid(${#lists.emptyList()})}"></div>
+            <div th:replace="~{fragments/products-grid :: productsGrid(${products})}"></div>
         </div>
     </main>
 
