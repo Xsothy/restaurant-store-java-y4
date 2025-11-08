@@ -17,4 +17,6 @@ public class PaymentRequest {
     private String paymentToken;
     
     private String cardLastFourDigits;
+    
+    private String transactionId;
 }

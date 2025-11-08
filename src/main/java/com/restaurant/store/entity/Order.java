@@ -49,6 +49,12 @@ public class Order {
     @Column(name = "special_instructions")
     private String specialInstructions;
     
+    @Column(name = "external_id")
+    private Long externalId;
+    
+    @Column(name = "synced_at")
+    private LocalDateTime syncedAt;
+    
     @Column(name = "created_at")
     private LocalDateTime createdAt;
     

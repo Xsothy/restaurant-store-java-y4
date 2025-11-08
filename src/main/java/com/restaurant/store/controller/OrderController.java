@@ -12,6 +12,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/orders")
@@ -49,6 +50,15 @@ public class OrderController {
         
         String status = orderService.getOrderStatus(orderId, authToken);
         return ResponseEntity.ok(ApiResponse.success("Order status retrieved successfully", status));
+    }
+    
+    @PostMapping("/{orderId}/payment-intent")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> createPaymentIntent(
+            @PathVariable Long orderId,
+            @RequestHeader("Authorization") String authToken) {
+        
+        Map<String, Object> paymentIntent = orderService.createPaymentIntent(orderId, authToken);
+        return ResponseEntity.ok(ApiResponse.success("Payment intent created successfully", paymentIntent));
     }
     
     @PostMapping("/{orderId}/pay")

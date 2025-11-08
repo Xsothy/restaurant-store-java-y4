@@ -58,6 +58,10 @@ public class SecurityConfig {
                         // API paths allowed for everyone (e.g., login/register)
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/api/products/**", "/api/categories/**").permitAll()
+                        // Internal API and webhooks (for Admin backend and Stripe)
+                        .requestMatchers("/api/internal/**", "/api/webhooks/**", "/api/sync/**").permitAll()
+                        // WebSocket endpoint
+                        .requestMatchers("/ws/**").permitAll()
 
                         // SECURE WEB PATHS: Require authentication
                         .requestMatchers("/orders", "/profile").authenticated() // Now accessible via session/form login
