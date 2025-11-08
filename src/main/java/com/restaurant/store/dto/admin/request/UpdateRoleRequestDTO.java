@@ -1,6 +1,6 @@
-package com.restaurant.store.dto.admin;
+package com.restaurant.store.dto.admin.request;
 
-import com.resadmin.res.entity.User;
+import com.restaurant.store.entity.Role;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -14,5 +14,5 @@ import jakarta.validation.constraints.NotNull;
 @AllArgsConstructor
 public class UpdateRoleRequestDTO {
     @NotNull(message = "Role is required")
-    private User.Role role;
+    private Role role;
 }

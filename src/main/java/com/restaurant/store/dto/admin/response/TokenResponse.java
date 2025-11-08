@@ -1,6 +1,6 @@
-package com.restaurant.store.dto.admin;
+package com.restaurant.store.dto.admin.response;
 
-import com.resadmin.res.dto.UserDTO;
+import com.restaurant.store.dto.admin.UserDTO;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

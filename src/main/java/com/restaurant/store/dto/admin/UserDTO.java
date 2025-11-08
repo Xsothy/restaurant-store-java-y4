@@ -1,6 +1,6 @@
 package com.restaurant.store.dto.admin;
 
-import com.resadmin.res.entity.User;
+import com.restaurant.store.entity.Role;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -27,7 +27,7 @@ public class UserDTO {
     @Size(max = 100, message = "Full name must not exceed 100 characters")
     private String fullName;
     
-    private User.Role role;
+    private Role role;
     
     private Boolean enabled;
     

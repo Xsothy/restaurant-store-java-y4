@@ -1,7 +1,8 @@
-package com.restaurant.store.dto.admin;
+package com.restaurant.store.dto.admin.request;
 
 import com.fasterxml.jackson.annotation.JsonAlias;
-import com.resadmin.res.entity.Order;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.restaurant.store.entity.OrderType;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -40,13 +41,14 @@ public class CreateOrderRequestDTO {
     @JsonAlias({"totalPrice"})
     private BigDecimal totalAmount;
     
-    private Order.OrderType orderType;
+    private OrderType orderType;
     
     @NotEmpty(message = "Order items are required")
     @Valid
     @JsonAlias({"orderItems"})
     private List<CreateOrderItemRequestDTO> items;
     
+    @JsonIgnore
     public String getCustomerDetails() {
         StringBuilder details = new StringBuilder();
         details.append("Name: ").append(customerName);
@@ -60,20 +62,23 @@ public class CreateOrderRequestDTO {
         return details.toString();
     }
     
+    @JsonIgnore
     public BigDecimal getTotalPrice() {
         return totalAmount;
     }
     
+    @JsonIgnore
     public List<CreateOrderItemRequestDTO> getOrderItems() {
         return items;
     }
     
-    public Order.OrderType getOrderType() {
+    @JsonIgnore
+    public OrderType getEffectiveOrderType() {
         if (orderType == null) {
             if (customerAddress != null && !customerAddress.isBlank()) {
-                return Order.OrderType.DELIVERY;
+                return OrderType.DELIVERY;
             }
-            return Order.OrderType.TAKEOUT;
+            return OrderType.PICKUP;
         }
         return orderType;
     }

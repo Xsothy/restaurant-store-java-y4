@@ -1,6 +1,7 @@
 package com.restaurant.store.dto.admin;
 
-import com.resadmin.res.entity.Order;
+import com.restaurant.store.entity.OrderStatus;
+import com.restaurant.store.entity.OrderType;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -33,14 +34,14 @@ public class OrderDTO {
     @Size(max = 500, message = "Customer details must not exceed 500 characters")
     private String customerDetails;
     
-    private Order.OrderStatus status;
+    private OrderStatus status;
     
     @NotNull(message = "Total price is required")
     @DecimalMin(value = "0.0", inclusive = false, message = "Total price must be greater than 0")
     private BigDecimal totalPrice;
     
     @NotNull(message = "Order type is required")
-    private Order.OrderType orderType;
+    private OrderType orderType;
     
     private LocalDateTime createdAt;
     

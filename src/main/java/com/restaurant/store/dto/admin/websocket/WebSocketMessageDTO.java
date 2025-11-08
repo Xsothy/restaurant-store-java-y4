@@ -1,4 +1,4 @@
-package com.restaurant.store.dto.admin;
+package com.restaurant.store.dto.admin.websocket;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

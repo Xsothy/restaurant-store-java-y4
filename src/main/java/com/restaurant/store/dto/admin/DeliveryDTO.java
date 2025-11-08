@@ -1,6 +1,6 @@
 package com.restaurant.store.dto.admin;
 
-import com.resadmin.res.entity.Delivery;
+import com.restaurant.store.entity.DeliveryStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -20,7 +20,7 @@ public class DeliveryDTO {
     
     private UserDTO driver;
     
-    private Delivery.DeliveryStatus status;
+    private DeliveryStatus status;
     
     private LocalDateTime dispatchedAt;
     
