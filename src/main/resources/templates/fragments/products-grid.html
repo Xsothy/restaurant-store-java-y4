@@ -1,0 +1,50 @@
+    <div  th:fragment="productsGrid(products)"  th:if="${products.size() > 0}" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <div th:each="product : ${products}" class="bg-white rounded-lg shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden fade-in">
+            <!-- image, badge, info same as before -->
+            <div class="relative h-48 bg-gray-100">
+                <img th:src="${product.imageUrl != null ? product.imageUrl : '/images/placeholder-food.jpg'}"
+                     th:alt="${product.name}"
+                     class="w-full h-full object-cover"
+                     onerror="this.src='/images/placeholder-food.jpg'" />
+                <div th:if="${product.isAvailable}" class="absolute top-3 right-3 bg-green-500 text-white px-2 py-1 rounded-full text-xs font-semibold">
+                    Available
+                </div>
+                <div th:unless="${product.isAvailable}" class="absolute top-3 right-3 bg-red‑500 text-white px-2 py-1 rounded-full text-xs font-semibold">
+                    Not Available
+                </div>
+            </div>
+            <div class="p-4">
+                <h3 th:text="${product.name}" class="text-lg font-semibold text-gray-800 mb-2"></h3>
+                <p th:text="${product.description}" class="text-gray-600 text-sm mb-3 line-clamp-2"></p>
+                <div class="flex items-center justify-between mb-3">
+                    <span th:text="${#numbers.formatDecimal(product.price, 0, 0) + '៛'}" class="text-xl font-bold text-red-600"></span>
+                    <span th:if="${product.categoryId != null}"
+                          th:text="${product.categoryName}"
+                          class="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full"></span>
+                </div>
+                <div class="flex gap-2">
+                    <button
+                            @click.stop="openDetails(product)"
+                            class="flex-1 bg-red-600 hover:bg-red-700 text-white px-4 py-2.5 rounded-lg font-medium transition-colors duration-200 flex items-center justify-center gap-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                        </svg>
+                        មើលលម្អិត
+                    </button>
+                    <button
+                            @click.stop="addToCart(product)"
+                            class="bg-green-600 hover:bg-green-700 text-white px-4 py-2.5 rounded-lg transition-colors duration-200 flex items-center justify-center">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div th:if="${products.size() == 0}" class="text-center py-12">
+        <div class="text-gray‑400 mb‑4"> … </div>
+        <h3 class="text-xl font-semibold text-gray‑600 mb‑2">No products found</h3>
+        <p class="text-gray‑500">Try adjusting your filters or check back later.</p>
+    </div>

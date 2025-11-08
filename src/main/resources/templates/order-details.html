@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <th:block th:replace="~{fragments/layout :: head('Order Details - Restaurant Store')}"></th:block>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Kantumruy+Pro:wght@400;500;600;700&display=swap');
+        body {
+            font-family: 'Kantumruy Pro', sans-serif;
+        }
+        .status-pending { background-color: #fef3c7; color: #92400e; }
+        .status-confirmed { background-color: #dbeafe; color: #1e40af; }
+        .status-shipped { background-color: #e0e7ff; color: #3730a3; }
+        .status-delivered { background-color: #d1fae5; color: #065f46; }
+        .status-cancelled { background-color: #fee2e2; color: #991b1b; }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-gray-50 to-gray-100 min-h-screen">
+    <th:block th:replace="~{fragments/layout :: header-simple}"></th:block>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 py-8" th:if="${order}">
+        <div class="bg-white rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300 overflow-hidden">
+            <!-- Order Header -->
+            <div class="p-6 border-b border-gray-100">
+                <div class="flex items-center justify-between mb-4">
+                    <h1 class="text-2xl font-bold text-gray-900">Order Details</h1>
+                    <span th:class="'status-' + ${#strings.toLowerCase(order.status)} + ' px-3 py-1 rounded-full text-xs font-semibold'"
+                          th:text="${order.status}"></span>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-600">
+                    <div>
+                        <span class="font-medium">Order ID:</span>
+                        <span th:text="${'#' + order.id}" class="ml-2"></span>
+                    </div>
+                    <div>
+                        <span class="font-medium">Placed on:</span>
+                        <span th:text="${#temporals.format(order.createdAt, 'MMM dd, yyyy HH:mm')}" class="ml-2"></span>
+                    </div>
+                    <div>
+                        <span class="font-medium">Order Type:</span>
+                        <span th:text="${order.orderType}" class="ml-2"></span>
+                    </div>
+                    <div>
+                        <span class="font-medium">Total Amount:</span>
+                        <span th:text="${order.totalPrice + '៛'}" class="ml-2 font-bold text-lg text-red-600"></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Order Items -->
+            <div class="p-6">
+                <h2 class="text-lg font-semibold text-gray-900 mb-4">Order Items</h2>
+                <div class="space-y-3">
+                    <div th:each="item : ${order.orderItems}" class="flex items-center justify-between py-3 border-b border-gray-50 last:border-0">
+                        <div class="flex items-center gap-3">
+                            <img th:src="${item.productImageUrl != null ? item.productImageUrl : '/images/placeholder-food.jpg'}" 
+                                 th:alt="${item.productName}"
+                                 class="w-12 h-12 rounded-lg object-cover"
+                                 onerror="this.src='/images/placeholder-food.jpg'" />
+                            <div>
+                                <p th:text="${item.productName}" class="font-medium text-gray-900"></p>
+                                <p th:text="${'Quantity: ' + item.quantity}" class="text-sm text-gray-500"></p>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <p th:text="${#numbers.formatDecimal(item.price, 0, 0) + '៛'}" class="font-medium text-gray-900"></p>
+                            <p th:text="${'× ' + item.quantity}" class="text-sm text-gray-500"></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Order Actions -->
+            <div class="p-6 bg-gray-50 border-t border-gray-100">
+                <div class="flex gap-4">
+                    <button onclick="window.location.href='/orders'" 
+                            class="px-6 py-3 bg-white border border-gray-300 text-gray-700 rounded-md font-medium hover:bg-gray-50 transition-colors">
+                        Back to Orders
+                    </button>
+                    <button th:if="${order.status == 'PENDING' or order.status == 'CONFIRMED'}"
+                            th:onclick="'cancelOrder(' + ${order.id} + ')'"
+                            class="px-6 py-3 bg-red-600 text-white rounded-md font-medium hover:bg-red-700 transition-colors">
+                        Cancel Order
+                    </button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Order Not Found -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 py-8" th:unless="${order}">
+        <div class="text-center py-20">
+            <div class="text-gray-400 mb-4">
+                <svg class="w-24 h-24 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 011-18 0 9 9 0 0118 0z"></path>
+                </svg>
+            </div>
+            <h3 class="text-xl font-semibold text-gray-600 mb-2">Order Not Found</h3>
+            <p class="text-gray-500 mb-6">The order you're looking for doesn't exist or has been removed.</p>
+            <button onclick="window.location.href='/orders'" class="bg-gray-900 text-white px-6 py-3 rounded-md font-medium hover:bg-gray-800 transition-colors">
+                Back to Orders
+            </button>
+        </div>
+    </main>
+
+    <th:block th:replace="~{fragments/layout :: footer}"></th:block>
+    <th:block th:replace="~{fragments/layout :: api-config}"></th:block>
+    <th:block th:replace="~{fragments/layout :: auth-utils}"></th:block>
+
+    <script>
+        function cancelOrder(orderId) {
+            if (confirm('Are you sure you want to cancel this order?')) {
+                // TODO: Implement cancel order functionality
+                // This would make an API call to cancel order
+                fetch(`/api/orders/${orderId}/cancel`, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': 'Bearer ' + localStorage.getItem('token'),
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success || response.ok) {
+                        showNotification('Order cancelled successfully');
+                        setTimeout(() => {
+                            window.location.href = '/orders';
+                        }, 1500);
+                    } else {
+                        showNotification('Failed to cancel order: ' + (data.message || 'Unknown error'), 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error cancelling order:', error);
+                    showNotification('Network error. Please try again.', 'error');
+                });
+            }
+        }
+
+        function showNotification(message, type = 'success') {
+            const notification = document.createElement('div');
+            notification.className = `fixed bottom-4 right-4 px-6 py-3 rounded-lg shadow-lg z-50 fade-in ${
+                type === 'error' ? 'bg-red-600 text-white' : 'bg-green-600 text-white'
+            }`;
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.remove();
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
