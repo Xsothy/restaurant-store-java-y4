@@ -5,14 +5,17 @@ import com.restaurant.store.entity.Payment;
 import com.restaurant.store.entity.PaymentMethod;
 import com.restaurant.store.entity.PaymentStatus;
 import com.restaurant.store.repository.PaymentRepository;
+import com.stripe.Stripe;
 import com.stripe.exception.StripeException;
 import com.stripe.model.PaymentIntent;
 import com.stripe.param.PaymentIntentCreateParams;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import jakarta.annotation.PostConstruct;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -24,6 +27,14 @@ import java.util.Map;
 public class StripePaymentService {
 
     private final PaymentRepository paymentRepository;
+    
+    @Value("${stripe.secret.key}")
+    private String stripeSecretKey;
+    
+    @PostConstruct
+    public void init() {
+        Stripe.apiKey = stripeSecretKey;
+    }
 
     @Transactional
     public Map<String, Object> createPaymentIntent(Order order) throws StripeException {

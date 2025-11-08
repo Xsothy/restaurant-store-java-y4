@@ -39,6 +39,7 @@ public class OrderService {
     private final OrderMapper orderMapper;
     private final StripePaymentService stripePaymentService;
     private final AdminApiClient adminApiClient;
+    private final CartService cartService;
 
     @Transactional
     public OrderResponse createOrder(CreateOrderRequest request, String token) {

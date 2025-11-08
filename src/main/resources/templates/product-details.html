@@ -20,7 +20,7 @@
 <body class="bg-gradient-to-br from-gray-50 to-gray-100 min-h-screen">
     <th:block th:replace="~{fragments/layout :: header}"></th:block>
 
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 py-8" id="productView" th:attr="data-product-id=${productId}" x-data="productDetails()" x-init="init()">
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 py-8" x-data="productDetails()" x-init="init()">
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 fade-in">
             <!-- Product Image -->
             <div class="rounded-3xl overflow-hidden bg-white shadow-xl">
@@ -97,45 +97,26 @@
     <th:block th:replace="~{fragments/layout :: footer}"></th:block>
     <th:block th:replace="~{fragments/layout :: api-config}"></th:block>
     <th:block th:replace="~{fragments/layout :: auth-utils}"></th:block>
-    <script>
+    <script th:inline="javascript">
+        /*<![CDATA[*/
         function productDetails() {
+            // Server-side data passed from Thymeleaf
+            const serverProduct = /*[[${product}]]*/ null;
+            
             return {
-                product: null,
+                product: serverProduct,
                 quantity: 1,
                 
                 async init() {
-                    await this.loadProductDetails();
-                },
-                
-                async fetchProduct(productId) {
-                    try {
-                        const response = await fetch(`${API_BASE_URL}/products/${productId}`);
-                        if (!response.ok) return null;
-                        const payload = await response.json();
-                        return payload.success ? payload.data : null;
-                    } catch (error) {
-                        console.error('Failed to load product', error);
-                        return null;
-                    }
-                },
-                
-                async loadProductDetails() {
-                    const productView = document.getElementById('productView');
-                    const productId = productView?.dataset?.productId;
-                    
-                    if (productId) {
-                        this.product = await this.fetchProduct(productId);
-                    }
-                    
-                    if (!this.product) {
-                        this.product = JSON.parse(localStorage.getItem('selectedProduct'));
-                    }
-                    
                     if (!this.product) {
                         window.location.href = MENU_PAGE_URL;
                         return;
                     }
                     
+                    this.loadProductDetails();
+                },
+                
+                loadProductDetails() {
                     // Update DOM elements
                     document.getElementById('productImage').src = this.product.imageUrl || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=800&q=80';
                     document.getElementById('productImage').alt = this.product.name;
@@ -184,37 +165,54 @@
                     }
                 },
                 
-                addToCart() {
+                async addToCart() {
                     if (!this.product || this.product.isAvailable === false) return;
                     
-                    let cart = JSON.parse(localStorage.getItem('cart') || '[]');
-                    const existingItem = cart.find(item => item.id === this.product.id);
+                    const token = localStorage.getItem('token');
                     
-                    if (existingItem) {
-                        existingItem.quantity += this.quantity;
-                    } else {
-                        cart.push({
-                            ...this.product,
-                            quantity: this.quantity
+                    if (!token) {
+                        alert('សូមចូលគណនីជាមុនសិន / Please login first');
+                        window.location.href = '/login';
+                        return;
+                    }
+                    
+                    try {
+                        const response = await fetch(`${API_BASE_URL}/cart/add`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${token}`
+                            },
+                            body: JSON.stringify({
+                                productId: this.product.id,
+                                quantity: this.quantity
+                            })
                         });
+                        
+                        const data = await response.json();
+                        
+                        if (response.ok && data.success) {
+                            // Update cart badge
+                            if (typeof updateCartBadge === 'function') {
+                                updateCartBadge();
+                            }
+                            
+                            // Show success with quantity
+                            const message = this.quantity > 1 
+                                ? `បានបន្ថែម ${this.quantity} "${this.product.name}" ទៅកន្ត្រកហើយ!`
+                                : `បានបន្ថែម "${this.product.name}" ទៅកន្ត្រកហើយ!`;
+                            
+                            alert(message);
+                            
+                            // Reset quantity
+                            this.quantity = 1;
+                        } else {
+                            alert(data.message || 'មិនអាចបន្ថែមទៅកន្ត្រក / Failed to add to cart');
+                        }
+                    } catch (error) {
+                        console.error('Add to cart error:', error);
+                        alert('Network error. Please try again.');
                     }
-                    
-                    localStorage.setItem('cart', JSON.stringify(cart));
-                    
-                    // Update cart badge
-                    if (typeof updateCartBadge === 'function') {
-                        updateCartBadge();
-                    }
-                    
-                    // Show success with quantity
-                    const message = this.quantity > 1 
-                        ? `បានបន្ថែម ${this.quantity} "${this.product.name}" ទៅកន្ត្រកហើយ!`
-                        : `បានបន្ថែម "${this.product.name}" ទៅកន្ត្រកហើយ!`;
-                    
-                    alert(message);
-                    
-                    // Reset quantity
-                    this.quantity = 1;
                 },
                 
                 goBack() {
@@ -222,6 +220,7 @@
                 }
             }
         }
+        /*]]>*/
     </script>
 </body>
 </html>
