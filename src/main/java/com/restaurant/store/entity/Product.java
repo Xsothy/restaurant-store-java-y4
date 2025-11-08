@@ -49,6 +49,12 @@ public class Product {
     @JoinColumn(name = "category_id", nullable = false)
     private Category category;
     
+    @Column(name = "external_id")
+    private Long externalId;
+    
+    @Column(name = "synced_at")
+    private LocalDateTime syncedAt;
+    
     @Column(name = "created_at")
     private LocalDateTime createdAt;
     

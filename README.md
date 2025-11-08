@@ -137,18 +137,27 @@ The application uses SQLite for development with the following configuration:
 - **Delivery tracking**
 - **Business logic and validation**
 
+✅ **Recently Added:**
+- Admin Backend Integration (data sync for categories/products)
+- Stripe Payment Integration
+- WebSocket support for real-time order updates
+- Internal API for Admin Backend to update order statuses
+- Scheduled data synchronization
+- External ID tracking for synced entities
+
 🚧 **Next Steps:**
 - Unit and integration tests
 - API documentation (Swagger/OpenAPI)
-- Enhanced payment gateway integration
 - Email notifications
-- Admin panel endpoints
+- Enhanced admin authentication for internal endpoints
 
-### Key Features Ready for Implementation
-- All database models are defined with proper relationships
-- REST endpoints are stubbed and ready for service integration
-- DTOs are created for all request/response scenarios
-- Repository methods are defined for data access
+### Integration Features
+- **Admin API Integration**: Automatic sync of menu data from Admin Backend
+- **Stripe Payments**: Full payment processing with webhooks
+- **WebSocket**: Real-time order status updates
+- **Internal API**: Endpoints for Admin Backend to update orders
+
+For detailed integration documentation, see [INTEGRATION_README.md](INTEGRATION_README.md)
 
 ### Security Notes
 - JWT secret is configured in `application.properties`

@@ -31,6 +31,12 @@ public class Category {
     @Column(length = 255)
     private String description;
     
+    @Column(name = "external_id")
+    private Long externalId;
+    
+    @Column(name = "synced_at")
+    private LocalDateTime syncedAt;
+    
     @Column(name = "created_at")
     private LocalDateTime createdAt;
     

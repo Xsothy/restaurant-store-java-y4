@@ -7,10 +7,12 @@ import com.restaurant.store.dto.response.OrderResponse;
 import com.restaurant.store.entity.*;
 import com.restaurant.store.exception.BadRequestException;
 import com.restaurant.store.exception.ResourceNotFoundException;
+import com.restaurant.store.integration.AdminApiClient;
 import com.restaurant.store.mapper.OrderMapper;
 import com.restaurant.store.repository.*;
 import com.restaurant.store.security.JwtUtil;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,35 +20,25 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
+@RequiredArgsConstructor
+@Slf4j
 public class OrderService {
 
-    @Autowired
-    private OrderRepository orderRepository;
-
-    @Autowired
-    private OrderItemRepository orderItemRepository;
-
-    @Autowired
-    private ProductRepository productRepository;
-
-    @Autowired
-    private CustomerRepository customerRepository;
-
-    @Autowired
-    private PaymentRepository paymentRepository;
-
-    @Autowired
-    private DeliveryRepository deliveryRepository;
-
-    @Autowired
-    private JwtUtil jwtUtil;
-
-    @Autowired
-    private OrderMapper orderMapper;
+    private final OrderRepository orderRepository;
+    private final OrderItemRepository orderItemRepository;
+    private final ProductRepository productRepository;
+    private final CustomerRepository customerRepository;
+    private final PaymentRepository paymentRepository;
+    private final DeliveryRepository deliveryRepository;
+    private final JwtUtil jwtUtil;
+    private final OrderMapper orderMapper;
+    private final StripePaymentService stripePaymentService;
+    private final AdminApiClient adminApiClient;
 
     @Transactional
     public OrderResponse createOrder(CreateOrderRequest request, String token) {
@@ -108,6 +100,14 @@ public class OrderService {
             deliveryRepository.save(delivery);
         }
 
+        // Sync order to Admin backend
+        try {
+            log.info("Syncing order {} to Admin backend", order.getId());
+            adminApiClient.syncOrderToAdmin(order.getId());
+        } catch (Exception e) {
+            log.error("Failed to sync order to Admin backend", e);
+        }
+
         List<OrderItem> persistedItems = orderItemRepository.findByOrderId(order.getId());
         return orderMapper.toResponse(order, persistedItems);
     }
@@ -145,6 +145,35 @@ public class OrderService {
     }
 
     @Transactional
+    public Map<String, Object> createPaymentIntent(Long orderId, String token) {
+        String email = jwtUtil.extractUsername(token.substring(7));
+        Customer customer = customerRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("Customer not found"));
+
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new ResourceNotFoundException("Order not found with id: " + orderId));
+
+        if (!order.getCustomer().getId().equals(customer.getId())) {
+            throw new BadRequestException("Order does not belong to current customer");
+        }
+
+        if (order.getStatus() == OrderStatus.CANCELLED) {
+            throw new BadRequestException("Cannot process payment for cancelled order");
+        }
+
+        if (order.getStatus() == OrderStatus.DELIVERED) {
+            throw new BadRequestException("Order already delivered and paid");
+        }
+
+        try {
+            return stripePaymentService.createPaymentIntent(order);
+        } catch (Exception e) {
+            log.error("Error creating payment intent for order {}", orderId, e);
+            throw new BadRequestException("Failed to create payment intent: " + e.getMessage());
+        }
+    }
+
+    @Transactional
     public String processPayment(Long orderId, PaymentRequest request, String token) {
         String email = jwtUtil.extractUsername(token.substring(7));
         Customer customer = customerRepository.findByEmail(email)
@@ -165,21 +194,35 @@ public class OrderService {
             throw new BadRequestException("Order already delivered and paid");
         }
 
-        // Create payment record
-        Payment payment = new Payment();
-        payment.setOrder(order);
-        payment.setAmount(order.getTotalPrice());
-        payment.setMethod(request.getPaymentMethod());
-        payment.setStatus(PaymentStatus.COMPLETED);
-        payment.setTransactionId(UUID.randomUUID().toString());
-        payment.setPaidAt(LocalDateTime.now());
-        paymentRepository.save(payment);
+        // For non-Stripe payments (e.g., Cash on Delivery)
+        if (request.getPaymentMethod() != PaymentMethod.STRIPE && 
+            request.getPaymentMethod() != PaymentMethod.CREDIT_CARD &&
+            request.getPaymentMethod() != PaymentMethod.DEBIT_CARD) {
+            Payment payment = new Payment();
+            payment.setOrder(order);
+            payment.setAmount(order.getTotalPrice());
+            payment.setMethod(request.getPaymentMethod());
+            payment.setStatus(PaymentStatus.COMPLETED);
+            payment.setTransactionId(UUID.randomUUID().toString());
+            payment.setPaidAt(LocalDateTime.now());
+            paymentRepository.save(payment);
 
-        // Update order status
-        order.setStatus(OrderStatus.CONFIRMED);
-        orderRepository.save(order);
+            order.setStatus(OrderStatus.CONFIRMED);
+            orderRepository.save(order);
 
-        return "Payment processed successfully";
+            return "Payment processed successfully";
+        }
+
+        // For Stripe payments, confirm the payment intent
+        try {
+            stripePaymentService.confirmPayment(request.getTransactionId());
+            order.setStatus(OrderStatus.CONFIRMED);
+            orderRepository.save(order);
+            return "Payment processed successfully";
+        } catch (Exception e) {
+            log.error("Error processing payment for order {}", orderId, e);
+            throw new BadRequestException("Failed to process payment: " + e.getMessage());
+        }
     }
 
     public List<OrderResponse> getCustomerOrders(Long customerId, String token) {

@@ -36,12 +36,6 @@ public class DataSeeder implements CommandLineRunner {
     public void run(String... args) throws Exception {
         log.info("Starting data seeding from external API...");
 
-        // Check if data already exists
-        if (categoryRepository.count() > 0 || productRepository.count() > 0) {
-            log.info("Data already exists. Skipping seeding.");
-            return;
-        }
-
         try {
             // Fetch data from external API
             HttpClient client = HttpClient.newHttpClient();
@@ -73,20 +67,26 @@ public class DataSeeder implements CommandLineRunner {
             return;
         }
 
+        // Check if data already exists
+        if (categoryRepository.count() > 0) {
+            log.info("Data already exists. Skipping seeding.");
+            return;
+        }
+
         Map<String, Category> categoryMap = new HashMap<>();
 
         for (JsonNode node : categoriesNode) {
-            String nameKh = node.get("name_kh").asText();
+            String nameEn = node.get("name_kh").asText();
             String description = node.has("description") ? node.get("description").asText() : "";
 
-            Category category = new Category(nameKh, description);
+            Category category = new Category(nameEn, description);
             category = categoryRepository.save(category);
             
             // Store mapping using the external UUID
             String externalId = node.get("id").asText();
             categoryMap.put(externalId, category);
 
-            log.info("Created category: {} (ID: {})", nameKh, category.getId());
+            log.info("Created category: {} (ID: {})", nameEn, category.getId());
         }
 
         // Store the mapping for later use in products
@@ -101,12 +101,18 @@ public class DataSeeder implements CommandLineRunner {
             return;
         }
 
+        // Check if data already exists
+        if (productRepository.count() > 0) {
+            log.info("Products Data already exists. Skipping seeding.");
+            return;
+        }
+
         for (JsonNode node : productsNode) {
-            String nameKh = node.get("name_kh").asText();
-            String descriptionKh = node.get("description_kh").asText();
+            String nameEn = node.get("name_kh").asText();
+            String descriptionEn = node.get("description_kh").asText("");
             BigDecimal price = BigDecimal.valueOf(node.get("price").asDouble())
                     .multiply(BigDecimal.valueOf(4000));
-            String imageUrl =  node.get("image_url").asText();
+            String imageUrl = node.get("image_url").asText();
             Boolean isActive = node.get("active").asBoolean();
             String categoryExternalId = node.get("category_id").asText();
 
@@ -114,15 +120,15 @@ public class DataSeeder implements CommandLineRunner {
             Category category = categoryMapping.get(categoryExternalId);
             
             if (category == null) {
-                log.warn("Category not found for product: {}. Skipping.", nameKh);
+                log.warn("Category not found for product: {}. Skipping.", nameEn);
                 continue;
             }
 
-            Product product = new Product(nameKh, descriptionKh, price, imageUrl, isActive, category);
+            Product product = new Product(nameEn, descriptionEn, price, imageUrl, isActive, category);
             productRepository.save(product);
 
             log.info("Created product: {} (Price: ${}, Category: {})", 
-                    nameKh, price, category.getName());
+                    nameEn, price, category.getName());
         }
 
         log.info("Total products created: {}", productRepository.count());
