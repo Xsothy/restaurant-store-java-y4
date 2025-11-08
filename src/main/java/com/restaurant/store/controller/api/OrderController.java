@@ -1,4 +1,4 @@
-package com.restaurant.store.controller;
+package com.restaurant.store.controller.api;
 
 import com.restaurant.store.dto.request.CreateOrderRequest;
 import com.restaurant.store.dto.request.PaymentRequest;

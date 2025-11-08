@@ -1,4 +1,4 @@
-package com.restaurant.store.controller;
+package com.restaurant.store.controller.web;
 
 import com.restaurant.store.dto.response.PaymentResponse;
 import com.restaurant.store.entity.Customer;
