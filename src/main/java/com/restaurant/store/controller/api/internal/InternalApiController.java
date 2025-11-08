@@ -1,5 +1,6 @@
-package com.restaurant.store.controller.api;
+package com.restaurant.store.controller.api.internal;
 
+import com.restaurant.store.controller.api.OrderStatusWebSocketController;
 import com.restaurant.store.dto.request.OrderStatusUpdateRequest;
 import com.restaurant.store.dto.response.ApiResponse;
 import com.restaurant.store.entity.Order;
@@ -8,7 +9,7 @@ import com.restaurant.store.entity.OrderStatus;
 import com.restaurant.store.mapper.OrderMapper;
 import com.restaurant.store.repository.OrderItemRepository;
 import com.restaurant.store.repository.OrderRepository;
-import com.restaurant.store.service.OrderService;
+import io.swagger.v3.oas.annotations.Hidden;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -21,6 +22,7 @@ import java.util.List;
 @RequestMapping("/api/internal")
 @RequiredArgsConstructor
 @Slf4j
+@Hidden
 public class InternalApiController {
 
     private final OrderRepository orderRepository;

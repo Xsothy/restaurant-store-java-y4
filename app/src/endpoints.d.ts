@@ -1,6 +1,6 @@
 /* tslint:disable */
 /* eslint-disable */
-// Generated using typescript-generator version 3.2.1263 on 2025-11-08 18:59:37.
+// Generated using typescript-generator version 3.2.1263 on 2025-11-08 15:54:13.
 
 declare namespace endpoint {
 

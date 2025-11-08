@@ -1,7 +1,8 @@
-package com.restaurant.store.controller.api;
+package com.restaurant.store.controller.api.internal;
 
 import com.restaurant.store.dto.response.ApiResponse;
 import com.restaurant.store.integration.DataSyncService;
+import io.swagger.v3.oas.annotations.Hidden;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -11,6 +12,7 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/sync")
 @RequiredArgsConstructor
 @Slf4j
+@Hidden
 public class AdminSyncController {
 
     private final DataSyncService dataSyncService;
