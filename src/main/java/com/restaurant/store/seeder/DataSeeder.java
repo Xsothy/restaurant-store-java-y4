@@ -76,17 +76,17 @@ public class DataSeeder implements CommandLineRunner {
         Map<String, Category> categoryMap = new HashMap<>();
 
         for (JsonNode node : categoriesNode) {
-            String nameEn = node.get("name_en").asText();
+            String nameKh = node.get("name_kh").asText();
             String description = node.has("description") ? node.get("description").asText() : "";
 
-            Category category = new Category(nameEn, description);
+            Category category = new Category(nameKh, description);
             category = categoryRepository.save(category);
             
             // Store mapping using the external UUID
             String externalId = node.get("id").asText();
             categoryMap.put(externalId, category);
 
-            log.info("Created category: {} (ID: {})", nameEn, category.getId());
+            log.info("Created category: {} (ID: {})", nameKh, category.getId());
         }
 
         // Store the mapping for later use in products
@@ -102,8 +102,8 @@ public class DataSeeder implements CommandLineRunner {
         }
 
         for (JsonNode node : productsNode) {
-            String nameEn = node.get("name_kh").asText();
-            String descriptionEn = node.get("description_kh").asText();
+            String nameKh = node.get("name_kh").asText();
+            String descriptionKh = node.get("description_kh").asText();
             BigDecimal price = BigDecimal.valueOf(node.get("price").asDouble())
                     .multiply(BigDecimal.valueOf(4000));
             String imageUrl =  node.get("image_url").asText();
@@ -114,15 +114,15 @@ public class DataSeeder implements CommandLineRunner {
             Category category = categoryMapping.get(categoryExternalId);
             
             if (category == null) {
-                log.warn("Category not found for product: {}. Skipping.", nameEn);
+                log.warn("Category not found for product: {}. Skipping.", nameKh);
                 continue;
             }
 
-            Product product = new Product(nameEn, descriptionEn, price, imageUrl, isActive, category);
+            Product product = new Product(nameKh, descriptionKh, price, imageUrl, isActive, category);
             productRepository.save(product);
 
             log.info("Created product: {} (Price: ${}, Category: {})", 
-                    nameEn, price, category.getName());
+                    nameKh, price, category.getName());
         }
 
         log.info("Total products created: {}", productRepository.count());
