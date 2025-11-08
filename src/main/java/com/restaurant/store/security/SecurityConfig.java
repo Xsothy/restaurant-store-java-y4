@@ -55,6 +55,8 @@ public class SecurityConfig {
                         // Web/Static paths allowed for everyone
                         .requestMatchers("/", "/login", "/register", "/menu", "/products/**", "/product-details", "/cart").permitAll()
                         .requestMatchers("/css/**", "/js/**", "/images/**", "/*.html", "/static/**").permitAll()
+                        // Swagger/OpenAPI paths
+                        .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**", "/swagger-resources/**", "/webjars/**").permitAll()
                         // API paths allowed for everyone (e.g., login/register)
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/api/products/**", "/api/categories/**").permitAll()
@@ -64,7 +66,7 @@ public class SecurityConfig {
                         .requestMatchers("/ws/**").permitAll()
 
                         // SECURE WEB PATHS: Require authentication
-                        .requestMatchers("/orders", "/profile").authenticated() // Now accessible via session/form login
+                        .requestMatchers("/orders", "/profile").authenticated()
                         // SECURE API PATHS: Require authentication
                         .requestMatchers("/api/orders/**", "/api/deliveries/**", "/api/customers/**").authenticated()
 
