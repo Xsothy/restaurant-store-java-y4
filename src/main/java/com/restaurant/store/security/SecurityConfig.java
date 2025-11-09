@@ -53,25 +53,40 @@ public class SecurityConfig {
 
                 // 2. Define Authorization Rules
                 .authorizeHttpRequests(auth -> auth
-                        // Web/Static paths allowed for everyone
+                        // ===== WEB/STATIC PATHS =====
                         .requestMatchers("/", "/login", "/register", "/menu", "/products/**", "/product-details", "/cart").permitAll()
                         .requestMatchers("/payment/success", "/payment/cancel").permitAll()
                         .requestMatchers("/css/**", "/js/**", "/images/**", "/*.html", "/static/**").permitAll()
-                        // Swagger/OpenAPI paths
+                        
+                        // ===== SWAGGER/OPENAPI DOCUMENTATION =====
                         .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**", "/swagger-resources/**", "/webjars/**").permitAll()
-                        // API paths allowed for everyone (e.g., login/register)
-                        .requestMatchers("/api/auth/**").permitAll()
+                        
+                        // ===== OPEN API ENDPOINTS (PUBLIC) =====
+                        // Authentication (Register, Login)
+                        .requestMatchers("/api/auth/register", "/api/auth/login").permitAll()
+                        // Products and Categories (Browse Menu)
                         .requestMatchers("/api/products/**", "/api/categories/**").permitAll()
-                        // Internal API and webhooks (for Admin backend and Stripe)
-                        .requestMatchers("/api/internal/**", "/api/webhooks/**", "/api/sync/**").permitAll()
+                        // Stripe Webhooks (Public but validated)
+                        .requestMatchers("/api/webhooks/**").permitAll()
                         // WebSocket endpoint
                         .requestMatchers("/ws/**").permitAll()
-
-                        // SECURE WEB PATHS: Require authentication
+                        
+                        // ===== PRIVATE API ENDPOINTS (INTERNAL ONLY) =====
+                        // These endpoints should only be accessed by Admin Backend or internal services
+                        // In production, consider adding IP whitelisting or API key authentication
+                        .requestMatchers("/api/internal/**", "/api/sync/**").permitAll() // TODO: Secure with API key or IP whitelist
+                        
+                        // ===== AUTHENTICATED WEB PATHS =====
                         .requestMatchers("/orders", "/profile", "/checkout").authenticated()
-                        // SECURE API PATHS: Require authentication
-                        .requestMatchers("/api/orders/**", "/api/deliveries/**", "/api/customers/**").authenticated()
-                        .requestMatchers("/api/web/payment/**", "/api/cart/**").authenticated()
+                        
+                        // ===== AUTHENTICATED API ENDPOINTS =====
+                        // These require customer authentication (JWT token)
+                        .requestMatchers("/api/auth/logout").authenticated()
+                        .requestMatchers("/api/cart/**").authenticated()
+                        .requestMatchers("/api/orders/**").authenticated()
+                        .requestMatchers("/api/deliveries/**").authenticated()
+                        .requestMatchers("/api/customers/**").authenticated()
+                        .requestMatchers("/api/web/payment/**").authenticated()
 
                         // Default rule
                         .anyRequest().authenticated()

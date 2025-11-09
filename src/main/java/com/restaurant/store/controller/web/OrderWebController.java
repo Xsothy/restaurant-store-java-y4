@@ -1,75 +1,73 @@
 package com.restaurant.store.controller.web;
 
-import com.restaurant.store.dto.response.CustomerResponse;
 import com.restaurant.store.dto.response.OrderResponse;
+import com.restaurant.store.entity.Customer;
+import com.restaurant.store.security.AuthHelper;
 import com.restaurant.store.service.OrderService;
-import com.restaurant.store.repository.CustomerRepository;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpSession;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
-import com.restaurant.store.exception.UnauthorizedException;
-import com.restaurant.store.entity.Customer;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 
 import java.util.List;
 
+/**
+ * Controller for order-related web pages.
+ */
 @Controller
+@RequestMapping("/orders")
 @RequiredArgsConstructor
 @Slf4j
-@RequestMapping("/orders")
 public class OrderWebController {
     
+    private final AuthHelper authHelper;
     private final OrderService orderService;
-    private final CustomerRepository customerRepository;
-
+    
+    /**
+     * Display orders list page.
+     */
     @GetMapping
-    public String orders(HttpServletRequest request, Model model, @CookieValue(value = "jwt", required = false) String jwtCookie) {
+    public String orders(Model model) {
         try {
-            String token = getAuthToken(jwtCookie);
-            Customer customer = getCustomerFromAuth();
-            List<OrderResponse> orders = orderService.getCustomerOrders(customer.getId(), token);
+            // Get authenticated customer using AuthHelper
+            Customer customer = authHelper.user();
+            
+            // Get customer orders
+            List<OrderResponse> orders = orderService.getCustomerOrders(customer.getId(), null);
             model.addAttribute("orders", orders);
+            
             return "orders";
-        } catch (UnauthorizedException e) {
+        } catch (Exception e) {
+            log.warn("Failed to load orders: {}", e.getMessage());
             return "redirect:/auth/login";
         }
     }
     
+    /**
+     * Display order details page.
+     */
     @GetMapping("/{orderId}")
-    public String orderDetails(@PathVariable Long orderId, HttpServletRequest request, Model model, @CookieValue(value = "jwt", required = false) String jwtCookie) {
+    public String orderDetails(@PathVariable Long orderId, Model model) {
         try {
-            String token = getAuthToken(jwtCookie);
-            Customer customer = getCustomerFromAuth();
-
-            OrderResponse order = orderService.getOrderById(orderId, token);
+            // Get authenticated customer using AuthHelper
+            Customer customer = authHelper.user();
+            
+            // Get order details
+            OrderResponse order = orderService.getOrderById(orderId, null);
+            
+            // Verify order belongs to customer
+            if (!order.getCustomerId().equals(customer.getId())) {
+                log.warn("Customer {} attempted to access order {} belonging to another customer", 
+                        customer.getId(), orderId);
+                return "redirect:/orders";
+            }
+            
             model.addAttribute("order", order);
             return "order-details";
-        } catch (UnauthorizedException e) {
+        } catch (Exception e) {
+            log.warn("Failed to load order details: {}", e.getMessage());
             return "redirect:/auth/login";
         }
-
-    }
-
-    private String getAuthToken(String jwtCookie) {
-        if (jwtCookie != null && !jwtCookie.isEmpty()) {
-            return "Bearer " + jwtCookie;
-        }
-        throw new UnauthorizedException("Authentication required");
-    }
-
-    private Customer getCustomerFromAuth() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication != null && authentication.isAuthenticated()) {
-            String email = authentication.getName();
-            return customerRepository.findByEmail(email)
-                    .orElseThrow(() -> new UnauthorizedException("Customer not found"));
-        }
-        throw new UnauthorizedException("Authentication required");
     }
 }

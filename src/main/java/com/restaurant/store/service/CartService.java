@@ -105,6 +105,18 @@ public class CartService {
         return getCartResponse(cart.getId());
     }
     
+    /**
+     * Get cart by customer ID (for internal use, e.g., web controllers).
+     */
+    public CartResponse getCartByCustomerId(Long customerId) {
+        Customer customer = customerRepository.findById(customerId)
+                .orElseThrow(() -> new ResourceNotFoundException("Customer not found"));
+        Cart cart = cartRepository.findByCustomerId(customer.getId())
+                .orElseGet(() -> createNewCart(customer));
+        
+        return getCartResponse(cart.getId());
+    }
+    
     @Transactional
     public void clearCart(String token) {
         Customer customer = getCustomerFromToken(token);

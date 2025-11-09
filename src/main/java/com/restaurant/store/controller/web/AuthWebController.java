@@ -13,6 +13,9 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+/**
+ * Controller for authentication-related web pages (login, register, logout).
+ */
 @Controller
 @RequestMapping("/auth")
 public class AuthWebController {
@@ -20,6 +23,9 @@ public class AuthWebController {
     @Autowired
     private AuthService authService;
     
+    /**
+     * Display login page.
+     */
     @GetMapping("/login")
     public String login(@RequestParam(required = false) String error, Model model) {
         if (error != null) {
@@ -29,12 +35,18 @@ public class AuthWebController {
         return "login";
     }
     
+    /**
+     * Display registration page.
+     */
     @GetMapping("/register")
     public String register(Model model) {
         model.addAttribute("registerRequest", new CustomerRegisterRequest());
         return "register";
     }
     
+    /**
+     * Process login form submission.
+     */
     @PostMapping("/login")
     public String processLogin(
             @Valid @ModelAttribute LoginRequest loginRequest,
