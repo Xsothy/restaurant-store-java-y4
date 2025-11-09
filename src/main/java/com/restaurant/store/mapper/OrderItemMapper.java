@@ -16,6 +16,7 @@ public class OrderItemMapper {
                 .id(orderItem.getId())
                 .productId(orderItem.getProduct() != null ? orderItem.getProduct().getId() : null)
                 .productName(orderItem.getProduct() != null ? orderItem.getProduct().getName() : null)
+                .productImageUrl(orderItem.getProduct() != null ? orderItem.getProduct().getImageUrl() : null)
                 .quantity(orderItem.getQuantity())
                 .unitPrice(orderItem.getPrice())
                 .totalPrice(orderItem.getPrice() != null ? orderItem.getPrice().multiply(java.math.BigDecimal.valueOf(orderItem.getQuantity())) : null)

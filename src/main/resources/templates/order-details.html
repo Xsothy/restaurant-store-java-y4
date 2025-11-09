@@ -7,34 +7,54 @@
         body {
             font-family: 'Kantumruy Pro', sans-serif;
         }
-        .status-pending { background-color: #fef3c7; color: #92400e; }
-        .status-confirmed { background-color: #dbeafe; color: #1e40af; }
-        .status-shipped { background-color: #e0e7ff; color: #3730a3; }
-        .status-delivered { background-color: #d1fae5; color: #065f46; }
-        .status-cancelled { background-color: #fee2e2; color: #991b1b; }
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.5rem 1rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .status-PENDING { background-color: #fef3c7; color: #92400e; }
+        .status-CONFIRMED { background-color: #dbeafe; color: #1e40af; }
+        .status-PREPARING { background-color: #ede9fe; color: #5b21b6; }
+        .status-READY { background-color: #e0e7ff; color: #3730a3; }
+        .status-COMPLETED { background-color: #dcfce7; color: #166534; }
+        .status-CANCELLED { background-color: #fee2e2; color: #991b1b; }
+        .status-DELIVERED { background-color: #dcfce7; color: #166534; }
     </style>
 </head>
 <body class="bg-gradient-to-br from-gray-50 to-gray-100 min-h-screen">
     <th:block th:replace="~{fragments/layout :: header-simple}"></th:block>
 
     <main class="max-w-7xl mx-auto px-4 sm:px-6 py-8" th:if="${order}">
-        <div class="bg-white rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300 overflow-hidden">
-            <!-- Order Header -->
+        <div class="mb-6" th:if="${successMessage}">
+            <div class="rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-green-700" th:text="${successMessage}"></div>
+        </div>
+        <div class="mb-6" th:if="${errorMessage}">
+            <div class="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700" th:text="${errorMessage}"></div>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300 overflow-hidden" th:attr="data-order-id=${order.id}">
             <div class="p-6 border-b border-gray-100">
-                <div class="flex items-center justify-between mb-4">
-                    <h1 class="text-2xl font-bold text-gray-900">Order Details</h1>
-                    <span th:class="'status-' + ${#strings.toLowerCase(order.status)} + ' px-3 py-1 rounded-full text-xs font-semibold'"
-                          th:text="${order.status}"></span>
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div>
+                        <h1 class="text-2xl font-bold text-gray-900">Order Details</h1>
+                        <p class="text-sm text-gray-500 mt-1">Placed on
+                            <span th:text="${#temporals.format(order.createdAt, 'MMM dd, yyyy HH:mm')}"></span>
+                        </p>
+                    </div>
+                    <span class="status-badge" th:classappend="' status-' + ${order.status}" th:text="${order.status}"
+                          th:attr="data-status-badge=${order.id}"></span>
                 </div>
-                
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-600">
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-600 mt-4">
                     <div>
                         <span class="font-medium">Order ID:</span>
                         <span th:text="${'#' + order.id}" class="ml-2"></span>
-                    </div>
-                    <div>
-                        <span class="font-medium">Placed on:</span>
-                        <span th:text="${#temporals.format(order.createdAt, 'MMM dd, yyyy HH:mm')}" class="ml-2"></span>
                     </div>
                     <div>
                         <span class="font-medium">Order Type:</span>
@@ -42,52 +62,108 @@
                     </div>
                     <div>
                         <span class="font-medium">Total Amount:</span>
-                        <span th:text="${order.totalPrice + '៛'}" class="ml-2 font-bold text-lg text-red-600"></span>
+                        <span th:text="${#numbers.formatDecimal(order.totalPrice, 0, 'COMMA', 0, 'POINT') + '៛'}"
+                              class="ml-2 font-bold text-lg text-red-600"></span>
+                    </div>
+                    <div th:if="${order.estimatedDeliveryTime != null}">
+                        <span class="font-medium">Estimated Delivery:</span>
+                        <span th:text="${#temporals.format(order.estimatedDeliveryTime, 'MMM dd, yyyy HH:mm')}"
+                              class="ml-2"></span>
                     </div>
                 </div>
             </div>
 
-            <!-- Order Items -->
-            <div class="p-6">
-                <h2 class="text-lg font-semibold text-gray-900 mb-4">Order Items</h2>
-                <div class="space-y-3">
-                    <div th:each="item : ${order.orderItems}" class="flex items-center justify-between py-3 border-b border-gray-50 last:border-0">
-                        <div class="flex items-center gap-3">
-                            <img th:src="${item.productImageUrl != null ? item.productImageUrl : '/images/placeholder-food.jpg'}" 
-                                 th:alt="${item.productName}"
-                                 class="w-12 h-12 rounded-lg object-cover"
-                                 onerror="this.src='/images/placeholder-food.jpg'" />
-                            <div>
-                                <p th:text="${item.productName}" class="font-medium text-gray-900"></p>
-                                <p th:text="${'Quantity: ' + item.quantity}" class="text-sm text-gray-500"></p>
+            <div class="p-6 border-b border-gray-100 grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="lg:col-span-2">
+                    <h2 class="text-lg font-semibold text-gray-900 mb-4">Order Items</h2>
+                    <div class="space-y-3" th:attr="data-items-container=${order.id}">
+                        <div th:each="item : ${order.orderItems}" class="flex items-center justify-between py-3 border-b border-gray-50 last:border-0">
+                            <div class="flex items-center gap-3">
+                                <img th:src="${item.productImageUrl != null ? item.productImageUrl : '/images/placeholder-food.jpg'}"
+                                     th:alt="${item.productName}"
+                                     class="w-12 h-12 rounded-lg object-cover"
+                                     onerror="this.src='/images/placeholder-food.jpg'" />
+                                <div>
+                                    <p th:text="${item.productName}" class="font-medium text-gray-900"></p>
+                                    <p class="text-sm text-gray-500">
+                                        Qty <span th:text="${item.quantity}"></span>
+                                        •
+                                        <span th:text="${#numbers.formatDecimal(item.unitPrice, 0, 'COMMA', 0, 'POINT') + '៛'}"></span>
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <p th:text="${#numbers.formatDecimal(item.totalPrice, 0, 'COMMA', 0, 'POINT') + '៛'}" class="font-medium text-gray-900"></p>
                             </div>
                         </div>
-                        <div class="text-right">
-                            <p th:text="${#numbers.formatDecimal(item.price, 0, 0) + '៛'}" class="font-medium text-gray-900"></p>
-                            <p th:text="${'× ' + item.quantity}" class="text-sm text-gray-500"></p>
-                        </div>
+                    </div>
+                </div>
+
+                <div class="space-y-4">
+                    <div class="bg-gray-50 rounded-lg p-4">
+                        <h3 class="font-semibold text-gray-900 mb-3">Payment Summary</h3>
+                        <p class="text-sm text-gray-600">
+                            Method:
+                            <span class="font-medium" th:text="${order.paymentMethod != null ? order.paymentMethod : 'N/A'}"
+                                  th:attr="data-payment-method=${order.id}"></span>
+                        </p>
+                        <p class="text-sm text-gray-600">
+                            Status:
+                            <span class="font-medium" th:text="${order.paymentStatus != null ? order.paymentStatus : 'N/A'}"
+                                  th:attr="data-payment-status=${order.id}"></span>
+                        </p>
+                        <p class="text-sm text-gray-600" th:if="${order.paymentPaidAt != null}">
+                            Paid on:
+                            <span class="font-medium"
+                                  th:text="${#temporals.format(order.paymentPaidAt, 'MMM dd, yyyy HH:mm')}"></span>
+                        </p>
+                        <p class="text-sm text-gray-600" th:if="${order.paymentTransactionId != null}">
+                            Transaction ID:
+                            <span class="font-medium" th:text="${order.paymentTransactionId}"></span>
+                        </p>
+                    </div>
+
+                    <div class="bg-blue-50 rounded-lg p-4" th:if="${order.deliveryStatus != null}" th:attr="data-delivery-card=${order.id}">
+                        <h3 class="font-semibold text-gray-900 mb-3">Delivery Status</h3>
+                        <p class="text-sm text-gray-600">
+                            Status:
+                            <span class="font-medium" th:text="${order.deliveryStatus}" th:attr="data-delivery-status=${order.id}"></span>
+                        </p>
+                        <p class="text-sm text-gray-600" th:if="${order.deliveryDriverName != null}">
+                            Driver:
+                            <span class="font-medium" th:text="${order.deliveryDriverName}"></span>
+                            <span class="text-gray-400" th:if="${order.deliveryDriverPhone != null}" th:text="${'(' + order.deliveryDriverPhone + ')'}"></span>
+                        </p>
+                        <p class="text-sm text-gray-600" th:if="${order.deliveryEstimatedArrivalTime != null}">
+                            ETA:
+                            <span class="font-medium" th:text="${#temporals.format(order.deliveryEstimatedArrivalTime, 'MMM dd, yyyy HH:mm')}"
+                                  th:attr="data-delivery-eta=${order.id}"></span>
+                        </p>
+                        <p class="text-sm text-gray-600" th:if="${order.deliveryActualDeliveryTime != null}">
+                            Delivered:
+                            <span class="font-medium" th:text="${#temporals.format(order.deliveryActualDeliveryTime, 'MMM dd, yyyy HH:mm')}"></span>
+                        </p>
                     </div>
                 </div>
             </div>
 
-            <!-- Order Actions -->
-            <div class="p-6 bg-gray-50 border-t border-gray-100">
-                <div class="flex gap-4">
-                    <button onclick="window.location.href='/orders'" 
-                            class="px-6 py-3 bg-white border border-gray-300 text-gray-700 rounded-md font-medium hover:bg-gray-50 transition-colors">
-                        Back to Orders
-                    </button>
-                    <button th:if="${order.status == 'PENDING' or order.status == 'CONFIRMED'}"
-                            th:onclick="'cancelOrder(' + ${order.id} + ')'"
+            <div class="p-6 bg-gray-50 border-t border-gray-100 flex flex-wrap gap-4">
+                <button onclick="window.location.href='/orders'"
+                        class="px-6 py-3 bg-white border border-gray-300 text-gray-700 rounded-md font-medium hover:bg-gray-100 transition-colors">
+                    Back to Orders
+                </button>
+                <form th:if="${order.status == 'PENDING' or order.status == 'CONFIRMED'}"
+                      th:action="@{/orders/{orderId}/cancel(orderId=${order.id})}" method="post"
+                      onsubmit="return confirm('Are you sure you want to cancel this order?');">
+                    <button type="submit"
                             class="px-6 py-3 bg-red-600 text-white rounded-md font-medium hover:bg-red-700 transition-colors">
                         Cancel Order
                     </button>
-                </div>
+                </form>
             </div>
         </div>
     </main>
 
-    <!-- Order Not Found -->
     <main class="max-w-7xl mx-auto px-4 sm:px-6 py-8" th:unless="${order}">
         <div class="text-center py-20">
             <div class="text-gray-400 mb-4">
@@ -107,47 +183,105 @@
     <th:block th:replace="~{fragments/layout :: api-config}"></th:block>
     <th:block th:replace="~{fragments/layout :: auth-utils}"></th:block>
 
-    <script>
-        function cancelOrder(orderId) {
-            if (confirm('Are you sure you want to cancel this order?')) {
-                // TODO: Implement cancel order functionality
-                // This would make an API call to cancel order
-                fetch(`/api/orders/${orderId}/cancel`, {
-                    method: 'PUT',
-                    headers: {
-                        'Authorization': 'Bearer ' + localStorage.getItem('token'),
-                        'Content-Type': 'application/json'
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+    <script th:inline="javascript">
+        const detailStatusClassMap = {
+            'PENDING': 'status-PENDING',
+            'CONFIRMED': 'status-CONFIRMED',
+            'PREPARING': 'status-PREPARING',
+            'READY': 'status-READY',
+            'COMPLETED': 'status-COMPLETED',
+            'CANCELLED': 'status-CANCELLED',
+            'DELIVERED': 'status-DELIVERED'
+        };
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const container = document.querySelector('[data-order-id]');
+            if (!container || typeof SockJS === 'undefined' || typeof Stomp === 'undefined') {
+                return;
+            }
+
+            const orderId = container.dataset.orderId;
+            const socket = new SockJS('/ws');
+            const stompClient = Stomp.over(socket);
+            stompClient.reconnect_delay = 5000;
+
+            stompClient.connect({}, () => {
+                stompClient.subscribe(`/topic/orders/${orderId}`, message => {
+                    try {
+                        const payload = JSON.parse(message.body);
+                        updateOrderDetails(orderId, payload);
+                    } catch (error) {
+                        console.error('Failed to parse order update', error);
                     }
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success || response.ok) {
-                        showNotification('Order cancelled successfully');
-                        setTimeout(() => {
-                            window.location.href = '/orders';
-                        }, 1500);
-                    } else {
-                        showNotification('Failed to cancel order: ' + (data.message || 'Unknown error'), 'error');
-                    }
-                })
-                .catch(error => {
-                    console.error('Error cancelling order:', error);
-                    showNotification('Network error. Please try again.', 'error');
                 });
+                stompClient.subscribe(`/topic/orders/${orderId}/status`, message => {
+                    updateOrderStatus(orderId, message.body);
+                });
+            }, error => {
+                console.warn('Unable to connect to order updates', error);
+            });
+        });
+
+        function updateOrderStatus(orderId, status) {
+            const badge = document.querySelector(`[data-status-badge="${orderId}"]`);
+            if (!badge || !status) {
+                return;
+            }
+            badge.textContent = status;
+            badge.className = 'status-badge';
+            badge.classList.add(detailStatusClassMap[status] || 'status-PENDING');
+        }
+
+        function updateOrderDetails(orderId, order) {
+            if (!order) {
+                return;
+            }
+
+            updateOrderStatus(orderId, order.status);
+
+            const paymentMethodEl = document.querySelector(`[data-payment-method="${orderId}"]`);
+            if (paymentMethodEl) {
+                paymentMethodEl.textContent = order.paymentMethod || 'N/A';
+            }
+
+            const paymentStatusEl = document.querySelector(`[data-payment-status="${orderId}"]`);
+            if (paymentStatusEl) {
+                paymentStatusEl.textContent = order.paymentStatus || 'N/A';
+            }
+
+            const deliveryStatusEl = document.querySelector(`[data-delivery-status="${orderId}"]`);
+            if (deliveryStatusEl) {
+                deliveryStatusEl.textContent = order.deliveryStatus || 'N/A';
+            }
+
+            const deliveryEtaEl = document.querySelector(`[data-delivery-eta="${orderId}"]`);
+            if (deliveryEtaEl) {
+                if (order.deliveryEstimatedArrivalTime) {
+                    deliveryEtaEl.textContent = formatDate(order.deliveryEstimatedArrivalTime);
+                } else {
+                    deliveryEtaEl.textContent = 'N/A';
+                }
             }
         }
 
-        function showNotification(message, type = 'success') {
-            const notification = document.createElement('div');
-            notification.className = `fixed bottom-4 right-4 px-6 py-3 rounded-lg shadow-lg z-50 fade-in ${
-                type === 'error' ? 'bg-red-600 text-white' : 'bg-green-600 text-white'
-            }`;
-            notification.textContent = message;
-            document.body.appendChild(notification);
-            
-            setTimeout(() => {
-                notification.remove();
-            }, 3000);
+        function formatDate(value) {
+            try {
+                const date = new Date(value);
+                if (!isNaN(date.getTime())) {
+                    return date.toLocaleString('en-US', {
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    });
+                }
+            } catch (error) {
+                console.warn('Unable to format date', value, error);
+            }
+            return value;
         }
     </script>
 </body>

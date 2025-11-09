@@ -2,31 +2,48 @@
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
     <th:block th:replace="~{fragments/layout :: head('My Orders - Restaurant Store')}"></th:block>
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Kantumruy+Pro:wght@400;500;600;700&display=swap');
         body {
             font-family: 'Kantumruy Pro', sans-serif;
         }
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.5rem 1rem;
+            border-radius: 9999px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .status-PENDING { background-color: #fef3c7; color: #92400e; }
+        .status-CONFIRMED { background-color: #dbeafe; color: #1e40af; }
+        .status-PREPARING { background-color: #ede9fe; color: #5b21b6; }
+        .status-READY { background-color: #e0e7ff; color: #3730a3; }
+        .status-COMPLETED { background-color: #dcfce7; color: #166534; }
+        .status-CANCELLED { background-color: #fee2e2; color: #991b1b; }
+        .status-DELIVERED { background-color: #dcfce7; color: #166534; }
     </style>
 </head>
 <body class="bg-gradient-to-br from-gray-50 to-gray-100 min-h-screen">
     <th:block th:replace="~{fragments/layout :: header}"></th:block>
 
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 py-8" x-data="ordersApp()" x-init="init()">
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 py-8">
         <div class="mb-8">
             <h1 class="text-3xl font-bold text-gray-800">My Orders</h1>
             <p class="text-gray-600 mt-2">Track and manage your orders</p>
         </div>
 
-        <!-- Loading State -->
-        <div x-show="loading" class="text-center py-20">
-            <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-red-600"></div>
-            <p class="text-gray-500 mt-4">Loading orders...</p>
+        <div th:if="${successMessage}" class="mb-6 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-green-700">
+            <span th:text="${successMessage}"></span>
+        </div>
+        <div th:if="${errorMessage}" class="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700">
+            <span th:text="${errorMessage}"></span>
         </div>
 
-        <!-- Empty State -->
-        <div x-show="!loading && orders.length === 0" class="text-center py-20">
+        <div th:if="${orders == null || #lists.isEmpty(orders)}" class="text-center py-20">
             <svg class="w-24 h-24 mx-auto text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
             </svg>
@@ -36,84 +53,83 @@
             </button>
         </div>
 
-        <!-- Orders List -->
-        <div x-show="!loading && orders.length > 0" class="space-y-6">
-            <template x-for="order in orders" :key="order.id">
-                <div class="bg-white rounded-xl shadow-md p-6">
-                    <!-- Order Header -->
-                    <div class="flex flex-col md:flex-row md:items-center justify-between mb-4 pb-4 border-b">
-                        <div>
-                            <h3 class="text-xl font-bold text-gray-800 mb-1">
-                                Order #<span x-text="order.id"></span>
-                            </h3>
-                            <p class="text-sm text-gray-500" x-text="formatDate(order.createdAt)"></p>
-                        </div>
-                        <div class="mt-3 md:mt-0 flex items-center gap-4">
-                            <span :class="getStatusClass(order.status)" 
-                                  class="px-4 py-2 rounded-full text-sm font-medium"
-                                  x-text="order.status"></span>
-                            <span class="text-2xl font-bold text-red-600" x-text="formatPrice(order.totalAmount)"></span>
-                        </div>
+        <div th:if="${orders != null && !#lists.isEmpty(orders)}" class="space-y-6">
+            <div th:each="order : ${orders}" class="bg-white rounded-xl shadow-md p-6" th:attr="data-order-id=${order.id}">
+                <div class="flex flex-col md:flex-row md:items-center justify-between mb-4 pb-4 border-b">
+                    <div>
+                        <h3 class="text-xl font-bold text-gray-800 mb-1">
+                            Order #<span th:text="${order.id}"></span>
+                        </h3>
+                        <p class="text-sm text-gray-500" th:text="${#temporals.format(order.createdAt, 'MMM dd, yyyy HH:mm')}"></p>
                     </div>
-
-                    <!-- Order Items -->
-                    <div class="space-y-3 mb-4">
-                        <template x-for="item in order.orderItems" :key="item.id">
-                            <div class="flex items-center gap-4 py-2">
-                                <img :src="item.product?.imageUrl || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=100&q=80'" 
-                                     :alt="item.product?.name || 'Product'"
-                                     class="w-16 h-16 object-cover rounded-lg">
-                                <div class="flex-1">
-                                    <h4 class="font-semibold text-gray-800" x-text="item.product?.name || 'Product'"></h4>
-                                    <p class="text-sm text-gray-500">
-                                        <span x-text="item.quantity"></span> × 
-                                        <span x-text="formatPrice(item.price)"></span>
-                                    </p>
-                                </div>
-                                <div class="text-right">
-                                    <p class="font-semibold text-gray-800" x-text="formatPrice(item.quantity * item.price)"></p>
-                                </div>
-                            </div>
-                        </template>
-                    </div>
-
-                    <!-- Payment Info -->
-                    <div class="bg-gray-50 rounded-lg p-4 mb-4">
-                        <div class="grid grid-cols-2 gap-4 text-sm">
-                            <div>
-                                <span class="text-gray-600">Payment Method:</span>
-                                <span class="font-medium ml-2" x-text="order.payment?.paymentType || 'N/A'"></span>
-                            </div>
-                            <div>
-                                <span class="text-gray-600">Payment Status:</span>
-                                <span :class="order.payment?.status === 'COMPLETED' ? 'text-green-600' : 'text-yellow-600'" 
-                                      class="font-medium ml-2" 
-                                      x-text="order.payment?.status || 'N/A'"></span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Delivery Info -->
-                    <div x-show="order.delivery" class="bg-blue-50 rounded-lg p-4">
-                        <div class="flex items-center gap-2 mb-2">
-                            <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0"></path>
-                            </svg>
-                            <span class="font-semibold text-gray-800">Delivery Information</span>
-                        </div>
-                        <div class="grid grid-cols-2 gap-4 text-sm">
-                            <div>
-                                <span class="text-gray-600">Status:</span>
-                                <span class="font-medium ml-2" x-text="order.delivery?.status || 'N/A'"></span>
-                            </div>
-                            <div>
-                                <span class="text-gray-600">Address:</span>
-                                <span class="font-medium ml-2" x-text="order.delivery?.address || 'N/A'"></span>
-                            </div>
-                        </div>
+                    <div class="mt-3 md:mt-0 flex flex-col md:flex-row md:items-center gap-4 text-right md:text-left">
+                        <span class="status-badge" th:classappend="' status-' + ${order.status}" th:text="${order.status}"
+                              th:attr="data-status-badge=${order.id}"></span>
+                        <span class="text-2xl font-bold text-red-600" th:text="${#numbers.formatDecimal(order.totalPrice, 0, 'COMMA', 0, 'POINT')} + '៛'"></span>
                     </div>
                 </div>
-            </template>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div class="lg:col-span-2 space-y-3" th:attr="data-items-container=${order.id}">
+                        <div th:each="item : ${order.orderItems}" class="flex items-center gap-4 py-2">
+                            <img th:src="${item.productImageUrl != null ? item.productImageUrl : 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=100&q=80'}"
+                                 th:alt="${item.productName}"
+                                 class="w-16 h-16 object-cover rounded-lg">
+                            <div class="flex-1">
+                                <h4 class="font-semibold text-gray-800" th:text="${item.productName}"></h4>
+                                <p class="text-sm text-gray-500">
+                                    <span th:text="${item.quantity}"></span>
+                                    ×
+                                    <span th:text="${#numbers.formatDecimal(item.unitPrice, 0, 'COMMA', 0, 'POINT')} + '៛'"></span>
+                                </p>
+                            </div>
+                            <div class="text-right">
+                                <p class="font-semibold text-gray-800" th:text="${#numbers.formatDecimal(item.totalPrice, 0, 'COMMA', 0, 'POINT')} + '៛'"></p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="space-y-4">
+                        <div class="bg-gray-50 rounded-lg p-4">
+                            <h4 class="font-semibold text-gray-800 mb-2">Payment</h4>
+                            <p class="text-sm text-gray-600">
+                                Method:
+                                <span class="font-medium" th:text="${order.paymentMethod != null ? order.paymentMethod : 'N/A'}"
+                                      th:attr="data-payment-method=${order.id}"></span>
+                            </p>
+                            <p class="text-sm text-gray-600">
+                                Status:
+                                <span class="font-medium" th:text="${order.paymentStatus != null ? order.paymentStatus : 'N/A'}"
+                                      th:attr="data-payment-status=${order.id}"></span>
+                            </p>
+                        </div>
+
+                        <div class="bg-blue-50 rounded-lg p-4" th:if="${order.deliveryStatus != null}" th:attr="data-delivery-card=${order.id}">
+                            <h4 class="font-semibold text-gray-800 mb-2">Delivery</h4>
+                            <p class="text-sm text-gray-600">
+                                Status:
+                                <span class="font-medium" th:text="${order.deliveryStatus}" th:attr="data-delivery-status=${order.id}"></span>
+                            </p>
+                            <p class="text-sm text-gray-600" th:if="${order.deliveryDriverName != null}">
+                                Driver:
+                                <span class="font-medium" th:text="${order.deliveryDriverName}"></span>
+                                <span class="text-gray-400" th:if="${order.deliveryDriverPhone != null}" th:text="${'(' + order.deliveryDriverPhone + ')'}"></span>
+                            </p>
+                            <p class="text-sm text-gray-600" th:if="${order.deliveryEstimatedArrivalTime != null}">
+                                ETA:
+                                <span class="font-medium"
+                                      th:text="${#temporals.format(order.deliveryEstimatedArrivalTime, 'MMM dd, yyyy HH:mm') }"
+                                      th:attr="data-delivery-eta=${order.id}"></span>
+                            </p>
+                        </div>
+
+                        <a th:href="@{/orders/{id}(id=${order.id})}"
+                           class="inline-flex items-center justify-center w-full px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors">
+                            View Details
+                        </a>
+                    </div>
+                </div>
+            </div>
         </div>
     </main>
 
@@ -121,79 +137,109 @@
     <th:block th:replace="~{fragments/layout :: api-config}"></th:block>
     <th:block th:replace="~{fragments/layout :: auth-utils}"></th:block>
 
-    <script>
-        function ordersApp() {
-            return {
-                orders: [],
-                loading: false,
-                
-                async init() {
-                    await this.fetchOrders();
-                },
-                
-                async fetchOrders() {
-                    const token = localStorage.getItem('token');
-                    
-                    if (!token) {
-                        alert('Please login to view your orders');
-                        window.location.href = '/login';
-                        return;
-                    }
-                    
-                    this.loading = true;
-                    
-                    try {
-                        const response = await fetch(`${API_BASE_URL}/orders/my-orders`, {
-                            headers: {
-                                'Authorization': `Bearer ${token}`
-                            }
-                        });
-                        
-                        const data = await response.json();
-                        
-                        if (response.ok && data.success) {
-                            this.orders = data.data || [];
-                        } else {
-                            console.error('Failed to fetch orders:', data.message);
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+    <script th:inline="javascript">
+        const statusClassMap = {
+            'PENDING': 'status-PENDING',
+            'CONFIRMED': 'status-CONFIRMED',
+            'PREPARING': 'status-PREPARING',
+            'READY': 'status-READY',
+            'COMPLETED': 'status-COMPLETED',
+            'CANCELLED': 'status-CANCELLED',
+            'DELIVERED': 'status-DELIVERED'
+        };
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const orderCards = document.querySelectorAll('[data-order-id]');
+            if (!orderCards.length || typeof SockJS === 'undefined' || typeof Stomp === 'undefined') {
+                return;
+            }
+
+            const socket = new SockJS('/ws');
+            const stompClient = Stomp.over(socket);
+            stompClient.reconnect_delay = 5000;
+
+            stompClient.connect({}, () => {
+                orderCards.forEach(card => {
+                    const orderId = card.dataset.orderId;
+                    stompClient.subscribe(`/topic/orders/${orderId}`, message => {
+                        try {
+                            const payload = JSON.parse(message.body);
+                            updateOrderCard(orderId, payload);
+                        } catch (error) {
+                            console.error('Failed to parse order update', error);
                         }
-                    } catch (error) {
-                        console.error('Error fetching orders:', error);
-                    } finally {
-                        this.loading = false;
-                    }
-                },
-                
-                formatPrice(price) {
-                    if (typeof price === 'number') {
-                        return `${price.toLocaleString()}៛`;
-                    }
-                    return price || '0៛';
-                },
-                
-                formatDate(dateString) {
-                    if (!dateString) return 'N/A';
-                    const date = new Date(dateString);
-                    return date.toLocaleDateString('en-US', { 
-                        year: 'numeric', 
-                        month: 'short', 
+                    });
+                    stompClient.subscribe(`/topic/orders/${orderId}/status`, message => {
+                        updateOrderStatus(orderId, message.body);
+                    });
+                });
+            }, error => {
+                console.warn('Unable to connect to order updates', error);
+            });
+        });
+
+        function updateOrderStatus(orderId, status) {
+            const badge = document.querySelector(`[data-status-badge="${orderId}"]`);
+            if (!badge || !status) {
+                return;
+            }
+
+            badge.textContent = status;
+            badge.className = 'status-badge';
+            const normalized = statusClassMap[status] || 'status-PENDING';
+            badge.classList.add(normalized);
+        }
+
+        function updateOrderCard(orderId, order) {
+            if (!order) {
+                return;
+            }
+
+            updateOrderStatus(orderId, order.status);
+
+            const paymentMethodEl = document.querySelector(`[data-payment-method="${orderId}"]`);
+            if (paymentMethodEl) {
+                paymentMethodEl.textContent = order.paymentMethod || 'N/A';
+            }
+
+            const paymentStatusEl = document.querySelector(`[data-payment-status="${orderId}"]`);
+            if (paymentStatusEl) {
+                paymentStatusEl.textContent = order.paymentStatus || 'N/A';
+            }
+
+            const deliveryStatusEl = document.querySelector(`[data-delivery-status="${orderId}"]`);
+            if (deliveryStatusEl) {
+                deliveryStatusEl.textContent = order.deliveryStatus || 'N/A';
+            }
+
+            const deliveryEtaEl = document.querySelector(`[data-delivery-eta="${orderId}"]`);
+            if (deliveryEtaEl) {
+                if (order.deliveryEstimatedArrivalTime) {
+                    deliveryEtaEl.textContent = formatDate(order.deliveryEstimatedArrivalTime);
+                } else {
+                    deliveryEtaEl.textContent = 'N/A';
+                }
+            }
+        }
+
+        function formatDate(value) {
+            try {
+                const date = new Date(value);
+                if (!isNaN(date.getTime())) {
+                    return date.toLocaleString('en-US', {
+                        year: 'numeric',
+                        month: 'short',
                         day: 'numeric',
                         hour: '2-digit',
                         minute: '2-digit'
                     });
-                },
-                
-                getStatusClass(status) {
-                    const statusClasses = {
-                        'PENDING': 'bg-yellow-100 text-yellow-700',
-                        'CONFIRMED': 'bg-blue-100 text-blue-700',
-                        'PREPARING': 'bg-purple-100 text-purple-700',
-                        'READY': 'bg-indigo-100 text-indigo-700',
-                        'COMPLETED': 'bg-green-100 text-green-700',
-                        'CANCELLED': 'bg-red-100 text-red-700'
-                    };
-                    return statusClasses[status] || 'bg-gray-100 text-gray-700';
                 }
+            } catch (error) {
+                console.warn('Unable to format date', value, error);
             }
+            return value;
         }
     </script>
 </body>
