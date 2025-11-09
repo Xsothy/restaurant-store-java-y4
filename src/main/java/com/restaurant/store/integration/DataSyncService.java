@@ -26,7 +26,7 @@ import java.util.Optional;
 @Slf4j
 public class DataSyncService {
 
-    private final AdminApiClient adminApiClient;
+    private final AdminIntegrationService adminIntegrationService;
     private final CategoryRepository categoryRepository;
     private final ProductRepository productRepository;
 
@@ -64,7 +64,7 @@ public class DataSyncService {
     @Transactional
     public void syncCategories() {
         log.info("Syncing categories from Admin API");
-        List<AdminCategoryDto> adminCategories = adminApiClient.fetchCategories();
+        List<AdminCategoryDto> adminCategories = adminIntegrationService.fetchCategories();
 
         if (adminCategories.isEmpty()) {
             log.warn("No categories to sync");
@@ -97,7 +97,7 @@ public class DataSyncService {
     @Transactional
     public void syncProducts() {
         log.info("Syncing products from Admin API");
-        List<AdminProductDto> adminProducts = adminApiClient.fetchProducts();
+        List<AdminProductDto> adminProducts = adminIntegrationService.fetchProducts();
 
         if (adminProducts.isEmpty()) {
             log.warn("No products to sync");

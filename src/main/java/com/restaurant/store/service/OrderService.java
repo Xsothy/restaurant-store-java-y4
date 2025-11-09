@@ -1,5 +1,6 @@
 package com.restaurant.store.service;
 
+import com.restaurant.store.controller.api.OrderStatusWebSocketController;
 import com.restaurant.store.dto.request.CreateOrderRequest;
 import com.restaurant.store.dto.request.OrderItemRequest;
 import com.restaurant.store.dto.request.PaymentRequest;
@@ -7,7 +8,7 @@ import com.restaurant.store.dto.response.OrderResponse;
 import com.restaurant.store.entity.*;
 import com.restaurant.store.exception.BadRequestException;
 import com.restaurant.store.exception.ResourceNotFoundException;
-import com.restaurant.store.integration.AdminApiClient;
+import com.restaurant.store.integration.AdminIntegrationService;
 import com.restaurant.store.mapper.OrderMapper;
 import com.restaurant.store.repository.*;
 import com.restaurant.store.security.JwtUtil;
@@ -19,8 +20,10 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -38,8 +41,9 @@ public class OrderService {
     private final JwtUtil jwtUtil;
     private final OrderMapper orderMapper;
     private final PaymentIntentService paymentIntentService;
-    private final AdminApiClient adminApiClient;
+    private final AdminIntegrationService adminIntegrationService;
     private final CartService cartService;
+    private final OrderStatusWebSocketController orderStatusWebSocketController;
 
     @Transactional
     public OrderResponse createOrder(CreateOrderRequest request, String token) {
@@ -104,7 +108,7 @@ public class OrderService {
         // Sync order to Admin backend
         try {
             log.info("Syncing order {} to Admin backend", order.getId());
-            adminApiClient.syncOrderToAdmin(order.getId());
+            adminIntegrationService.syncOrderToAdmin(order.getId());
         } catch (Exception e) {
             log.error("Failed to sync order to Admin backend", e);
         }
@@ -114,9 +118,7 @@ public class OrderService {
     }
 
     public OrderResponse getOrderById(Long orderId, String token) {
-        String email = jwtUtil.extractUsername(token.substring(7));
-        Customer customer = customerRepository.findByEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException("Customer not found"));
+        Customer customer = getCustomerFromToken(token);
 
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new ResourceNotFoundException("Order not found with id: " + orderId));
@@ -127,13 +129,11 @@ public class OrderService {
         }
 
         List<OrderItem> orderItems = orderItemRepository.findByOrderId(orderId);
-        return orderMapper.toResponse(order, orderItems);
+        return enrichOrderResponse(orderMapper.toResponse(order, orderItems), order);
     }
 
     public String getOrderStatus(Long orderId, String token) {
-        String email = jwtUtil.extractUsername(token.substring(7));
-        Customer customer = customerRepository.findByEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException("Customer not found"));
+        Customer customer = getCustomerFromToken(token);
 
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new ResourceNotFoundException("Order not found with id: " + orderId));
@@ -147,9 +147,7 @@ public class OrderService {
 
     @Transactional
     public Map<String, Object> createPaymentIntent(Long orderId, String token) {
-        String email = jwtUtil.extractUsername(token.substring(7));
-        Customer customer = customerRepository.findByEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException("Customer not found"));
+        Customer customer = getCustomerFromToken(token);
 
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new ResourceNotFoundException("Order not found with id: " + orderId));
@@ -177,9 +175,7 @@ public class OrderService {
 
     @Transactional
     public String processPayment(Long orderId, PaymentRequest request, String token) {
-        String email = jwtUtil.extractUsername(token.substring(7));
-        Customer customer = customerRepository.findByEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException("Customer not found"));
+        Customer customer = getCustomerFromToken(token);
 
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new ResourceNotFoundException("Order not found with id: " + orderId));
@@ -228,36 +224,64 @@ public class OrderService {
     }
 
     public List<OrderResponse> getCustomerOrders(Long customerId, String token) {
-        String email = jwtUtil.extractUsername(token.substring(7));
-        Customer customer = customerRepository.findByEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException("Customer not found"));
+        if (token == null) {
+            return getOrdersForCustomer(customerId);
+        }
+
+        Customer customer = getCustomerFromToken(token);
 
         // Verify requesting customer matches the customerId
         if (!customer.getId().equals(customerId)) {
             throw new BadRequestException("Cannot access other customer's orders");
         }
 
-        List<Order> orders = orderRepository.findByCustomerIdOrderByCreatedAtDesc(customerId);
-        return orders.stream()
-                .map(order -> orderMapper.toResponse(order, orderItemRepository.findByOrderId(order.getId())))
-                .collect(Collectors.toList());
+        return getOrdersForCustomer(customerId);
     }
 
     public List<OrderResponse> getMyOrders(String token) {
-        String email = jwtUtil.extractUsername(token.substring(7));
-        Customer customer = customerRepository.findByEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException("Customer not found"));
-
-        List<Order> orders = orderRepository.findByCustomerIdOrderByCreatedAtDesc(customer.getId());
-        return orders.stream()
-                .map(order -> orderMapper.toResponse(order, orderItemRepository.findByOrderId(order.getId())))
-                .collect(Collectors.toList());
+        Customer customer = getCustomerFromToken(token);
+        return getOrdersForCustomer(customer.getId());
     }
 
     @Transactional
     public String cancelOrder(Long orderId, String token) {
-        String email = jwtUtil.extractUsername(token.substring(7));
-        Customer customer = customerRepository.findByEmail(email)
+        Customer customer = getCustomerFromToken(token);
+        cancelOrderForCustomer(orderId, customer.getId());
+        return "Order cancelled successfully";
+    }
+
+    @Transactional(readOnly = true)
+    public List<OrderResponse> getOrdersForCustomer(Long customerId) {
+        Customer customer = customerRepository.findById(customerId)
+                .orElseThrow(() -> new ResourceNotFoundException("Customer not found"));
+
+        List<Order> orders = orderRepository.findByCustomerIdOrderByCreatedAtDesc(customer.getId());
+        return orders.stream()
+                .map(order -> enrichOrderResponse(
+                        orderMapper.toResponse(order, orderItemRepository.findByOrderId(order.getId())),
+                        order))
+                .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public OrderResponse getOrderForCustomer(Long orderId, Long customerId) {
+        Customer customer = customerRepository.findById(customerId)
+                .orElseThrow(() -> new ResourceNotFoundException("Customer not found"));
+
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new ResourceNotFoundException("Order not found with id: " + orderId));
+
+        if (!order.getCustomer().getId().equals(customer.getId())) {
+            throw new BadRequestException("Order does not belong to current customer");
+        }
+
+        List<OrderItem> orderItems = orderItemRepository.findByOrderId(orderId);
+        return enrichOrderResponse(orderMapper.toResponse(order, orderItems), order);
+    }
+
+    @Transactional
+    public OrderResponse cancelOrderForCustomer(Long orderId, Long customerId) {
+        Customer customer = customerRepository.findById(customerId)
                 .orElseThrow(() -> new ResourceNotFoundException("Customer not found"));
 
         Order order = orderRepository.findById(orderId)
@@ -276,9 +300,47 @@ public class OrderService {
         }
 
         order.setStatus(OrderStatus.CANCELLED);
-        orderRepository.save(order);
+        order = orderRepository.save(order);
 
-        return "Order cancelled successfully";
+        List<OrderItem> orderItems = orderItemRepository.findByOrderId(orderId);
+        OrderResponse response = enrichOrderResponse(orderMapper.toResponse(order, orderItems), order);
+        orderStatusWebSocketController.sendOrderUpdate(orderId, response);
+        orderStatusWebSocketController.sendOrderStatusUpdate(orderId, order.getStatus().name());
+        return response;
+    }
+
+    private OrderResponse enrichOrderResponse(OrderResponse response, Order order) {
+        if (response == null || order == null) {
+            return response;
+        }
+
+        List<Payment> payments = paymentRepository.findByOrderId(order.getId());
+        if (!payments.isEmpty()) {
+            payments.sort(Comparator.comparing(Payment::getUpdatedAt, Comparator.nullsLast(Comparator.naturalOrder())).reversed());
+            Payment latestPayment = payments.get(0);
+            response.setPaymentStatus(latestPayment.getStatus());
+            response.setPaymentMethod(latestPayment.getMethod());
+            response.setPaymentPaidAt(latestPayment.getPaidAt());
+            response.setPaymentTransactionId(latestPayment.getTransactionId());
+        }
+
+        Optional<Delivery> deliveryOptional = deliveryRepository.findByOrderId(order.getId());
+        if (deliveryOptional.isPresent()) {
+            Delivery delivery = deliveryOptional.get();
+            response.setDeliveryStatus(delivery.getStatus());
+            response.setDeliveryDriverName(delivery.getDriverName());
+            response.setDeliveryDriverPhone(delivery.getDriverPhone());
+            response.setDeliveryEstimatedArrivalTime(delivery.getEstimatedArrivalTime());
+            response.setDeliveryActualDeliveryTime(delivery.getActualDeliveryTime());
+        }
+
+        return response;
+    }
+
+    private Customer getCustomerFromToken(String token) {
+        String email = jwtUtil.extractUsername(token.substring(7));
+        return customerRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("Customer not found"));
     }
 }
 

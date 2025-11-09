@@ -54,7 +54,7 @@ public class SecurityConfig {
                 // 2. Define Authorization Rules
                 .authorizeHttpRequests(auth -> auth
                         // ===== WEB/STATIC PATHS =====
-                        .requestMatchers("/", "/login", "/register", "/menu", "/products/**", "/product-details", "/cart").permitAll()
+                        .requestMatchers("/", "/login", "/register", "/menu", "/products/**", "/product-details").permitAll()
                         .requestMatchers("/payment/success", "/payment/cancel").permitAll()
                         .requestMatchers("/css/**", "/js/**", "/images/**", "/*.html", "/static/**").permitAll()
                         
@@ -77,7 +77,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/internal/**", "/api/sync/**").permitAll() // TODO: Secure with API key or IP whitelist
                         
                         // ===== AUTHENTICATED WEB PATHS =====
-                        .requestMatchers("/orders", "/profile", "/checkout").authenticated()
+                        .requestMatchers("/orders", "/orders/**", "/cart", "/cart/**", "/profile", "/checkout").authenticated()
                         
                         // ===== AUTHENTICATED API ENDPOINTS =====
                         // These require customer authentication (JWT token)
