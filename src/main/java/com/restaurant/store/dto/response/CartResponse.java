@@ -16,6 +16,7 @@ public class CartResponse {
     private Long id;
     private List<CartItemResponse> items;
     private BigDecimal subtotal;
+    private BigDecimal vat;
     private BigDecimal deliveryFee;
     private BigDecimal total;
     private Integer itemCount;
