@@ -161,7 +161,12 @@ class ProductControllerIntegrationTest {
     @DisplayName("Should return 404 when product not found")
     void testGetProductById_NotFound() throws Exception {
         mockMvc.perform(get("/api/products/{productId}", 99999L))
-                .andExpect(status().isNotFound());
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.status").value(404))
+                .andExpect(jsonPath("$.error").value("Not Found"))
+                .andExpect(jsonPath("$.message")
+                        .value("Product not found with id: 99999"))
+                .andExpect(jsonPath("$.path").value("/api/products/99999"));
     }
 
     @Test
@@ -179,7 +184,12 @@ class ProductControllerIntegrationTest {
     @DisplayName("Should return 404 when category not found")
     void testGetProductsByCategory_CategoryNotFound() throws Exception {
         mockMvc.perform(get("/api/categories/{categoryId}/products", 99999L))
-                .andExpect(status().isNotFound());
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.status").value(404))
+                .andExpect(jsonPath("$.error").value("Not Found"))
+                .andExpect(jsonPath("$.message")
+                        .value("Category not found with id: 99999"))
+                .andExpect(jsonPath("$.path").value("/api/categories/99999/products"));
     }
 
     @Test
