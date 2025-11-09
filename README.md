@@ -87,7 +87,7 @@ src/
 1. **Clone the repository**
    ```bash
    git clone <repository-url>
-   cd restaurant-store-api
+   cd restaurant-store-java-y4
    ```
 
 2. **Build the project**
