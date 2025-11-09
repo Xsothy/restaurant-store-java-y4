@@ -124,6 +124,9 @@ class CartControllerIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data.items", hasSize(0)))
+                .andExpect(jsonPath("$.data.subtotal").value(0.0))
+                .andExpect(jsonPath("$.data.vat").value(0.0))
+                .andExpect(jsonPath("$.data.deliveryFee").value(0.0))
                 .andExpect(jsonPath("$.data.total").value(0.0));
     }
 
@@ -144,7 +147,10 @@ class CartControllerIntegrationTest {
                 .andExpect(jsonPath("$.data.items[0].productName").value("Product 1"))
                 .andExpect(jsonPath("$.data.items[0].quantity").value(2))
                 .andExpect(jsonPath("$.data.items[0].price").value(10.00))
-                .andExpect(jsonPath("$.data.total").value(20.00));
+                .andExpect(jsonPath("$.data.subtotal").value(20.00))
+                .andExpect(jsonPath("$.data.vat").value(2.00))
+                .andExpect(jsonPath("$.data.deliveryFee").value(6000.0))
+                .andExpect(jsonPath("$.data.total").value(6022.00));
     }
 
     @Test
@@ -173,7 +179,10 @@ class CartControllerIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data.items", hasSize(2)))
-                .andExpect(jsonPath("$.data.total").value(35.00)); // 2*10 + 1*15
+                .andExpect(jsonPath("$.data.subtotal").value(35.00))
+                .andExpect(jsonPath("$.data.vat").value(3.50))
+                .andExpect(jsonPath("$.data.deliveryFee").value(6000.0))
+                .andExpect(jsonPath("$.data.total").value(6038.50)); // 2*10 + 1*15 + VAT + fee
     }
 
     @Test
@@ -234,7 +243,10 @@ class CartControllerIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data.items[0].quantity").value(5))
-                .andExpect(jsonPath("$.data.total").value(50.00)); // 5*10
+                .andExpect(jsonPath("$.data.subtotal").value(50.00))
+                .andExpect(jsonPath("$.data.vat").value(5.00))
+                .andExpect(jsonPath("$.data.deliveryFee").value(6000.0))
+                .andExpect(jsonPath("$.data.total").value(6055.00)); // 5*10 + VAT + fee
     }
 
     @Test
@@ -263,6 +275,9 @@ class CartControllerIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data.items", hasSize(0)))
+                .andExpect(jsonPath("$.data.subtotal").value(0.0))
+                .andExpect(jsonPath("$.data.vat").value(0.0))
+                .andExpect(jsonPath("$.data.deliveryFee").value(0.0))
                 .andExpect(jsonPath("$.data.total").value(0.0));
     }
 
@@ -299,6 +314,9 @@ class CartControllerIntegrationTest {
                         .header("Authorization", authToken))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.items", hasSize(0)))
+                .andExpect(jsonPath("$.data.subtotal").value(0.0))
+                .andExpect(jsonPath("$.data.vat").value(0.0))
+                .andExpect(jsonPath("$.data.deliveryFee").value(0.0))
                 .andExpect(jsonPath("$.data.total").value(0.0));
     }
 

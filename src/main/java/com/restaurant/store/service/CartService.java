@@ -18,6 +18,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -32,7 +33,8 @@ public class CartService {
     private final CustomerRepository customerRepository;
     private final JwtUtil jwtUtil;
     
-    private static final BigDecimal DELIVERY_FEE = new BigDecimal("2000");
+    private static final BigDecimal DELIVERY_FEE = new BigDecimal("6000.00");
+    private static final BigDecimal VAT_RATE = new BigDecimal("0.10");
     
     @Transactional
     public CartResponse addToCart(AddToCartRequest request, String token) {
@@ -163,17 +165,23 @@ public class CartService {
         BigDecimal subtotal = items.stream()
                 .map(item -> item.getPrice().multiply(BigDecimal.valueOf(item.getQuantity())))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
-        
+        subtotal = subtotal.setScale(2, RoundingMode.HALF_UP);
+
         int itemCount = items.stream()
                 .mapToInt(CartItem::getQuantity)
                 .sum();
-        
+
+        BigDecimal vat = subtotal.multiply(VAT_RATE).setScale(2, RoundingMode.HALF_UP);
+        BigDecimal deliveryFee = itemCount > 0 ? DELIVERY_FEE : BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP);
+        BigDecimal total = subtotal.add(vat).add(deliveryFee).setScale(2, RoundingMode.HALF_UP);
+
         return CartResponse.builder()
                 .id(cart.getId())
                 .items(itemResponses)
                 .subtotal(subtotal)
-                .deliveryFee(DELIVERY_FEE)
-                .total(subtotal.add(DELIVERY_FEE))
+                .vat(vat)
+                .deliveryFee(deliveryFee)
+                .total(total)
                 .itemCount(itemCount)
                 .build();
     }
