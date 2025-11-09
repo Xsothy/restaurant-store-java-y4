@@ -1,7 +1,10 @@
 package com.restaurant.store.dto.response;
 
+import com.restaurant.store.entity.DeliveryStatus;
 import com.restaurant.store.entity.OrderStatus;
 import com.restaurant.store.entity.OrderType;
+import com.restaurant.store.entity.PaymentMethod;
+import com.restaurant.store.entity.PaymentStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -30,4 +33,13 @@ public class OrderResponse {
     private LocalDateTime updatedAt;
     private LocalDateTime estimatedDeliveryTime;
     private List<OrderItemResponse> orderItems;
+    private PaymentStatus paymentStatus;
+    private PaymentMethod paymentMethod;
+    private LocalDateTime paymentPaidAt;
+    private String paymentTransactionId;
+    private DeliveryStatus deliveryStatus;
+    private String deliveryDriverName;
+    private String deliveryDriverPhone;
+    private LocalDateTime deliveryEstimatedArrivalTime;
+    private LocalDateTime deliveryActualDeliveryTime;
 }

@@ -2,27 +2,50 @@
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
     <th:block th:replace="~{fragments/layout :: head('Shopping Cart - Restaurant Store')}"></th:block>
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Kantumruy+Pro:wght@400;500;600;700&display=swap');
         body {
             font-family: 'Kantumruy Pro', sans-serif;
+        }
+        .status-message {
+            animation: fade-in 0.3s ease-in-out;
+        }
+        @keyframes fade-in {
+            from { opacity: 0; transform: translateY(-4px); }
+            to { opacity: 1; transform: translateY(0); }
         }
     </style>
 </head>
 <body class="bg-gradient-to-br from-gray-50 to-gray-100 min-h-screen">
     <th:block th:replace="~{fragments/layout :: header}"></th:block>
 
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 py-8" x-data="cartApp()" x-init="init()">
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 py-8">
         <div class="mb-8">
             <h1 class="text-3xl font-bold text-gray-800">Shopping Cart</h1>
             <p class="text-gray-600 mt-2">Review your items before checkout</p>
         </div>
 
-        <!-- Empty State -->
-        <div x-show="cartItems.length === 0" class="text-center py-20">
+        <div th:if="${cartMessage}" class="status-message mb-6 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-green-700">
+            <span th:text="${cartMessage}"></span>
+        </div>
+        <div th:if="${cartError}" class="status-message mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700">
+            <span th:text="${cartError}"></span>
+        </div>
+
+        <div th:if="${cart == null}" class="text-center py-20">
             <svg class="w-24 h-24 mx-auto text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path>
+            </svg>
+            <p class="text-gray-500 text-lg mb-2">We couldn't load your cart details.</p>
+            <p class="text-gray-400 mb-6">Please sign in again to continue shopping.</p>
+            <button onclick="window.location.href='/login'" class="px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors">
+                Go to Login
+            </button>
+        </div>
+
+        <div th:if="${cart != null && cart.itemCount == 0}" class="text-center py-20">
+            <svg class="w-24 h-24 mx-auto text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path>
             </svg>
             <p class="text-gray-500 text-lg mb-6">Your cart is empty</p>
             <button onclick="window.location.href='/menu'" class="px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors">
@@ -30,74 +53,89 @@
             </button>
         </div>
 
-        <!-- Cart Items -->
-        <div x-show="cartItems.length > 0" class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div th:if="${cart != null && cart.itemCount > 0}" class="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div class="lg:col-span-2 space-y-4">
-                <template x-for="(item, index) in cartItems" :key="index">
-                    <div class="bg-white rounded-xl shadow-md p-6 flex gap-6">
-                        <img :src="item.imageUrl || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=200&q=80'" 
-                             :alt="item.name"
-                             class="w-24 h-24 object-cover rounded-lg">
-                        
-                        <div class="flex-1">
-                            <h3 class="text-xl font-bold text-gray-800 mb-2" x-text="item.name"></h3>
-                            <p class="text-lg font-semibold text-red-600 mb-3" x-text="formatPrice(item.price)"></p>
-                            
-                            <div class="flex items-center gap-4">
-                                <div class="flex items-center border-2 border-gray-200 rounded-lg overflow-hidden">
-                                    <button @click="decreaseQuantity(index)" class="px-3 py-1 hover:bg-gray-100 transition-colors">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"></path>
-                                        </svg>
-                                    </button>
-                                    <span x-text="item.quantity" class="px-4 py-1 font-semibold"></span>
-                                    <button @click="increaseQuantity(index)" class="px-3 py-1 hover:bg-gray-100 transition-colors">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-                                        </svg>
-                                    </button>
-                                </div>
-                                
-                                <button @click="removeItem(index)" class="text-red-600 hover:text-red-700 transition-colors">
+                <div th:each="item : ${cart.items}" class="bg-white rounded-xl shadow-md p-6 flex flex-col sm:flex-row gap-6">
+                    <img th:src="${item.productImageUrl != null ? item.productImageUrl : 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=200&q=80'}"
+                         th:alt="${item.productName}"
+                         class="w-24 h-24 object-cover rounded-lg">
+
+                    <div class="flex-1">
+                        <h3 class="text-xl font-bold text-gray-800 mb-2" th:text="${item.productName}"></h3>
+                        <p class="text-lg font-semibold text-red-600 mb-3"
+                           th:text="${#numbers.formatDecimal(item.price, 0, 'COMMA', 0, 'POINT')} + '៛'"></p>
+
+                        <div class="flex flex-col sm:flex-row sm:items-center gap-4">
+                            <form th:action="@{/cart/items/{id}/quantity(id=${item.id})}" method="post"
+                                  class="flex items-center border-2 border-gray-200 rounded-lg overflow-hidden">
+                                <button type="submit" name="action" value="decrease"
+                                        class="px-3 py-1 hover:bg-gray-100 transition-colors"
+                                        th:disabled="${item.quantity <= 1}">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"></path>
+                                    </svg>
+                                </button>
+                                <span class="px-4 py-1 font-semibold" th:text="${item.quantity}"></span>
+                                <button type="submit" name="action" value="increase"
+                                        class="px-3 py-1 hover:bg-gray-100 transition-colors">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                                    </svg>
+                                </button>
+                            </form>
+
+                            <form th:action="@{/cart/items/{id}/remove(id=${item.id})}" method="post"
+                                  onsubmit="return confirm('Are you sure you want to remove this item?');">
+                                <button type="submit" class="text-red-600 hover:text-red-700 transition-colors">
                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
                                     </svg>
                                 </button>
-                            </div>
-                        </div>
-                        
-                        <div class="text-right">
-                            <p class="text-xl font-bold text-gray-800" x-text="formatPrice(item.price * item.quantity)"></p>
+                            </form>
                         </div>
                     </div>
-                </template>
+
+                    <div class="text-right">
+                        <p class="text-xl font-bold text-gray-800"
+                           th:text="${#numbers.formatDecimal(item.subtotal, 0, 'COMMA', 0, 'POINT')} + '៛'"></p>
+                    </div>
+                </div>
             </div>
 
-            <!-- Order Summary -->
             <div class="lg:col-span-1">
                 <div class="bg-white rounded-xl shadow-md p-6 sticky top-24">
                     <h2 class="text-2xl font-bold text-gray-800 mb-6">Order Summary</h2>
-                    
+
                     <div class="space-y-3 mb-6">
                         <div class="flex justify-between text-gray-600">
                             <span>Subtotal</span>
-                            <span x-text="formatPrice(subtotal)" class="font-medium"></span>
+                            <span class="font-medium"
+                                  th:text="${#numbers.formatDecimal(cart.subtotal, 0, 'COMMA', 0, 'POINT')} + '៛'"></span>
+                        </div>
+                        <div class="flex justify-between text-gray-600">
+                            <span>VAT</span>
+                            <span class="font-medium"
+                                  th:text="${#numbers.formatDecimal(cart.vat, 0, 'COMMA', 0, 'POINT')} + '៛'"></span>
                         </div>
                         <div class="flex justify-between text-gray-600">
                             <span>Delivery Fee</span>
-                            <span x-text="formatPrice(deliveryFee)" class="font-medium"></span>
+                            <span class="font-medium"
+                                  th:text="${#numbers.formatDecimal(cart.deliveryFee, 0, 'COMMA', 0, 'POINT')} + '៛'"></span>
                         </div>
                         <div class="border-t pt-3 flex justify-between text-lg font-bold text-gray-800">
                             <span>Total</span>
-                            <span x-text="formatPrice(total)" class="text-red-600"></span>
+                            <span class="text-red-600"
+                                  th:text="${#numbers.formatDecimal(cart.total, 0, 'COMMA', 0, 'POINT')} + '៛'"></span>
                         </div>
                     </div>
-                    
-                    <button @click="checkout" class="w-full bg-red-600 text-white font-medium py-3 rounded-lg hover:bg-red-700 transition-colors mb-3">
+
+                    <button onclick="window.location.href='/checkout'"
+                            class="w-full bg-red-600 text-white font-medium py-3 rounded-lg hover:bg-red-700 transition-colors mb-3">
                         Proceed to Checkout
                     </button>
-                    
-                    <button onclick="window.location.href='/menu'" class="w-full bg-gray-100 text-gray-700 font-medium py-3 rounded-lg hover:bg-gray-200 transition-colors">
+
+                    <button onclick="window.location.href='/menu'"
+                            class="w-full bg-gray-100 text-gray-700 font-medium py-3 rounded-lg hover:bg-gray-200 transition-colors">
                         Continue Shopping
                     </button>
                 </div>
@@ -108,141 +146,5 @@
     <th:block th:replace="~{fragments/layout :: footer}"></th:block>
     <th:block th:replace="~{fragments/layout :: api-config}"></th:block>
     <th:block th:replace="~{fragments/layout :: auth-utils}"></th:block>
-
-    <script>
-        function cartApp() {
-            return {
-                cart: null,
-                cartItems: [],
-                deliveryFee: 0,
-                subtotal: 0,
-                total: 0,
-                
-                async init() {
-                    const token = localStorage.getItem('token');
-                    
-                    if (!token) {
-                        alert('Please login to view your cart');
-                        window.location.href = '/login';
-                        return;
-                    }
-                    
-                    await this.loadCart();
-                },
-                
-                async loadCart() {
-                    const token = localStorage.getItem('token');
-                    
-                    try {
-                        const response = await fetch(`${API_BASE_URL}/cart`, {
-                            headers: {
-                                'Authorization': `Bearer ${token}`
-                            }
-                        });
-                        
-                        const data = await response.json();
-                        
-                        if (response.ok && data.success && data.data) {
-                            this.cart = data.data;
-                            this.cartItems = data.data.items.map(item => ({
-                                id: item.id,
-                                productId: item.productId,
-                                name: item.productName,
-                                imageUrl: item.productImageUrl,
-                                price: item.price,
-                                quantity: item.quantity
-                            }));
-                            this.subtotal = data.data.subtotal;
-                            this.deliveryFee = data.data.deliveryFee;
-                            this.total = data.data.total;
-                        }
-                    } catch (error) {
-                        console.error('Load cart error:', error);
-                    }
-                },
-                
-                async increaseQuantity(index) {
-                    const item = this.cartItems[index];
-                    if (item.quantity < 99) {
-                        await this.updateQuantity(item.id, item.quantity + 1);
-                    }
-                },
-                
-                async decreaseQuantity(index) {
-                    const item = this.cartItems[index];
-                    if (item.quantity > 1) {
-                        await this.updateQuantity(item.id, item.quantity - 1);
-                    }
-                },
-                
-                async updateQuantity(cartItemId, newQuantity) {
-                    const token = localStorage.getItem('token');
-                    
-                    try {
-                        const response = await fetch(`${API_BASE_URL}/cart/items/${cartItemId}`, {
-                            method: 'PUT',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'Authorization': `Bearer ${token}`
-                            },
-                            body: JSON.stringify({ quantity: newQuantity })
-                        });
-                        
-                        if (response.ok) {
-                            await this.loadCart();
-                            if (typeof updateCartBadge === 'function') {
-                                updateCartBadge();
-                            }
-                        }
-                    } catch (error) {
-                        console.error('Update quantity error:', error);
-                    }
-                },
-                
-                async removeItem(index) {
-                    if (!confirm('Are you sure you want to remove this item?')) {
-                        return;
-                    }
-                    
-                    const item = this.cartItems[index];
-                    const token = localStorage.getItem('token');
-                    
-                    try {
-                        const response = await fetch(`${API_BASE_URL}/cart/items/${item.id}`, {
-                            method: 'DELETE',
-                            headers: {
-                                'Authorization': `Bearer ${token}`
-                            }
-                        });
-                        
-                        if (response.ok) {
-                            await this.loadCart();
-                            if (typeof updateCartBadge === 'function') {
-                                updateCartBadge();
-                            }
-                        }
-                    } catch (error) {
-                        console.error('Remove item error:', error);
-                    }
-                },
-                
-                formatPrice(price) {
-                    if (typeof price === 'number') {
-                        return `${price.toLocaleString()}៛`;
-                    }
-                    return price;
-                },
-                
-                checkout() {
-                    if (this.cartItems.length === 0) {
-                        alert('Your cart is empty');
-                        return;
-                    }
-                    
-                    window.location.href = '/checkout';
-                }
-            }
-        }
-    </script>
 </body>
 </html>

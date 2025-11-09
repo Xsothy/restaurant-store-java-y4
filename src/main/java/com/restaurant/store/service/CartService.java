@@ -115,8 +115,54 @@ public class CartService {
                 .orElseThrow(() -> new ResourceNotFoundException("Customer not found"));
         Cart cart = cartRepository.findByCustomerId(customer.getId())
                 .orElseGet(() -> createNewCart(customer));
-        
+
         return getCartResponse(cart.getId());
+    }
+
+    @Transactional
+    public CartResponse incrementCartItemForCustomer(Long cartItemId, Long customerId) {
+        return updateCartItemQuantityForCustomer(cartItemId, customerId, 1);
+    }
+
+    @Transactional
+    public CartResponse decrementCartItemForCustomer(Long cartItemId, Long customerId) {
+        return updateCartItemQuantityForCustomer(cartItemId, customerId, -1);
+    }
+
+    @Transactional
+    public CartResponse removeCartItemForCustomer(Long cartItemId, Long customerId) {
+        CartItem cartItem = getCartItemForCustomer(cartItemId, customerId);
+        Long cartId = cartItem.getCart().getId();
+        cartItemRepository.delete(cartItem);
+        return getCartResponse(cartId);
+    }
+
+    private CartResponse updateCartItemQuantityForCustomer(Long cartItemId, Long customerId, int delta) {
+        CartItem cartItem = getCartItemForCustomer(cartItemId, customerId);
+
+        int newQuantity = cartItem.getQuantity() + delta;
+        if (newQuantity < 1) {
+            throw new BadRequestException("Quantity must be at least 1");
+        }
+
+        cartItem.setQuantity(newQuantity);
+        cartItemRepository.save(cartItem);
+
+        return getCartResponse(cartItem.getCart().getId());
+    }
+
+    private CartItem getCartItemForCustomer(Long cartItemId, Long customerId) {
+        Customer customer = customerRepository.findById(customerId)
+                .orElseThrow(() -> new ResourceNotFoundException("Customer not found"));
+
+        CartItem cartItem = cartItemRepository.findById(cartItemId)
+                .orElseThrow(() -> new ResourceNotFoundException("Cart item not found"));
+
+        if (!cartItem.getCart().getCustomer().getId().equals(customer.getId())) {
+            throw new BadRequestException("Cart item does not belong to current customer");
+        }
+
+        return cartItem;
     }
     
     @Transactional
