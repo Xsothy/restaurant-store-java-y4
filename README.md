@@ -15,7 +15,7 @@ This API provides endpoints for:
 ## Technology Stack
 
 - **Backend**: Spring Boot 3.2.0
-- **Database**: SQLite (for development)
+- **Database**: PostgreSQL (local development)
 - **ORM**: Spring Data JPA with Hibernate
 - **Authentication**: JWT (JSON Web Tokens)
 - **Validation**: Bean Validation (Jakarta)
@@ -102,7 +102,6 @@ src/
 
 4. **Access the API**
    - Base URL: `http://localhost:8080/api`
-   - Database file: `restaurant_store.db` (created automatically)
 
 ### Sample Data
 
@@ -114,10 +113,14 @@ The application includes sample data with:
 
 ### Database Configuration
 
-The application uses SQLite for development with the following configuration:
-- Database file: `restaurant_store.db`
-- DDL mode: `create-drop` (recreates schema on startup)
-- Show SQL: Enabled for debugging
+The default profile connects to a local PostgreSQL instance using the following datasource settings:
+- **URL**: `jdbc:postgresql://localhost:5432/restaurant`
+- **Driver**: `org.postgresql.Driver`
+- **Credentials**: `postgres` / `0954`
+- **Schema Management**: `spring.jpa.hibernate.ddl-auto=update` (incremental schema updates)
+- **SQL Logging**: `spring.jpa.show-sql=true`
+
+For automated tests we activate the `test` profile, which swaps the datasource for an in-memory H2 database (`jdbc:h2:mem:testdb`) with `create-drop` schema management to keep tests isolated from the PostgreSQL instance.
 
 ## Development Notes
 

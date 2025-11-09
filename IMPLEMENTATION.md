@@ -150,7 +150,7 @@ All controllers have been updated to use their respective services:
 
 ### application.properties
 Already configured with:
-- SQLite database
+- PostgreSQL datasource (`jdbc:postgresql://localhost:5432/restaurant`)
 - JPA settings
 - JWT secret and expiration (24 hours)
 - Logging levels
@@ -158,7 +158,7 @@ Already configured with:
 ### pom.xml
 All dependencies already present:
 - Spring Boot Web, Data JPA, Security, Validation
-- SQLite JDBC driver
+- PostgreSQL JDBC driver
 - JWT (jjwt) libraries
 - BCrypt (included in Spring Security)
 
@@ -208,7 +208,7 @@ Error responses:
 
 4. **Access the API:**
    - Base URL: `http://localhost:8080/api`
-   - Database: `restaurant_store.db` (auto-created)
+   - Ensure a local PostgreSQL instance is running with the credentials configured in `application.properties`
 
 ## Testing the API
 
@@ -292,7 +292,7 @@ Authorization: Bearer <your-jwt-token>
 3. **Email Notifications**: Not implemented
 4. **Rate Limiting**: No API rate limiting implemented
 5. **Audit Logging**: No comprehensive audit trail
-6. **Database**: SQLite suitable for development only, use PostgreSQL/MySQL for production
+6. **Database**: Requires a running PostgreSQL instance; production deployments should harden credentials and connection settings
 
 ## Conclusion
 

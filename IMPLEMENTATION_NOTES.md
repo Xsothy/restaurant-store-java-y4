@@ -153,7 +153,7 @@ All pages use:
 ## Technology Stack
 
 - **Backend**: Spring Boot 3.2, Spring Security, Spring Data JPA
-- **Database**: SQLite
+- **Database**: PostgreSQL (local development)
 - **Authentication**: JWT (JSON Web Tokens)
 - **Template Engine**: Thymeleaf
 - **Frontend**: Tailwind CSS, Vanilla JavaScript
@@ -165,6 +165,6 @@ All pages use:
 
 - Static resources are served from `src/main/resources/static/`
 - Thymeleaf templates are in `src/main/resources/templates/`
-- Database file: `restaurant_store.db` (created on first run)
-- Database schema: `create-drop` mode (resets on restart)
+- Datasource: `jdbc:postgresql://localhost:5432/restaurant`
+- Database schema: `spring.jpa.hibernate.ddl-auto=update`
 - Sample data loaded from `src/main/resources/data.sql`
