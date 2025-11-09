@@ -14,13 +14,17 @@ import reactor.core.publisher.Mono;
 import java.util.Collections;
 import java.util.List;
 
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+
 @Service
+@ConditionalOnProperty(name = "admin.api.stub.enabled", havingValue = "false", matchIfMissing = true)
 @RequiredArgsConstructor
 @Slf4j
-public class AdminApiClient {
+public class AdminApiClient implements AdminIntegrationService {
 
     private final WebClient adminWebClient;
 
+    @Override
     public List<AdminCategoryDto> fetchCategories() {
         try {
             log.info("Fetching categories from Admin API");
@@ -46,6 +50,7 @@ public class AdminApiClient {
         }
     }
 
+    @Override
     public List<AdminProductDto> fetchProducts() {
         try {
             log.info("Fetching products from Admin API");
@@ -71,6 +76,7 @@ public class AdminApiClient {
         }
     }
 
+    @Override
     public void syncOrderToAdmin(Long orderId) {
         try {
             log.info("Syncing order {} to Admin API", orderId);

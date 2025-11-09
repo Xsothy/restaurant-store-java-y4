@@ -8,7 +8,7 @@ import com.restaurant.store.dto.response.OrderResponse;
 import com.restaurant.store.entity.*;
 import com.restaurant.store.exception.BadRequestException;
 import com.restaurant.store.exception.ResourceNotFoundException;
-import com.restaurant.store.integration.AdminApiClient;
+import com.restaurant.store.integration.AdminIntegrationService;
 import com.restaurant.store.mapper.OrderMapper;
 import com.restaurant.store.repository.*;
 import com.restaurant.store.security.JwtUtil;
@@ -41,7 +41,7 @@ public class OrderService {
     private final JwtUtil jwtUtil;
     private final OrderMapper orderMapper;
     private final PaymentIntentService paymentIntentService;
-    private final AdminApiClient adminApiClient;
+    private final AdminIntegrationService adminIntegrationService;
     private final CartService cartService;
     private final OrderStatusWebSocketController orderStatusWebSocketController;
 
@@ -108,7 +108,7 @@ public class OrderService {
         // Sync order to Admin backend
         try {
             log.info("Syncing order {} to Admin backend", order.getId());
-            adminApiClient.syncOrderToAdmin(order.getId());
+            adminIntegrationService.syncOrderToAdmin(order.getId());
         } catch (Exception e) {
             log.error("Failed to sync order to Admin backend", e);
         }
