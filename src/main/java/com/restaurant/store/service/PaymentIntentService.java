@@ -55,13 +55,18 @@ public class PaymentIntentService implements PaymentService {
 
         PaymentIntent paymentIntent = PaymentIntent.create(params);
 
-        Payment payment = new Payment();
+        Payment payment = paymentRepository.findByOrderIdAndStatus(order.getId(), PaymentStatus.PENDING)
+                .orElse(new Payment());
+
         payment.setOrder(order);
         payment.setAmount(order.getTotalPrice());
         payment.setMethod(PaymentMethod.STRIPE);
         payment.setStatus(PaymentStatus.PENDING);
         payment.setTransactionId(paymentIntent.getId());
-        payment.setCreatedAt(LocalDateTime.now());
+        if (payment.getCreatedAt() == null) {
+            payment.setCreatedAt(LocalDateTime.now());
+        }
+        payment.setUpdatedAt(LocalDateTime.now());
 
         paymentRepository.save(payment);
 
@@ -87,6 +92,7 @@ public class PaymentIntentService implements PaymentService {
         if ("succeeded".equals(paymentIntent.getStatus())) {
             payment.setStatus(PaymentStatus.COMPLETED);
             payment.setPaidAt(LocalDateTime.now());
+            payment.setUpdatedAt(LocalDateTime.now());
             paymentRepository.save(payment);
             log.info("Payment confirmed successfully: {}", paymentId);
         } else {
@@ -105,6 +111,7 @@ public class PaymentIntentService implements PaymentService {
                 .orElseThrow(() -> new RuntimeException("Payment not found for intent: " + paymentId));
 
         payment.setStatus(PaymentStatus.FAILED);
+        payment.setUpdatedAt(LocalDateTime.now());
         paymentRepository.save(payment);
         log.info("Payment intent marked as failed: {}", paymentId);
     }

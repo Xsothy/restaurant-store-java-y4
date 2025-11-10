@@ -78,13 +78,18 @@ public class PaymentSessionService implements PaymentService {
 
         Session session = Session.create(params);
 
-        Payment payment = new Payment();
+        Payment payment = paymentRepository.findByOrderIdAndStatus(order.getId(), PaymentStatus.PENDING)
+                .orElse(new Payment());
+
         payment.setOrder(order);
         payment.setAmount(order.getTotalPrice());
         payment.setMethod(PaymentMethod.STRIPE);
         payment.setStatus(PaymentStatus.PENDING);
         payment.setTransactionId(session.getId());
-        payment.setCreatedAt(LocalDateTime.now());
+        if (payment.getCreatedAt() == null) {
+            payment.setCreatedAt(LocalDateTime.now());
+        }
+        payment.setUpdatedAt(LocalDateTime.now());
 
         paymentRepository.save(payment);
 
@@ -112,6 +117,7 @@ public class PaymentSessionService implements PaymentService {
         if ("complete".equals(session.getStatus()) && "paid".equals(session.getPaymentStatus())) {
             payment.setStatus(PaymentStatus.COMPLETED);
             payment.setPaidAt(LocalDateTime.now());
+            payment.setUpdatedAt(LocalDateTime.now());
             paymentRepository.save(payment);
             log.info("Payment session confirmed successfully: {}", paymentId);
         } else {
@@ -130,6 +136,7 @@ public class PaymentSessionService implements PaymentService {
                 .orElseThrow(() -> new RuntimeException("Payment not found for session: " + paymentId));
 
         payment.setStatus(PaymentStatus.FAILED);
+        payment.setUpdatedAt(LocalDateTime.now());
         paymentRepository.save(payment);
         log.info("Payment session marked as failed: {}", paymentId);
     }

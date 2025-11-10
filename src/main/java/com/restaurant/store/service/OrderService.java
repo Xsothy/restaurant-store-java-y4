@@ -193,16 +193,17 @@ public class OrderService {
         }
 
         // For non-Stripe payments (e.g., Cash on Delivery)
-        if (request.getPaymentMethod() != PaymentMethod.STRIPE && 
+        if (request.getPaymentMethod() != PaymentMethod.STRIPE &&
             request.getPaymentMethod() != PaymentMethod.CREDIT_CARD &&
             request.getPaymentMethod() != PaymentMethod.DEBIT_CARD) {
             Payment payment = new Payment();
             payment.setOrder(order);
             payment.setAmount(order.getTotalPrice());
             payment.setMethod(request.getPaymentMethod());
-            payment.setStatus(PaymentStatus.COMPLETED);
-            payment.setTransactionId(UUID.randomUUID().toString());
-            payment.setPaidAt(LocalDateTime.now());
+            payment.setStatus(PaymentStatus.PENDING);
+            payment.setTransactionId("COD-" + UUID.randomUUID());
+            payment.setPaidAt(null);
+            payment.setUpdatedAt(LocalDateTime.now());
             paymentRepository.save(payment);
 
             order.setStatus(OrderStatus.CONFIRMED);
