@@ -9,6 +9,7 @@ import com.restaurant.store.repository.CustomerRepository;
 import com.restaurant.store.repository.OrderRepository;
 import com.restaurant.store.security.JwtUtil;
 import com.restaurant.store.service.PaymentService;
+import com.stripe.exception.StripeException;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -64,8 +65,8 @@ public class WebPaymentController {
             log.info("Payment created for order {} using service type: {}", orderId, paymentService.getServiceType());
             
             return ResponseEntity.ok(result);
-        } catch (Exception e) {
-            log.error("Error creating payment for order {}", orderId, e);
+        } catch (StripeException e) {
+            log.error("Stripe error creating payment for order {}", orderId, e);
             throw new BadRequestException("Failed to create payment: " + e.getMessage());
         }
     }

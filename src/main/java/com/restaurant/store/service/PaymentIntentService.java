@@ -5,6 +5,7 @@ import com.restaurant.store.entity.Order;
 import com.restaurant.store.entity.Payment;
 import com.restaurant.store.entity.PaymentMethod;
 import com.restaurant.store.entity.PaymentStatus;
+import com.restaurant.store.exception.ResourceNotFoundException;
 import com.restaurant.store.repository.PaymentRepository;
 import com.stripe.Stripe;
 import com.stripe.exception.StripeException;
@@ -82,7 +83,7 @@ public class PaymentIntentService implements PaymentService {
         PaymentIntent paymentIntent = PaymentIntent.retrieve(paymentId);
 
         Payment payment = paymentRepository.findByTransactionId(paymentId)
-                .orElseThrow(() -> new RuntimeException("Payment not found for intent: " + paymentId));
+                .orElseThrow(() -> new ResourceNotFoundException("Payment not found for intent: " + paymentId));
 
         if ("succeeded".equals(paymentIntent.getStatus())) {
             payment.setStatus(PaymentStatus.COMPLETED);
@@ -102,7 +103,7 @@ public class PaymentIntentService implements PaymentService {
         PaymentIntent paymentIntent = PaymentIntent.retrieve(paymentId);
 
         Payment payment = paymentRepository.findByTransactionId(paymentId)
-                .orElseThrow(() -> new RuntimeException("Payment not found for intent: " + paymentId));
+                .orElseThrow(() -> new ResourceNotFoundException("Payment not found for intent: " + paymentId));
 
         payment.setStatus(PaymentStatus.FAILED);
         paymentRepository.save(payment);

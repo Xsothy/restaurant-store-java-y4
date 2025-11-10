@@ -2,6 +2,9 @@ package com.restaurant.store.controller.web;
 
 import com.restaurant.store.dto.response.CartResponse;
 import com.restaurant.store.entity.Customer;
+import com.restaurant.store.exception.BadRequestException;
+import com.restaurant.store.exception.ResourceNotFoundException;
+import com.restaurant.store.exception.UnauthorizedException;
 import com.restaurant.store.security.AuthHelper;
 import com.restaurant.store.service.CartService;
 import lombok.RequiredArgsConstructor;
@@ -31,19 +34,21 @@ public class CartWebController {
      * Display shopping cart page.
      */
     @GetMapping
-    public String cart(Model model) {
+    public String cart(Model model, RedirectAttributes redirectAttributes) {
         try {
-            // Get authenticated customer using AuthHelper
             Customer customer = authHelper.user();
-
-            // Get customer's cart
             CartResponse cart = cartService.getCartByCustomerId(customer.getId());
             model.addAttribute("cart", cart);
 
             return "cart";
-        } catch (Exception e) {
-            log.warn("Failed to load cart: {}", e.getMessage());
+        } catch (UnauthorizedException ex) {
+            log.debug("Unauthorized cart access: {}", ex.getMessage());
+            redirectAttributes.addFlashAttribute("errorMessage", "Please login to view your cart");
             return "redirect:/login";
+        } catch (ResourceNotFoundException ex) {
+            log.warn("Cart resources missing: {}", ex.getMessage());
+            redirectAttributes.addFlashAttribute("cartError", ex.getMessage());
+            return "redirect:/menu";
         }
     }
 
@@ -61,9 +66,13 @@ public class CartWebController {
             } else {
                 redirectAttributes.addFlashAttribute("cartError", "Unsupported cart action");
             }
-        } catch (Exception e) {
-            log.warn("Unable to update cart item {}: {}", cartItemId, e.getMessage());
-            redirectAttributes.addFlashAttribute("cartError", e.getMessage());
+        } catch (UnauthorizedException ex) {
+            log.debug("Unauthorized cart update attempt: {}", ex.getMessage());
+            redirectAttributes.addFlashAttribute("errorMessage", "Please login to manage your cart");
+            return "redirect:/login";
+        } catch (BadRequestException | ResourceNotFoundException ex) {
+            log.warn("Unable to update cart item {}: {}", cartItemId, ex.getMessage());
+            redirectAttributes.addFlashAttribute("cartError", ex.getMessage());
         }
 
         return "redirect:/cart";
@@ -75,9 +84,13 @@ public class CartWebController {
             Customer customer = authHelper.user();
             cartService.removeCartItemForCustomer(cartItemId, customer.getId());
             redirectAttributes.addFlashAttribute("cartMessage", "Item removed from cart");
-        } catch (Exception e) {
-            log.warn("Unable to remove cart item {}: {}", cartItemId, e.getMessage());
-            redirectAttributes.addFlashAttribute("cartError", e.getMessage());
+        } catch (UnauthorizedException ex) {
+            log.debug("Unauthorized cart item removal attempt: {}", ex.getMessage());
+            redirectAttributes.addFlashAttribute("errorMessage", "Please login to manage your cart");
+            return "redirect:/login";
+        } catch (ResourceNotFoundException | BadRequestException ex) {
+            log.warn("Unable to remove cart item {}: {}", cartItemId, ex.getMessage());
+            redirectAttributes.addFlashAttribute("cartError", ex.getMessage());
         }
 
         return "redirect:/cart";
