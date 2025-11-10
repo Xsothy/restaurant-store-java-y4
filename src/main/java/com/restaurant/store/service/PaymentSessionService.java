@@ -5,6 +5,7 @@ import com.restaurant.store.entity.Order;
 import com.restaurant.store.entity.Payment;
 import com.restaurant.store.entity.PaymentMethod;
 import com.restaurant.store.entity.PaymentStatus;
+import com.restaurant.store.exception.ResourceNotFoundException;
 import com.restaurant.store.repository.PaymentRepository;
 import com.stripe.Stripe;
 import com.stripe.exception.StripeException;
@@ -107,7 +108,7 @@ public class PaymentSessionService implements PaymentService {
         Session session = Session.retrieve(paymentId);
 
         Payment payment = paymentRepository.findByTransactionId(paymentId)
-                .orElseThrow(() -> new RuntimeException("Payment not found for session: " + paymentId));
+                .orElseThrow(() -> new ResourceNotFoundException("Payment not found for session: " + paymentId));
 
         if ("complete".equals(session.getStatus()) && "paid".equals(session.getPaymentStatus())) {
             payment.setStatus(PaymentStatus.COMPLETED);
@@ -127,7 +128,7 @@ public class PaymentSessionService implements PaymentService {
         Session session = Session.retrieve(paymentId);
 
         Payment payment = paymentRepository.findByTransactionId(paymentId)
-                .orElseThrow(() -> new RuntimeException("Payment not found for session: " + paymentId));
+                .orElseThrow(() -> new ResourceNotFoundException("Payment not found for session: " + paymentId));
 
         payment.setStatus(PaymentStatus.FAILED);
         paymentRepository.save(payment);

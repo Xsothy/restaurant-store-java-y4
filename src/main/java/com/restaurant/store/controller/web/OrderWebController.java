@@ -2,6 +2,9 @@ package com.restaurant.store.controller.web;
 
 import com.restaurant.store.dto.response.OrderResponse;
 import com.restaurant.store.entity.Customer;
+import com.restaurant.store.exception.BadRequestException;
+import com.restaurant.store.exception.ResourceNotFoundException;
+import com.restaurant.store.exception.UnauthorizedException;
 import com.restaurant.store.security.AuthHelper;
 import com.restaurant.store.service.OrderService;
 import lombok.RequiredArgsConstructor;
@@ -34,17 +37,14 @@ public class OrderWebController {
     @GetMapping
     public String orders(Model model, RedirectAttributes redirectAttributes) {
         try {
-            // Get authenticated customer using AuthHelper
             Customer customer = authHelper.user();
-
-            // Get customer orders
             List<OrderResponse> orders = orderService.getOrdersForCustomer(customer.getId());
             model.addAttribute("orders", orders);
 
             return "orders";
-        } catch (Exception e) {
-            log.warn("Failed to load orders: {}", e.getMessage());
-            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+        } catch (UnauthorizedException ex) {
+            log.debug("Unauthorized orders access: {}", ex.getMessage());
+            redirectAttributes.addFlashAttribute("errorMessage", "Please login to view your orders");
             return "redirect:/login";
         }
     }
@@ -55,25 +55,26 @@ public class OrderWebController {
     @GetMapping("/{orderId}")
     public String orderDetails(@PathVariable Long orderId, Model model, RedirectAttributes redirectAttributes) {
         try {
-            // Get authenticated customer using AuthHelper
             Customer customer = authHelper.user();
-
-            // Get order details
             OrderResponse order = orderService.getOrderForCustomer(orderId, customer.getId());
 
-            // Verify order belongs to customer
             if (!order.getCustomerId().equals(customer.getId())) {
                 log.warn("Customer {} attempted to access order {} belonging to another customer",
                         customer.getId(), orderId);
+                redirectAttributes.addFlashAttribute("errorMessage", "You cannot view this order");
                 return "redirect:/orders";
             }
 
             model.addAttribute("order", order);
             return "order-details";
-        } catch (Exception e) {
-            log.warn("Failed to load order details: {}", e.getMessage());
-            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+        } catch (UnauthorizedException ex) {
+            log.debug("Unauthorized order details access: {}", ex.getMessage());
+            redirectAttributes.addFlashAttribute("errorMessage", "Please login to view your orders");
             return "redirect:/login";
+        } catch (ResourceNotFoundException ex) {
+            log.warn("Order {} not found for customer: {}", orderId, ex.getMessage());
+            redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());
+            return "redirect:/orders";
         }
     }
 
@@ -84,9 +85,13 @@ public class OrderWebController {
             orderService.cancelOrderForCustomer(orderId, customer.getId());
             redirectAttributes.addFlashAttribute("successMessage", "Order cancelled successfully");
             return "redirect:/orders/" + orderId;
-        } catch (Exception e) {
-            log.warn("Failed to cancel order {}: {}", orderId, e.getMessage());
-            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+        } catch (UnauthorizedException ex) {
+            log.debug("Unauthorized order cancellation attempt: {}", ex.getMessage());
+            redirectAttributes.addFlashAttribute("errorMessage", "Please login to manage your orders");
+            return "redirect:/login";
+        } catch (BadRequestException | ResourceNotFoundException ex) {
+            log.warn("Failed to cancel order {}: {}", orderId, ex.getMessage());
+            redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());
             return "redirect:/orders/" + orderId;
         }
     }
