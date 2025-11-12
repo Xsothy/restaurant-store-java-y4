@@ -55,8 +55,21 @@ public class PaymentIntentService implements PaymentService {
 
         PaymentIntent paymentIntent = PaymentIntent.create(params);
 
-        Payment payment = paymentRepository.findByOrderIdAndStatus(order.getId(), PaymentStatus.PENDING)
-                .orElse(new Payment());
+        Payment payment = paymentRepository
+                .findFirstByOrderIdAndMethodAndStatusOrderByUpdatedAtDesc(
+                        order.getId(),
+                        PaymentMethod.STRIPE,
+                        PaymentStatus.PENDING
+                )
+                .orElseGet(() -> {
+                    Payment newPayment = new Payment();
+                    newPayment.setOrder(order);
+                    newPayment.setAmount(order.getTotalPrice());
+                    newPayment.setMethod(PaymentMethod.STRIPE);
+                    newPayment.setStatus(PaymentStatus.PENDING);
+                    newPayment.setCreatedAt(LocalDateTime.now());
+                    return newPayment;
+                });
 
         payment.setOrder(order);
         payment.setAmount(order.getTotalPrice());

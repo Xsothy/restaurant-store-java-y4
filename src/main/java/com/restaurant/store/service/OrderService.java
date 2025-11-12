@@ -196,12 +196,24 @@ public class OrderService {
         if (request.getPaymentMethod() != PaymentMethod.STRIPE &&
             request.getPaymentMethod() != PaymentMethod.CREDIT_CARD &&
             request.getPaymentMethod() != PaymentMethod.DEBIT_CARD) {
-            Payment payment = new Payment();
+            Payment payment = paymentRepository
+                    .findFirstByOrderIdAndMethodAndStatusOrderByUpdatedAtDesc(
+                            order.getId(),
+                            request.getPaymentMethod(),
+                            PaymentStatus.PENDING
+                    )
+                    .orElseGet(Payment::new);
+
             payment.setOrder(order);
             payment.setAmount(order.getTotalPrice());
             payment.setMethod(request.getPaymentMethod());
             payment.setStatus(PaymentStatus.PENDING);
-            payment.setTransactionId("COD-" + UUID.randomUUID());
+            if (payment.getTransactionId() == null) {
+                payment.setTransactionId(request.getPaymentMethod().name() + "-" + UUID.randomUUID());
+            }
+            if (payment.getCreatedAt() == null) {
+                payment.setCreatedAt(LocalDateTime.now());
+            }
             payment.setPaidAt(null);
             payment.setUpdatedAt(LocalDateTime.now());
             paymentRepository.save(payment);
