@@ -168,10 +168,6 @@ public class OrderService {
             throw new BadRequestException("Order already delivered and paid");
         }
 
-        if (!"intent".equalsIgnoreCase(paymentService.getServiceType())) {
-            throw new BadRequestException("Payment intent flow is disabled for the current configuration");
-        }
-
         try {
             return paymentService.createPayment(order)
                     .toMap();
