@@ -6,12 +6,26 @@
         @import url('https://fonts.googleapis.com/css2?family=Kantumruy+Pro:wght@400;500;600;700&display=swap');
         body {
             font-family: 'Kantumruy Pro', sans-serif;
+            background: #f6f6f8;
+        }
+        .card-shell {
+            background: #ffffff;
+            border-radius: 24px;
+            border: 1px solid #f0f1f5;
+            box-shadow: 0 20px 45px rgba(15, 23, 42, 0.06);
+        }
+        .section-label {
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            font-weight: 600;
+            color: #9ca3af;
         }
         .status-badge {
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            padding: 0.5rem 1rem;
+            padding: 0.45rem 0.95rem;
             border-radius: 9999px;
             font-size: 0.75rem;
             font-weight: 600;
@@ -52,20 +66,21 @@
         .order-tracking-timeline {
             position: relative;
             padding-left: 2.5rem;
+            margin-top: 1.5rem;
         }
         .order-tracking-timeline::before {
             content: '';
             position: absolute;
             left: 0.95rem;
-            top: 0.25rem;
-            bottom: 0.25rem;
+            top: 0;
+            bottom: 0;
             width: 2px;
-            background: linear-gradient(180deg, rgba(191, 219, 254, 0.6), rgba(147, 197, 253, 0.8));
+            background: linear-gradient(180deg, rgba(226, 232, 240, 0.8), rgba(226, 232, 240, 0));
         }
         .tracking-step {
             position: relative;
             padding-left: 1.25rem;
-            padding-bottom: 1.5rem;
+            padding-bottom: 1.75rem;
         }
         .tracking-step:last-child {
             padding-bottom: 0;
@@ -74,157 +89,114 @@
             position: absolute;
             left: -0.95rem;
             top: 0;
-            width: 1.9rem;
-            height: 1.9rem;
+            width: 1.7rem;
+            height: 1.7rem;
             border-radius: 9999px;
-            border: 3px solid #bfdbfe;
+            border: 3px solid #dbeafe;
             background-color: #fff;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 0.75rem;
+            font-size: 0.65rem;
             font-weight: 700;
-            color: #1e3a8a;
+            color: #1e40af;
             transition: all 0.3s ease;
         }
         .tracking-step-upcoming .tracking-marker {
-            border-color: #e2e8f0;
+            border-color: #e5e7eb;
             color: #94a3b8;
         }
         .tracking-step-completed .tracking-marker {
-            border-color: #bbf7d0;
-            background-color: #bbf7d0;
-            color: #166534;
-            box-shadow: 0 10px 25px -15px rgba(22, 101, 52, 0.75);
+            border-color: #86efac;
+            background-color: #86efac;
+            color: #14532d;
+            box-shadow: 0 10px 25px -12px rgba(34, 197, 94, 0.7);
         }
         .tracking-step-active .tracking-marker {
             border-color: #3b82f6;
             background-color: #2563eb;
             color: #ffffff;
-            box-shadow: 0 10px 25px -12px rgba(37, 99, 235, 0.65);
+            box-shadow: 0 10px 25px -12px rgba(37, 99, 235, 0.6);
         }
         .tracking-step-cancelled .tracking-marker {
             border-color: #fecaca;
             background-color: #fecaca;
             color: #991b1b;
-            box-shadow: 0 10px 25px -15px rgba(185, 28, 28, 0.6);
+            box-shadow: 0 10px 25px -15px rgba(185, 28, 28, 0.5);
         }
         .tracking-connector {
             display: none;
         }
         @media (min-width: 768px) {
-            .order-tracking-wrapper {
-                padding-left: 1rem;
-                padding-right: 1rem;
-            }
             .order-tracking-timeline {
-                display: grid;
-                grid-template-columns: repeat(6, minmax(0, 1fr));
-                gap: 1.5rem;
-                padding-left: 0;
-                padding-top: 1rem;
-            }
-            .order-tracking-timeline::before {
-                display: none;
-            }
-            .tracking-step {
-                padding-left: 0;
-                padding-bottom: 0;
-                text-align: center;
-            }
-            .tracking-marker {
-                position: relative;
-                left: auto;
-                margin: 0 auto 0.75rem;
-            }
-            .tracking-connector {
-                position: absolute;
-                top: 1.05rem;
-                left: 50%;
-                right: -50%;
-                height: 2px;
-                background: linear-gradient(90deg, rgba(191, 219, 254, 0.6), rgba(147, 197, 253, 0.8));
-                z-index: -1;
-            }
-            .tracking-step:last-child .tracking-connector {
-                display: none;
-            }
-            .tracking-step-completed .tracking-connector {
-                background: linear-gradient(90deg, rgba(187, 247, 208, 0.8), rgba(74, 222, 128, 0.8));
-            }
-            .tracking-step-active .tracking-connector {
-                background: linear-gradient(90deg, rgba(59, 130, 246, 0.7), rgba(37, 99, 235, 0.7));
-            }
-            .tracking-step-cancelled .tracking-connector {
-                background: linear-gradient(90deg, rgba(252, 165, 165, 0.8), rgba(248, 113, 113, 0.8));
+                padding-left: 2.75rem;
             }
         }
     </style>
 </head>
-<body class="bg-gradient-to-br from-gray-50 to-gray-100 min-h-screen">
+<body class="min-h-screen">
     <th:block th:replace="~{fragments/layout :: header}"></th:block>
 
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 py-8" th:if="${order}">
-        <div class="mb-6" th:if="${successMessage}">
-            <div class="rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-green-700" th:text="${successMessage}"></div>
-        </div>
-        <div class="mb-6" th:if="${errorMessage}">
-            <div class="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700" th:text="${errorMessage}"></div>
+    <main class="max-w-3xl mx-auto px-4 sm:px-0 py-8" th:if="${order}">
+        <div class="mb-4 space-y-3">
+            <div class="rounded-2xl border border-green-200 bg-green-50 px-4 py-3 text-green-700" th:text="${successMessage}"
+                 th:if="${successMessage}"></div>
+            <div class="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-red-700" th:text="${errorMessage}"
+                 th:if="${errorMessage}"></div>
         </div>
 
-        <div class="bg-white rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300 overflow-hidden" th:attr="data-order-id=${order.id}">
-            <div class="p-6 border-b border-gray-100">
-                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div class="space-y-6" th:attr="data-order-id=${order.id}">
+            <div class="card-shell p-6">
+                <div class="flex items-start justify-between gap-6">
                     <div>
-                        <h1 class="text-2xl font-bold text-gray-900">Order Details</h1>
+                        <p class="section-label">Order</p>
+                        <h1 class="text-3xl font-semibold text-gray-900" th:text="${'Order #' + order.id}"></h1>
                         <p class="text-sm text-gray-500 mt-1">Placed on
-                            <span th:text="${#temporals.format(order.createdAt, 'MMM dd, yyyy HH:mm')}"></span>
+                            <span th:text="${#temporals.format(order.createdAt, 'MMM dd, yyyy • HH:mm')}"></span>
                         </p>
                     </div>
-                    <span class="status-badge" th:classappend="' status-' + ${order.status}" th:text="${order.status}"
-                          th:attr="data-status-badge=${order.id}"></span>
+                    <div class="text-right">
+                        <p class="section-label text-right">Total</p>
+                        <p class="text-2xl font-bold text-gray-900"
+                           th:text="${#numbers.formatDecimal(order.totalPrice, 0, 'COMMA', 0, 'POINT') + ' ៛'}"></p>
+                        <span class="status-badge mt-3 inline-flex" th:classappend="' status-' + ${order.status}"
+                              th:text="${order.status}" th:attr="data-status-badge=${order.id}"></span>
+                    </div>
                 </div>
-
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-600 mt-4">
+                <div class="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm text-gray-600">
                     <div>
-                        <span class="font-medium">Order ID:</span>
-                        <span th:text="${'#' + order.id}" class="ml-2"></span>
+                        <p class="text-gray-500">Order Type</p>
+                        <p class="font-semibold text-gray-900" th:text="${order.orderType}"></p>
                     </div>
                     <div>
-                        <span class="font-medium">Order Type:</span>
-                        <span th:text="${order.orderType}" class="ml-2"></span>
-                    </div>
-                    <div>
-                        <span class="font-medium">Total Amount:</span>
-                        <span th:text="${#numbers.formatDecimal(order.totalPrice, 0, 'COMMA', 0, 'POINT') + '៛'}"
-                              class="ml-2 font-bold text-lg text-red-600"></span>
+                        <p class="text-gray-500">Contact</p>
+                        <p class="font-semibold text-gray-900">
+                            <span th:text="${order.customerName}"></span>
+                            <span th:if="${order.phoneNumber != null}"> • <span th:text="${order.phoneNumber}"></span></span>
+                        </p>
                     </div>
                     <div th:if="${order.estimatedDeliveryTime != null}">
-                        <span class="font-medium">Estimated Delivery:</span>
-                        <span th:text="${#temporals.format(order.estimatedDeliveryTime, 'MMM dd, yyyy HH:mm')}"
-                              class="ml-2"></span>
+                        <p class="text-gray-500">ETA</p>
+                        <p class="font-semibold text-gray-900"
+                           th:text="${#temporals.format(order.estimatedDeliveryTime, 'MMM dd, yyyy • HH:mm')}"></p>
+                    </div>
+                    <div th:if="${order.deliveryAddress != null}">
+                        <p class="text-gray-500">Address</p>
+                        <p class="font-semibold text-gray-900" th:text="${order.deliveryAddress}"></p>
                     </div>
                 </div>
             </div>
 
-            <div class="p-6 border-b border-gray-100 order-tracking-wrapper"
-                 th:with="trackingStatuses=${T(java.util.Arrays).asList(
-                        T(com.restaurant.store.entity.OrderStatus).PENDING,
-                        T(com.restaurant.store.entity.OrderStatus).CONFIRMED,
-                        T(com.restaurant.store.entity.OrderStatus).PREPARING,
-                        T(com.restaurant.store.entity.OrderStatus).READY,
-                        T(com.restaurant.store.entity.OrderStatus).OUT_FOR_DELIVERY,
-                        T(com.restaurant.store.entity.OrderStatus).DELIVERED
-                 )},
-                 currentIndex=${trackingStatuses.contains(order.status) ? trackingStatuses.indexOf(order.status) : -1}">
-                <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-6">
+            <div class="card-shell p-6 order-tracking-wrapper">
+                <div class="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                     <div>
-                        <h2 class="text-lg font-semibold text-gray-900">Order Tracking</h2>
+                        <p class="section-label">Order Progress</p>
+                        <h2 class="text-xl font-semibold text-gray-900">Track your meal</h2>
                         <p class="text-sm text-gray-500"
                            th:attr="data-tracking-description=${order.id}"
                            th:text="${order.status == T(com.restaurant.store.entity.OrderStatus).CANCELLED
                                 ? 'This order was cancelled before completion.'
-                                : 'Follow your order from the kitchen to your door.'}"></p>
+                                : 'See what step comes next so you always know what to expect.'}"></p>
                     </div>
                     <div class="text-sm text-gray-500 flex items-center gap-2"
                          th:attr="data-order-updated-container=${order.id}"
@@ -232,11 +204,58 @@
                         <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                         </svg>
-                        <span>Last update</span>
+                        <span>Updated</span>
                         <span class="font-medium text-gray-700"
                               th:text="${order.updatedAt != null ? #temporals.format(order.updatedAt, 'MMM dd, yyyy HH:mm') : ''}"
                               th:attr="data-order-updated=${order.id}"></span>
                     </div>
+                </div>
+
+                <div class="bg-gray-50 rounded-2xl p-4 mt-4">
+                    <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                        <div>
+                        <p class="section-label">Progress</p>
+                        <p class="text-2xl font-semibold text-gray-900"
+                           th:attr="data-tracking-progress-label=${order.id}"
+                           th:text="${trackingIsCancelled
+                                    ? 'Order Cancelled'
+                                    : (trackingHasValidStatus
+                                        ? 'Step ' + trackingCompletedSteps + ' of ' + trackingStepCount
+                                        : 'Awaiting first update')}">Step 0 of 6</p>
+                        </div>
+                        <div class="text-left md:text-right">
+                        <p class="section-label">Next Step</p>
+                        <p class="text-sm font-semibold text-gray-800"
+                           th:classappend="${trackingIsCancelled} ? ' text-red-600' : ''"
+                           th:attr="data-tracking-next=${order.id}"
+                           th:text="${trackingIsCancelled
+                                    ? 'No further steps'
+                                    : (!trackingHasValidStatus
+                                       ? 'Next: ' + statusLabels[T(com.restaurant.store.entity.OrderStatus).PENDING]
+                                       : (trackingNextStep != null
+                                           ? 'Next: ' + statusLabels[trackingNextStep]
+                                           : 'All steps completed'))}">Next: Pending Confirmation</p>
+                        </div>
+                    </div>
+                    <div class="relative mt-4 h-1.5 bg-white rounded-full overflow-hidden">
+                        <div class="absolute inset-y-0 left-0 bg-gradient-to-r from-blue-400 via-blue-500 to-indigo-500 rounded-full transition-all duration-500"
+                             style="width: 0%;"
+                           th:styleappend="${'width: ' + #numbers.formatDecimal(trackingProgressPercent, 0, 'POINT', 0, 'POINT') + '%;'}"
+                             th:attr="data-tracking-progress=${order.id}"></div>
+                    </div>
+                    <p class="text-sm text-gray-600 mt-3"
+                       th:attr="data-tracking-remaining=${order.id}">
+                        <span th:if="${trackingIsCancelled}">This order was cancelled before completion.</span>
+                        <span th:if="${!trackingIsCancelled && !trackingHasValidStatus}">We will show the remaining steps once your order is confirmed.</span>
+                        <span th:if="${!trackingIsCancelled && trackingHasValidStatus && trackingCurrentIndex >= trackingStepCount - 1}">All steps are complete. Enjoy your meal!</span>
+                        <span th:if="${!trackingIsCancelled && trackingHasValidStatus && trackingCurrentIndex < trackingStepCount - 1}">
+                            Still to come:
+                            <span th:each="remainingStep, iter : ${trackingRemainingSteps}">
+                                <span th:text="${statusLabels[remainingStep]}"></span>
+                                <span th:if="${!iter.last}"> → </span>
+                            </span>
+                        </span>
+                    </p>
                 </div>
 
                 <div class="order-tracking-timeline"
@@ -246,131 +265,146 @@
                          th:class="${'tracking-step ' +
                                 (order.status == T(com.restaurant.store.entity.OrderStatus).CANCELLED
                                     ? (stepIndex == 0 ? 'tracking-step-cancelled' : 'tracking-step-upcoming')
-                                    : (currentIndex > stepIndex
+                                    : (trackingCurrentIndex > stepIndex
                                         ? 'tracking-step-completed'
-                                        : (currentIndex == stepIndex ? 'tracking-step-active' : 'tracking-step-upcoming')))}"
+                                        : (trackingCurrentIndex == stepIndex ? 'tracking-step-active' : 'tracking-step-upcoming')))}"
                          th:attr="data-tracking-step=${step.name()}">
                         <div class="tracking-marker" th:text="${stepIndex + 1}"></div>
                         <div class="tracking-connector" aria-hidden="true"></div>
                         <div class="space-y-1">
-                            <p class="font-semibold text-gray-800" th:text="${#strings.replace(step.name(), '_', ' ')}"></p>
+                            <p class="text-xs uppercase tracking-wide text-gray-400"
+                                th:text="${'Step ' + (stepIndex + 1) + ' of ' + trackingStepCount}"></p>
+                            <p class="font-semibold text-gray-800" th:text="${statusLabels[step]}"></p>
                             <p class="text-sm text-gray-500" th:switch="${step}">
-                                <span th:case="${T(com.restaurant.store.entity.OrderStatus).PENDING}">We've received your order and are awaiting confirmation.</span>
-                                <span th:case="${T(com.restaurant.store.entity.OrderStatus).CONFIRMED}">Your order has been confirmed by our team.</span>
-                                <span th:case="${T(com.restaurant.store.entity.OrderStatus).PREPARING}">Our chefs are preparing your dishes with care.</span>
-                                <span th:case="${T(com.restaurant.store.entity.OrderStatus).READY}">The order is ready for pickup and final checks.</span>
-                                <span th:case="${T(com.restaurant.store.entity.OrderStatus).OUT_FOR_DELIVERY}">Our driver has left the store with your order.</span>
-                                <span th:case="${T(com.restaurant.store.entity.OrderStatus).DELIVERED}">Enjoy your meal! The delivery has been completed.</span>
+                                <span th:case="${T(com.restaurant.store.entity.OrderStatus).PENDING}">We received your order.</span>
+                                <span th:case="${T(com.restaurant.store.entity.OrderStatus).CONFIRMED}">Restaurant confirmed the order.</span>
+                                <span th:case="${T(com.restaurant.store.entity.OrderStatus).PREPARING}">Chef is preparing your meal.</span>
+                                <span th:case="${T(com.restaurant.store.entity.OrderStatus).READY}">Order ready for pickup.</span>
+                                <span th:case="${T(com.restaurant.store.entity.OrderStatus).OUT_FOR_DELIVERY}">Rider is on the way.</span>
+                                <span th:case="${T(com.restaurant.store.entity.OrderStatus).DELIVERED}">Delivered. Enjoy!</span>
                                 <span th:case="*">Stay tuned for the next update.</span>
                             </p>
                         </div>
                     </div>
                 </div>
             </div>
+            <div class="grid gap-4 md:grid-cols-2">
+                <div class="card-shell p-5 space-y-2"
+                     th:if="${order.orderType == T(com.restaurant.store.entity.OrderType).DELIVERY}"
+                     th:attr="data-delivery-card=${order.id}">
+                    <p class="section-label">Delivery partner</p>
+                    <p class="text-lg font-semibold text-gray-900"
+                       th:text="${order.deliveryDriverName != null ? order.deliveryDriverName : 'Driver assigned soon'}"
+                       th:attr="data-delivery-driver=${order.id}"></p>
+                    <p class="text-sm text-gray-500">
+                        Contact:
+                        <span class="font-medium text-gray-900"
+                              th:text="${order.deliveryDriverPhone != null ? order.deliveryDriverPhone : 'Not available yet'}"
+                              th:attr="data-delivery-phone=${order.id}"></span>
+                    </p>
+                    <p class="text-sm text-gray-500">
+                        Status:
+                        <span class="font-medium text-gray-900"
+                              th:text="${order.deliveryStatus != null ? #strings.replace(order.deliveryStatus.name(), '_', ' ') : 'Pending'}"
+                              th:attr="data-delivery-status=${order.id}"></span>
+                    </p>
+                    <p class="text-sm text-gray-500" th:if="${order.deliveryEstimatedArrivalTime != null}">
+                        ETA: <span class="font-medium text-gray-900"
+                                    th:text="${#temporals.format(order.deliveryEstimatedArrivalTime, 'MMM dd, yyyy HH:mm')}"
+                                    th:attr="data-delivery-eta=${order.id}"></span>
+                    </p>
+                    <p class="text-sm text-gray-500" th:if="${order.deliveryActualDeliveryTime != null}">
+                        Delivered: <span class="font-medium text-gray-900"
+                                          th:text="${#temporals.format(order.deliveryActualDeliveryTime, 'MMM dd, yyyy HH:mm')}"></span>
+                    </p>
+                </div>
+                <div class="card-shell p-5 space-y-2">
+                    <p class="section-label">Delivery details</p>
+                    <p class="text-sm text-gray-500">Special instructions</p>
+                    <p class="text-base text-gray-900" th:text="${order.specialInstructions != null ? order.specialInstructions : 'No additional instructions'}"></p>
+                    <p class="text-sm text-gray-500" th:if="${order.deliveryAddress != null}">Address</p>
+                    <p class="text-base text-gray-900" th:if="${order.deliveryAddress != null}" th:text="${order.deliveryAddress}"></p>
+                </div>
+            </div>
 
-            <div class="p-6 border-b border-gray-100 grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div class="lg:col-span-2">
-                    <h2 class="text-lg font-semibold text-gray-900 mb-4">Order Items</h2>
-                    <div class="space-y-3" th:attr="data-items-container=${order.id}">
-                        <div th:each="item : ${order.orderItems}" class="flex items-center justify-between py-3 border-b border-gray-50 last:border-0">
-                            <div class="flex items-center gap-3">
-                                <img th:src="${item.productImageUrl != null ? item.productImageUrl : '/images/placeholder-food.jpg'}"
-                                     th:alt="${item.productName}"
-                                     class="w-12 h-12 rounded-lg object-cover"
-                                     onerror="this.src='/images/placeholder-food.jpg'" />
-                                <div>
-                                    <p th:text="${item.productName}" class="font-medium text-gray-900"></p>
-                                    <p class="text-sm text-gray-500">
-                                        Qty <span th:text="${item.quantity}"></span>
-                                        •
-                                        <span th:text="${#numbers.formatDecimal(item.unitPrice, 0, 'COMMA', 0, 'POINT') + '៛'}"></span>
-                                    </p>
-                                </div>
-                            </div>
-                            <div class="text-right">
-                                <p th:text="${#numbers.formatDecimal(item.totalPrice, 0, 'COMMA', 0, 'POINT') + '៛'}" class="font-medium text-gray-900"></p>
+            <div class="card-shell p-6">
+                <h2 class="text-lg font-semibold text-gray-900 mb-4">Order Items</h2>
+                <div class="space-y-3" th:attr="data-items-container=${order.id}">
+                    <div th:each="item : ${order.orderItems}" class="flex items-center justify-between py-3 border-b border-gray-100 last:border-0">
+                        <div class="flex items-center gap-3">
+                            <img th:src="${item.productImageUrl != null ? item.productImageUrl : '/images/placeholder-food.jpg'}"
+                                 th:alt="${item.productName}"
+                                 class="w-12 h-12 rounded-xl object-cover"
+                                 onerror="this.src='/images/placeholder-food.jpg'" />
+                            <div>
+                                <p th:text="${item.productName}" class="font-medium text-gray-900"></p>
+                                <p class="text-sm text-gray-500">
+                                    Qty <span th:text="${item.quantity}"></span>
+                                    •
+                                    <span th:text="${#numbers.formatDecimal(item.unitPrice, 0, 'COMMA', 0, 'POINT') + '៛'}"></span>
+                                </p>
                             </div>
                         </div>
-                    </div>
-                </div>
-
-                <div class="space-y-4">
-                    <div class="bg-gray-50 rounded-lg p-4">
-                        <h3 class="font-semibold text-gray-900 mb-3">Payment Summary</h3>
-                        <p class="text-sm text-gray-600">
-                            Method:
-                            <span class="font-medium"
-                                  th:text="${order.paymentMethod != null ? #strings.replace(order.paymentMethod.name(), '_', ' ') : 'N/A'}"
-                                  th:attr="data-payment-method=${order.id}"></span>
-                        </p>
-                        <p class="text-sm text-gray-600">
-                            Status:
-                            <span class="payment-badge"
-                                  th:classappend="${order.paymentStatus != null} ? ' payment-' + order.paymentStatus : ''"
-                                  th:text="${order.paymentStatus != null ? #strings.replace(order.paymentStatus.name(), '_', ' ') : 'N/A'}"
-                                  th:attr="data-payment-status=${order.id}"></span>
-                        </p>
-                        <p class="text-sm text-gray-600" th:if="${order.paymentPaidAt != null}">
-                            Paid on:
-                            <span class="font-medium"
-                                  th:text="${#temporals.format(order.paymentPaidAt, 'MMM dd, yyyy HH:mm')}"></span>
-                        </p>
-                        <p class="text-sm text-gray-600" th:if="${order.paymentTransactionId != null}">
-                            Transaction ID:
-                            <span class="font-medium" th:text="${order.paymentTransactionId}"></span>
-                        </p>
-                    </div>
-
-                    <div class="bg-blue-50 rounded-lg p-4"
-                         th:if="${order.orderType == T(com.restaurant.store.entity.OrderType).DELIVERY}"
-                         th:attr="data-delivery-card=${order.id}">
-                        <h3 class="font-semibold text-gray-900 mb-3">Delivery Status</h3>
-                        <p class="text-sm text-gray-600">
-                            Status:
-                            <span class="font-medium"
-                                  th:text="${order.deliveryStatus != null ? #strings.replace(order.deliveryStatus.name(), '_', ' ') : 'Pending'}"
-                                  th:attr="data-delivery-status=${order.id}"></span>
-                        </p>
-                        <p class="text-sm text-gray-600">
-                            Driver:
-                            <span class="font-medium"
-                                  th:text="${order.deliveryDriverName != null ? order.deliveryDriverName : 'Not assigned yet'}"
-                                  th:attr="data-delivery-driver=${order.id}"></span>
-                            <span class="text-gray-400"
-                                  th:text="${order.deliveryDriverPhone != null ? '(' + order.deliveryDriverPhone + ')' : ''}"
-                                  th:attr="data-delivery-phone=${order.id}"></span>
-                        </p>
-                        <p class="text-sm text-gray-600" th:if="${order.deliveryEstimatedArrivalTime != null}">
-                            ETA:
-                            <span class="font-medium" th:text="${#temporals.format(order.deliveryEstimatedArrivalTime, 'MMM dd, yyyy HH:mm')}"
-                                  th:attr="data-delivery-eta=${order.id}"></span>
-                        </p>
-                        <p class="text-sm text-gray-600" th:if="${order.deliveryActualDeliveryTime != null}">
-                            Delivered:
-                            <span class="font-medium" th:text="${#temporals.format(order.deliveryActualDeliveryTime, 'MMM dd, yyyy HH:mm')}"></span>
-                        </p>
+                        <div class="text-right">
+                            <p th:text="${#numbers.formatDecimal(item.totalPrice, 0, 'COMMA', 0, 'POINT') + '៛'}" class="font-semibold text-gray-900"></p>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <div class="p-6 bg-gray-50 border-t border-gray-100 flex flex-wrap gap-4">
-                <button onclick="window.location.href='/orders'"
-                        class="px-6 py-3 bg-white border border-gray-300 text-gray-700 rounded-md font-medium hover:bg-gray-100 transition-colors">
-                    Back to Orders
-                </button>
-                <form th:if="${order.status == 'PENDING' or order.status == 'CONFIRMED'}"
-                      th:action="@{/orders/{orderId}/cancel(orderId=${order.id})}" method="post"
-                      onsubmit="return confirm('Are you sure you want to cancel this order?');">
-                    <button type="submit"
-                            class="px-6 py-3 bg-red-600 text-white rounded-md font-medium hover:bg-red-700 transition-colors">
-                        Cancel Order
-                    </button>
-                </form>
+            <div class="grid gap-4 md:grid-cols-2">
+                <div class="card-shell p-5 space-y-2">
+                    <p class="section-label">Payment summary</p>
+                    <p class="text-sm text-gray-600">
+                        Method:
+                        <span class="font-medium"
+                              th:text="${order.paymentMethod != null ? #strings.replace(order.paymentMethod.name(), '_', ' ') : 'N/A'}"
+                              th:attr="data-payment-method=${order.id}"></span>
+                    </p>
+                    <p class="text-sm text-gray-600 flex items-center gap-2">
+                        Status:
+                        <span class="payment-badge"
+                              th:classappend="${order.paymentStatus != null} ? ' payment-' + order.paymentStatus : ''"
+                              th:text="${order.paymentStatus != null ? #strings.replace(order.paymentStatus.name(), '_', ' ') : 'N/A'}"
+                              th:attr="data-payment-status=${order.id}"></span>
+                    </p>
+                    <p class="text-sm text-gray-600" th:if="${order.paymentPaidAt != null}">
+                        Paid on:
+                        <span class="font-medium"
+                              th:text="${#temporals.format(order.paymentPaidAt, 'MMM dd, yyyy HH:mm')}"></span>
+                    </p>
+                    <p class="text-sm text-gray-600" th:if="${order.paymentTransactionId != null}">
+                        Transaction ID:
+                        <span class="font-medium" th:text="${order.paymentTransactionId}"></span>
+                    </p>
+                </div>
+                <div class="card-shell p-5 space-y-2">
+                    <p class="section-label">Need to change?</p>
+                    <p class="text-sm text-gray-600">We can cancel your order until the restaurant confirms it.</p>
+                    <div class="flex flex-wrap gap-3">
+                        <button onclick="window.location.href='/orders'"
+                                class="flex-1 rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50">
+                            Back to orders
+                        </button>
+                        <form class="flex-1"
+                              th:if="${order.status == 'PENDING' or order.status == 'CONFIRMED'}"
+                              th:action="@{/orders/{orderId}/cancel(orderId=${order.id})}" method="post"
+                              onsubmit="return confirm('Are you sure you want to cancel this order?');">
+                            <button type="submit"
+                                    class="w-full rounded-xl bg-red-600 px-4 py-3 text-sm font-semibold text-white hover:bg-red-700">
+                                Cancel order
+                            </button>
+                        </form>
+                    </div>
+                </div>
             </div>
         </div>
     </main>
 
     <main class="max-w-7xl mx-auto px-4 sm:px-6 py-8" th:unless="${order}">
+        <div class="max-w-2xl mx-auto mb-6" th:if="${errorMessage}">
+            <div class="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700" th:text="${errorMessage}"></div>
+        </div>
         <div class="text-center py-20">
             <div class="text-gray-400 mb-4">
                 <svg class="w-24 h-24 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -378,7 +412,10 @@
                 </svg>
             </div>
             <h3 class="text-xl font-semibold text-gray-600 mb-2">Order Not Found</h3>
-            <p class="text-gray-500 mb-6">The order you're looking for doesn't exist or has been removed.</p>
+            <p class="text-gray-500 mb-6"
+               th:text="${errorMessage != null ? errorMessage : 'The order you\'re looking for doesn\'t exist or has been removed.'}">
+                The order you're looking for doesn't exist or has been removed.
+            </p>
             <button onclick="window.location.href='/orders'" class="bg-gray-900 text-white px-6 py-3 rounded-md font-medium hover:bg-gray-800 transition-colors">
                 Back to Orders
             </button>
@@ -404,6 +441,14 @@
         };
 
         const trackingStatuses = ['PENDING', 'CONFIRMED', 'PREPARING', 'READY', 'OUT_FOR_DELIVERY', 'DELIVERED'];
+        const trackingStatusFriendlyNames = {
+            'PENDING': 'Pending Confirmation',
+            'CONFIRMED': 'Confirmed',
+            'PREPARING': 'Preparing Order',
+            'READY': 'Ready for Pickup',
+            'OUT_FOR_DELIVERY': 'Out for Delivery',
+            'DELIVERED': 'Completed'
+        };
 
         document.addEventListener('DOMContentLoaded', () => {
             const container = document.querySelector('[data-order-id]');
@@ -496,7 +541,7 @@
 
             const driverPhoneEl = document.querySelector(`[data-delivery-phone="${orderId}"]`);
             if (driverPhoneEl) {
-                driverPhoneEl.textContent = order.deliveryDriverPhone ? `(${order.deliveryDriverPhone})` : '';
+                driverPhoneEl.textContent = order.deliveryDriverPhone || 'Not available yet';
             }
         }
 
@@ -551,6 +596,7 @@
             });
 
             updateTrackingDescription(orderId, status);
+            updateTrackingProgress(orderId, status);
         }
 
         function updateLastUpdated(orderId, timestamp) {
@@ -573,8 +619,83 @@
 
             if (status === 'CANCELLED') {
                 description.textContent = 'This order was cancelled before completion.';
-            } else {
-                description.textContent = 'Follow your order from the kitchen to your door.';
+                return;
+            }
+
+            const activeIndex = trackingStatuses.indexOf(status);
+            if (activeIndex === -1) {
+                description.textContent = 'See what step comes next so you always know what to expect.';
+                return;
+            }
+
+            if (activeIndex >= trackingStatuses.length - 1) {
+                description.textContent = 'Your meal has been delivered. Enjoy every bite!';
+                return;
+            }
+
+            const nextStatus = trackingStatuses[activeIndex + 1];
+            description.textContent = `${formatTrackingStatus(status)} stage in progress. Next: ${formatTrackingStatus(nextStatus)}.`;
+        }
+
+        function updateTrackingProgress(orderId, status) {
+            const progressBar = document.querySelector(`[data-tracking-progress="${orderId}"]`);
+            const progressLabel = document.querySelector(`[data-tracking-progress-label="${orderId}"]`);
+            const nextLabel = document.querySelector(`[data-tracking-next="${orderId}"]`);
+            const remainingLabel = document.querySelector(`[data-tracking-remaining="${orderId}"]`);
+
+            if (!progressBar || !progressLabel || !remainingLabel) {
+                return;
+            }
+
+            const totalSteps = trackingStatuses.length;
+            const isCancelled = status === 'CANCELLED';
+            const activeIndex = trackingStatuses.indexOf(status);
+            const hasValidStatus = activeIndex >= 0;
+            const completedSteps = isCancelled ? 0 : (hasValidStatus ? activeIndex + 1 : 0);
+            const progressPercent = isCancelled ? 0 : (completedSteps / totalSteps) * 100;
+
+            progressBar.style.width = `${Math.min(100, Math.max(0, progressPercent))}%`;
+
+            if (progressLabel) {
+                if (isCancelled) {
+                    progressLabel.textContent = 'Order Cancelled';
+                } else if (hasValidStatus) {
+                    progressLabel.textContent = `Step ${completedSteps} of ${totalSteps}`;
+                } else {
+                    progressLabel.textContent = 'Awaiting first update';
+                }
+            }
+
+            if (nextLabel) {
+                if (isCancelled) {
+                    nextLabel.textContent = 'No further steps';
+                    nextLabel.classList.add('text-red-600');
+                } else if (!hasValidStatus) {
+                    nextLabel.textContent = `Next: ${formatTrackingStatus(trackingStatuses[0])}`;
+                    nextLabel.classList.remove('text-red-600');
+                } else if (activeIndex >= totalSteps - 1) {
+                    nextLabel.textContent = 'All steps completed';
+                    nextLabel.classList.remove('text-red-600');
+                } else {
+                    const upcoming = trackingStatuses[activeIndex + 1];
+                    nextLabel.textContent = `Next: ${formatTrackingStatus(upcoming)}`;
+                    nextLabel.classList.remove('text-red-600');
+                }
+            }
+
+            if (remainingLabel) {
+                if (isCancelled) {
+                    remainingLabel.textContent = 'This order was cancelled before completion.';
+                } else if (!hasValidStatus) {
+                    remainingLabel.textContent = 'We will show the remaining steps once your order is confirmed.';
+                } else if (activeIndex >= totalSteps - 1) {
+                    remainingLabel.textContent = 'All steps are complete. Enjoy your meal!';
+                } else {
+                    const remainingSteps = trackingStatuses
+                        .slice(activeIndex + 1)
+                        .map(formatTrackingStatus);
+                    remainingLabel.textContent = `Still to come: ${remainingSteps.join(' → ')}`;
+                }
             }
         }
 
@@ -619,6 +740,13 @@
             if (status && detailPaymentStatusClassMap[status]) {
                 element.classList.add(detailPaymentStatusClassMap[status]);
             }
+        }
+
+        function formatTrackingStatus(status) {
+            if (!status) {
+                return '';
+            }
+            return trackingStatusFriendlyNames[status] || formatEnumValue(status);
         }
 
         function formatEnumValue(value) {
