@@ -22,6 +22,7 @@
         .status-CONFIRMED { background-color: #dbeafe; color: #1e40af; }
         .status-PREPARING { background-color: #ede9fe; color: #5b21b6; }
         .status-READY { background-color: #e0e7ff; color: #3730a3; }
+        .status-OUT_FOR_DELIVERY { background-color: #cffafe; color: #0f766e; }
         .status-COMPLETED { background-color: #dcfce7; color: #166534; }
         .status-CANCELLED { background-color: #fee2e2; color: #991b1b; }
         .status-DELIVERED { background-color: #dcfce7; color: #166534; }
@@ -45,6 +46,119 @@
         .payment-FAILED { background-color: #fee2e2; color: #991b1b; }
         .payment-CANCELLED { background-color: #f1f5f9; color: #475569; }
         .payment-REFUNDED { background-color: #ede9fe; color: #5b21b6; }
+        .order-tracking-wrapper {
+            position: relative;
+        }
+        .order-tracking-timeline {
+            position: relative;
+            padding-left: 2.5rem;
+        }
+        .order-tracking-timeline::before {
+            content: '';
+            position: absolute;
+            left: 0.95rem;
+            top: 0.25rem;
+            bottom: 0.25rem;
+            width: 2px;
+            background: linear-gradient(180deg, rgba(191, 219, 254, 0.6), rgba(147, 197, 253, 0.8));
+        }
+        .tracking-step {
+            position: relative;
+            padding-left: 1.25rem;
+            padding-bottom: 1.5rem;
+        }
+        .tracking-step:last-child {
+            padding-bottom: 0;
+        }
+        .tracking-marker {
+            position: absolute;
+            left: -0.95rem;
+            top: 0;
+            width: 1.9rem;
+            height: 1.9rem;
+            border-radius: 9999px;
+            border: 3px solid #bfdbfe;
+            background-color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: #1e3a8a;
+            transition: all 0.3s ease;
+        }
+        .tracking-step-upcoming .tracking-marker {
+            border-color: #e2e8f0;
+            color: #94a3b8;
+        }
+        .tracking-step-completed .tracking-marker {
+            border-color: #bbf7d0;
+            background-color: #bbf7d0;
+            color: #166534;
+            box-shadow: 0 10px 25px -15px rgba(22, 101, 52, 0.75);
+        }
+        .tracking-step-active .tracking-marker {
+            border-color: #3b82f6;
+            background-color: #2563eb;
+            color: #ffffff;
+            box-shadow: 0 10px 25px -12px rgba(37, 99, 235, 0.65);
+        }
+        .tracking-step-cancelled .tracking-marker {
+            border-color: #fecaca;
+            background-color: #fecaca;
+            color: #991b1b;
+            box-shadow: 0 10px 25px -15px rgba(185, 28, 28, 0.6);
+        }
+        .tracking-connector {
+            display: none;
+        }
+        @media (min-width: 768px) {
+            .order-tracking-wrapper {
+                padding-left: 1rem;
+                padding-right: 1rem;
+            }
+            .order-tracking-timeline {
+                display: grid;
+                grid-template-columns: repeat(6, minmax(0, 1fr));
+                gap: 1.5rem;
+                padding-left: 0;
+                padding-top: 1rem;
+            }
+            .order-tracking-timeline::before {
+                display: none;
+            }
+            .tracking-step {
+                padding-left: 0;
+                padding-bottom: 0;
+                text-align: center;
+            }
+            .tracking-marker {
+                position: relative;
+                left: auto;
+                margin: 0 auto 0.75rem;
+            }
+            .tracking-connector {
+                position: absolute;
+                top: 1.05rem;
+                left: 50%;
+                right: -50%;
+                height: 2px;
+                background: linear-gradient(90deg, rgba(191, 219, 254, 0.6), rgba(147, 197, 253, 0.8));
+                z-index: -1;
+            }
+            .tracking-step:last-child .tracking-connector {
+                display: none;
+            }
+            .tracking-step-completed .tracking-connector {
+                background: linear-gradient(90deg, rgba(187, 247, 208, 0.8), rgba(74, 222, 128, 0.8));
+            }
+            .tracking-step-active .tracking-connector {
+                background: linear-gradient(90deg, rgba(59, 130, 246, 0.7), rgba(37, 99, 235, 0.7));
+            }
+            .tracking-step-cancelled .tracking-connector {
+                background: linear-gradient(90deg, rgba(252, 165, 165, 0.8), rgba(248, 113, 113, 0.8));
+            }
+        }
     </style>
 </head>
 <body class="bg-gradient-to-br from-gray-50 to-gray-100 min-h-screen">
@@ -89,6 +203,67 @@
                         <span class="font-medium">Estimated Delivery:</span>
                         <span th:text="${#temporals.format(order.estimatedDeliveryTime, 'MMM dd, yyyy HH:mm')}"
                               class="ml-2"></span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="p-6 border-b border-gray-100 order-tracking-wrapper"
+                 th:with="trackingStatuses=${T(java.util.Arrays).asList(
+                        T(com.restaurant.store.entity.OrderStatus).PENDING,
+                        T(com.restaurant.store.entity.OrderStatus).CONFIRMED,
+                        T(com.restaurant.store.entity.OrderStatus).PREPARING,
+                        T(com.restaurant.store.entity.OrderStatus).READY,
+                        T(com.restaurant.store.entity.OrderStatus).OUT_FOR_DELIVERY,
+                        T(com.restaurant.store.entity.OrderStatus).DELIVERED
+                 )},
+                 currentIndex=${trackingStatuses.contains(order.status) ? trackingStatuses.indexOf(order.status) : -1}">
+                <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-6">
+                    <div>
+                        <h2 class="text-lg font-semibold text-gray-900">Order Tracking</h2>
+                        <p class="text-sm text-gray-500"
+                           th:attr="data-tracking-description=${order.id}"
+                           th:text="${order.status == T(com.restaurant.store.entity.OrderStatus).CANCELLED
+                                ? 'This order was cancelled before completion.'
+                                : 'Follow your order from the kitchen to your door.'}"></p>
+                    </div>
+                    <div class="text-sm text-gray-500 flex items-center gap-2"
+                         th:attr="data-order-updated-container=${order.id}"
+                         th:classappend="${order.updatedAt == null} ? ' hidden' : ''">
+                        <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        <span>Last update</span>
+                        <span class="font-medium text-gray-700"
+                              th:text="${order.updatedAt != null ? #temporals.format(order.updatedAt, 'MMM dd, yyyy HH:mm') : ''}"
+                              th:attr="data-order-updated=${order.id}"></span>
+                    </div>
+                </div>
+
+                <div class="order-tracking-timeline"
+                     th:attr="data-tracking='${order.id}', data-tracking-status='${order.status}'">
+                    <div th:each="step, iterStat : ${trackingStatuses}"
+                         th:with="stepIndex=${iterStat.index}"
+                         th:class="${'tracking-step ' +
+                                (order.status == T(com.restaurant.store.entity.OrderStatus).CANCELLED
+                                    ? (stepIndex == 0 ? 'tracking-step-cancelled' : 'tracking-step-upcoming')
+                                    : (currentIndex > stepIndex
+                                        ? 'tracking-step-completed'
+                                        : (currentIndex == stepIndex ? 'tracking-step-active' : 'tracking-step-upcoming')))}"
+                         th:attr="data-tracking-step=${step.name()}">
+                        <div class="tracking-marker" th:text="${stepIndex + 1}"></div>
+                        <div class="tracking-connector" aria-hidden="true"></div>
+                        <div class="space-y-1">
+                            <p class="font-semibold text-gray-800" th:text="${#strings.replace(step.name(), '_', ' ')}"></p>
+                            <p class="text-sm text-gray-500" th:switch="${step}">
+                                <span th:case="${T(com.restaurant.store.entity.OrderStatus).PENDING}">We've received your order and are awaiting confirmation.</span>
+                                <span th:case="${T(com.restaurant.store.entity.OrderStatus).CONFIRMED}">Your order has been confirmed by our team.</span>
+                                <span th:case="${T(com.restaurant.store.entity.OrderStatus).PREPARING}">Our chefs are preparing your dishes with care.</span>
+                                <span th:case="${T(com.restaurant.store.entity.OrderStatus).READY}">The order is ready for pickup and final checks.</span>
+                                <span th:case="${T(com.restaurant.store.entity.OrderStatus).OUT_FOR_DELIVERY}">Our driver has left the store with your order.</span>
+                                <span th:case="${T(com.restaurant.store.entity.OrderStatus).DELIVERED}">Enjoy your meal! The delivery has been completed.</span>
+                                <span th:case="*">Stay tuned for the next update.</span>
+                            </p>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -222,18 +397,30 @@
             'CONFIRMED': 'status-CONFIRMED',
             'PREPARING': 'status-PREPARING',
             'READY': 'status-READY',
+            'OUT_FOR_DELIVERY': 'status-OUT_FOR_DELIVERY',
             'COMPLETED': 'status-COMPLETED',
             'CANCELLED': 'status-CANCELLED',
             'DELIVERED': 'status-DELIVERED'
         };
 
+        const trackingStatuses = ['PENDING', 'CONFIRMED', 'PREPARING', 'READY', 'OUT_FOR_DELIVERY', 'DELIVERED'];
+
         document.addEventListener('DOMContentLoaded', () => {
             const container = document.querySelector('[data-order-id]');
-            if (!container || typeof SockJS === 'undefined' || typeof Stomp === 'undefined') {
+            if (!container) {
                 return;
             }
 
             const orderId = container.dataset.orderId;
+            const trackingContainer = document.querySelector(`[data-tracking="${orderId}"]`);
+            if (trackingContainer) {
+                updateTrackingSteps(orderId, trackingContainer.dataset.trackingStatus);
+            }
+
+            if (typeof SockJS === 'undefined' || typeof Stomp === 'undefined') {
+                return;
+            }
+
             const socket = new SockJS('/ws');
             const stompClient = Stomp.over(socket);
             stompClient.reconnect_delay = 5000;
@@ -263,6 +450,8 @@
             badge.textContent = formatEnumValue(status) || status;
             badge.className = 'status-badge';
             badge.classList.add(detailStatusClassMap[status] || 'status-PENDING');
+
+            updateTrackingSteps(orderId, status);
         }
 
         function updateOrderDetails(orderId, order) {
@@ -271,6 +460,12 @@
             }
 
             updateOrderStatus(orderId, order.status);
+
+            updateTrackingSteps(orderId, order.status);
+
+            if (order.updatedAt) {
+                updateLastUpdated(orderId, order.updatedAt);
+            }
 
             const paymentMethodEl = document.querySelector(`[data-payment-method="${orderId}"]`);
             if (paymentMethodEl) {
@@ -302,6 +497,84 @@
             const driverPhoneEl = document.querySelector(`[data-delivery-phone="${orderId}"]`);
             if (driverPhoneEl) {
                 driverPhoneEl.textContent = order.deliveryDriverPhone ? `(${order.deliveryDriverPhone})` : '';
+            }
+        }
+
+        function updateTrackingSteps(orderId, status) {
+            if (!orderId) {
+                return;
+            }
+
+            const trackingContainer = document.querySelector(`[data-tracking="${orderId}"]`);
+            if (!trackingContainer) {
+                return;
+            }
+
+            if (status) {
+                trackingContainer.dataset.trackingStatus = status;
+            } else {
+                status = trackingContainer.dataset.trackingStatus;
+            }
+
+            const steps = trackingContainer.querySelectorAll('[data-tracking-step]');
+            if (!steps.length) {
+                return;
+            }
+
+            const isCancelled = status === 'CANCELLED';
+            const activeIndex = trackingStatuses.indexOf(status);
+
+            steps.forEach((step, index) => {
+                step.classList.remove('tracking-step-completed', 'tracking-step-active', 'tracking-step-upcoming', 'tracking-step-cancelled');
+
+                if (isCancelled) {
+                    if (index === 0) {
+                        step.classList.add('tracking-step-cancelled');
+                    } else {
+                        step.classList.add('tracking-step-upcoming');
+                    }
+                    return;
+                }
+
+                if (activeIndex === -1) {
+                    step.classList.add('tracking-step-upcoming');
+                    return;
+                }
+
+                if (index < activeIndex) {
+                    step.classList.add('tracking-step-completed');
+                } else if (index === activeIndex) {
+                    step.classList.add('tracking-step-active');
+                } else {
+                    step.classList.add('tracking-step-upcoming');
+                }
+            });
+
+            updateTrackingDescription(orderId, status);
+        }
+
+        function updateLastUpdated(orderId, timestamp) {
+            const container = document.querySelector(`[data-order-updated-container="${orderId}"]`);
+            const label = document.querySelector(`[data-order-updated="${orderId}"]`);
+
+            if (!container || !label) {
+                return;
+            }
+
+            container.classList.remove('hidden');
+            label.textContent = formatDate(timestamp);
+        }
+
+        function updateTrackingDescription(orderId, status) {
+            const description = document.querySelector(`[data-tracking-description="${orderId}"]`);
+            if (!description) {
+                return;
+            }
+
+            if (status === 'CANCELLED') {
+                description.textContent = 'This order was cancelled before completion.';
+            } else {
+                description.textContent = 'Follow your order from the kitchen to your door.';
             }
         }
 

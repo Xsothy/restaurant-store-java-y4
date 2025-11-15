@@ -21,6 +21,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -40,10 +41,13 @@ public class OrderService {
     private final DeliveryRepository deliveryRepository;
     private final JwtUtil jwtUtil;
     private final OrderMapper orderMapper;
-    private final PaymentIntentService paymentIntentService;
+    private final PaymentService paymentService;
     private final AdminIntegrationService adminIntegrationService;
     private final CartService cartService;
     private final OrderStatusWebSocketController orderStatusWebSocketController;
+
+    private static final EnumSet<PaymentStatus> REUSABLE_PAYMENT_STATUSES =
+            EnumSet.of(PaymentStatus.PENDING, PaymentStatus.PROCESSING);
 
     @Transactional
     public OrderResponse createOrder(CreateOrderRequest request, String token) {
@@ -165,7 +169,7 @@ public class OrderService {
         }
 
         try {
-            return paymentIntentService.createPayment(order)
+            return paymentService.createPayment(order)
                     .toMap();
         } catch (Exception e) {
             log.error("Error creating payment intent for order {}", orderId, e);
@@ -196,12 +200,21 @@ public class OrderService {
         if (request.getPaymentMethod() != PaymentMethod.STRIPE &&
             request.getPaymentMethod() != PaymentMethod.CREDIT_CARD &&
             request.getPaymentMethod() != PaymentMethod.DEBIT_CARD) {
-            Payment payment = new Payment();
+            Payment payment = paymentRepository
+                    .findFirstByOrderIdAndMethodAndStatusInOrderByUpdatedAtDesc(
+                            order.getId(),
+                            request.getPaymentMethod(),
+                            REUSABLE_PAYMENT_STATUSES
+                    )
+                    .orElseGet(Payment::new);
+
             payment.setOrder(order);
             payment.setAmount(order.getTotalPrice());
             payment.setMethod(request.getPaymentMethod());
             payment.setStatus(PaymentStatus.CASH_PENDING);
-            payment.setTransactionId("COD-" + UUID.randomUUID());
+            if (payment.getTransactionId() == null) {
+                payment.setTransactionId("COD-" + UUID.randomUUID());
+            }
             payment.setPaidAt(null);
             payment.setUpdatedAt(LocalDateTime.now());
             paymentRepository.save(payment);
@@ -213,8 +226,12 @@ public class OrderService {
         }
 
         // For Stripe payments, confirm the payment intent
+        if (!"intent".equalsIgnoreCase(paymentService.getServiceType())) {
+            throw new BadRequestException("Payment intent flow is disabled for the current configuration");
+        }
+
         try {
-            paymentIntentService.handlePaymentSuccess(request.getTransactionId());
+            paymentService.handlePaymentSuccess(request.getTransactionId());
             order.setStatus(OrderStatus.CONFIRMED);
             orderRepository.save(order);
             return "Payment processed successfully";

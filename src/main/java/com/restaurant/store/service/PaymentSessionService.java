@@ -21,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.EnumSet;
 
 @Service
 @RequiredArgsConstructor
@@ -79,9 +80,21 @@ public class PaymentSessionService implements PaymentService {
 
         Session session = Session.create(params);
 
-        Payment payment = paymentRepository.findByOrderIdAndStatus(order.getId(), PaymentStatus.AWAITING_SESSION)
-                .orElseGet(() -> paymentRepository.findByOrderIdAndStatus(order.getId(), PaymentStatus.PENDING)
-                        .orElse(new Payment()));
+        Payment payment = paymentRepository
+                .findFirstByOrderIdAndMethodAndStatusInOrderByUpdatedAtDesc(
+                        order.getId(),
+                        PaymentMethod.STRIPE,
+                        EnumSet.of(PaymentStatus.PENDING, PaymentStatus.PROCESSING)
+                )
+                .orElseGet(() -> {
+                    Payment newPayment = new Payment();
+                    newPayment.setOrder(order);
+                    newPayment.setAmount(order.getTotalPrice());
+                    newPayment.setMethod(PaymentMethod.STRIPE);
+                    newPayment.setStatus(PaymentStatus.PENDING);
+                    newPayment.setCreatedAt(LocalDateTime.now());
+                    return newPayment;
+                });
 
         payment.setOrder(order);
         payment.setAmount(order.getTotalPrice());
