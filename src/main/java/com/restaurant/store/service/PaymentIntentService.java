@@ -20,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.EnumSet;
 
 @Service
 @RequiredArgsConstructor
@@ -56,10 +57,10 @@ public class PaymentIntentService implements PaymentService {
         PaymentIntent paymentIntent = PaymentIntent.create(params);
 
         Payment payment = paymentRepository
-                .findFirstByOrderIdAndMethodAndStatusOrderByUpdatedAtDesc(
+                .findFirstByOrderIdAndMethodAndStatusInOrderByUpdatedAtDesc(
                         order.getId(),
                         PaymentMethod.STRIPE,
-                        PaymentStatus.PENDING
+                        EnumSet.of(PaymentStatus.PENDING, PaymentStatus.PROCESSING)
                 )
                 .orElseGet(() -> {
                     Payment newPayment = new Payment();
