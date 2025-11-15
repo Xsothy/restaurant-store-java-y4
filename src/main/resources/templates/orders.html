@@ -37,6 +37,9 @@
             letter-spacing: 0.05em;
         }
         .payment-PENDING { background-color: #fef3c7; color: #92400e; }
+        .payment-AWAITING_SESSION { background-color: #fef3c7; color: #92400e; }
+        .payment-AWAITING_WEBHOOK { background-color: #e0f2fe; color: #075985; }
+        .payment-CASH_PENDING { background-color: #fff7ed; color: #9a3412; }
         .payment-PROCESSING { background-color: #e0f2fe; color: #1e40af; }
         .payment-COMPLETED { background-color: #dcfce7; color: #166534; }
         .payment-FAILED { background-color: #fee2e2; color: #991b1b; }
@@ -280,6 +283,9 @@
 
         const paymentStatusClassMap = {
             'PENDING': 'payment-PENDING',
+            'AWAITING_SESSION': 'payment-AWAITING_SESSION',
+            'AWAITING_WEBHOOK': 'payment-AWAITING_WEBHOOK',
+            'CASH_PENDING': 'payment-CASH_PENDING',
             'PROCESSING': 'payment-PROCESSING',
             'COMPLETED': 'payment-COMPLETED',
             'FAILED': 'payment-FAILED',

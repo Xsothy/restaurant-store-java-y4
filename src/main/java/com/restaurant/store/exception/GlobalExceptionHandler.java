@@ -1,6 +1,5 @@
 package com.restaurant.store.exception;
 
-import com.restaurant.store.dto.response.ApiResponse;
 import com.restaurant.store.dto.response.ErrorResponse;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.MalformedJwtException;
@@ -370,15 +369,30 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleIllegalArgumentException(
             IllegalArgumentException ex, HttpServletRequest request) {
         log.error("Illegal argument: {}", ex.getMessage());
-        
+
         ErrorResponse error = ErrorResponse.of(
                 HttpStatus.BAD_REQUEST.value(),
                 "Bad Request",
                 ex.getMessage(),
                 request.getRequestURI()
         );
-        
+
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+    }
+
+    @ExceptionHandler(StripeWebhookException.class)
+    public ResponseEntity<ErrorResponse> handleStripeWebhookException(
+            StripeWebhookException ex, HttpServletRequest request) {
+        log.error("Stripe webhook processing failed: {}", ex.getMessage(), ex);
+
+        ErrorResponse error = ErrorResponse.of(
+                ex.getStatus().value(),
+                ex.getStatus().getReasonPhrase(),
+                ex.getMessage(),
+                request.getRequestURI()
+        );
+
+        return ResponseEntity.status(ex.getStatus()).body(error);
     }
 
     @ExceptionHandler(Exception.class)

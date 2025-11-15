@@ -200,19 +200,16 @@ public class OrderService {
                     .findFirstByOrderIdAndMethodAndStatusOrderByUpdatedAtDesc(
                             order.getId(),
                             request.getPaymentMethod(),
-                            PaymentStatus.PENDING
+                            PaymentStatus.CASH_PENDING
                     )
                     .orElseGet(Payment::new);
 
             payment.setOrder(order);
             payment.setAmount(order.getTotalPrice());
             payment.setMethod(request.getPaymentMethod());
-            payment.setStatus(PaymentStatus.PENDING);
+            payment.setStatus(PaymentStatus.CASH_PENDING);
             if (payment.getTransactionId() == null) {
-                payment.setTransactionId(request.getPaymentMethod().name() + "-" + UUID.randomUUID());
-            }
-            if (payment.getCreatedAt() == null) {
-                payment.setCreatedAt(LocalDateTime.now());
+                payment.setTransactionId("COD-" + UUID.randomUUID());
             }
             payment.setPaidAt(null);
             payment.setUpdatedAt(LocalDateTime.now());

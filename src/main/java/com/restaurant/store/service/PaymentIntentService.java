@@ -5,6 +5,7 @@ import com.restaurant.store.entity.Order;
 import com.restaurant.store.entity.Payment;
 import com.restaurant.store.entity.PaymentMethod;
 import com.restaurant.store.entity.PaymentStatus;
+import com.restaurant.store.exception.ResourceNotFoundException;
 import com.restaurant.store.repository.PaymentRepository;
 import com.stripe.Stripe;
 import com.stripe.exception.StripeException;
@@ -55,26 +56,14 @@ public class PaymentIntentService implements PaymentService {
 
         PaymentIntent paymentIntent = PaymentIntent.create(params);
 
-        Payment payment = paymentRepository
-                .findFirstByOrderIdAndMethodAndStatusOrderByUpdatedAtDesc(
-                        order.getId(),
-                        PaymentMethod.STRIPE,
-                        PaymentStatus.PENDING
-                )
-                .orElseGet(() -> {
-                    Payment newPayment = new Payment();
-                    newPayment.setOrder(order);
-                    newPayment.setAmount(order.getTotalPrice());
-                    newPayment.setMethod(PaymentMethod.STRIPE);
-                    newPayment.setStatus(PaymentStatus.PENDING);
-                    newPayment.setCreatedAt(LocalDateTime.now());
-                    return newPayment;
-                });
+        Payment payment = paymentRepository.findByOrderIdAndStatus(order.getId(), PaymentStatus.AWAITING_WEBHOOK)
+                .orElseGet(() -> paymentRepository.findByOrderIdAndStatus(order.getId(), PaymentStatus.PENDING)
+                        .orElse(new Payment()));
 
         payment.setOrder(order);
         payment.setAmount(order.getTotalPrice());
         payment.setMethod(PaymentMethod.STRIPE);
-        payment.setStatus(PaymentStatus.PENDING);
+        payment.setStatus(PaymentStatus.AWAITING_WEBHOOK);
         payment.setTransactionId(paymentIntent.getId());
         if (payment.getCreatedAt() == null) {
             payment.setCreatedAt(LocalDateTime.now());
@@ -100,7 +89,7 @@ public class PaymentIntentService implements PaymentService {
         PaymentIntent paymentIntent = PaymentIntent.retrieve(paymentId);
 
         Payment payment = paymentRepository.findByTransactionId(paymentId)
-                .orElseThrow(() -> new RuntimeException("Payment not found for intent: " + paymentId));
+                .orElseThrow(() -> new ResourceNotFoundException("Payment not found for intent: " + paymentId));
 
         if ("succeeded".equals(paymentIntent.getStatus())) {
             payment.setStatus(PaymentStatus.COMPLETED);
@@ -121,7 +110,7 @@ public class PaymentIntentService implements PaymentService {
         PaymentIntent paymentIntent = PaymentIntent.retrieve(paymentId);
 
         Payment payment = paymentRepository.findByTransactionId(paymentId)
-                .orElseThrow(() -> new RuntimeException("Payment not found for intent: " + paymentId));
+                .orElseThrow(() -> new ResourceNotFoundException("Payment not found for intent: " + paymentId));
 
         payment.setStatus(PaymentStatus.FAILED);
         payment.setUpdatedAt(LocalDateTime.now());

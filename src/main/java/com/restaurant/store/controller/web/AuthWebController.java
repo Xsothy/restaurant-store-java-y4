@@ -3,11 +3,13 @@ package com.restaurant.store.controller.web;
 import com.restaurant.store.dto.request.CustomerRegisterRequest;
 import com.restaurant.store.dto.request.LoginRequest;
 import com.restaurant.store.dto.response.AuthResponse;
+import com.restaurant.store.exception.BadRequestException;
 import com.restaurant.store.service.AuthService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -64,7 +66,7 @@ public class AuthWebController {
             
             redirectAttributes.addFlashAttribute("message", "Login successful");
             return "redirect:/menu";
-        } catch (Exception e) {
+        } catch (BadRequestException | AuthenticationException e) {
             redirectAttributes.addFlashAttribute("error", "Invalid email or password");
             return "redirect:/auth/login?error=true";
         }
@@ -87,7 +89,7 @@ public class AuthWebController {
             
             redirectAttributes.addFlashAttribute("message", "Registration successful");
             return "redirect:/menu";
-        } catch (Exception e) {
+        } catch (BadRequestException e) {
             redirectAttributes.addFlashAttribute("error", "Registration failed: " + e.getMessage());
             return "redirect:/auth/register";
         }
