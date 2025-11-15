@@ -187,24 +187,7 @@
                 </div>
             </div>
 
-            <div class="card-shell p-6 order-tracking-wrapper"
-                 th:with="trackingStatuses=${T(java.util.Arrays).asList(
-                        T(com.restaurant.store.entity.OrderStatus).PENDING,
-                        T(com.restaurant.store.entity.OrderStatus).CONFIRMED,
-                        T(com.restaurant.store.entity.OrderStatus).PREPARING,
-                        T(com.restaurant.store.entity.OrderStatus).READY,
-                        T(com.restaurant.store.entity.OrderStatus).OUT_FOR_DELIVERY,
-                        T(com.restaurant.store.entity.OrderStatus).DELIVERED
-                 )},
-                 statusLabels=${T(java.util.Map).of(
-                        T(com.restaurant.store.entity.OrderStatus).PENDING, 'Pending Confirmation',
-                        T(com.restaurant.store.entity.OrderStatus).CONFIRMED, 'Confirmed',
-                        T(com.restaurant.store.entity.OrderStatus).PREPARING, 'Preparing Order',
-                        T(com.restaurant.store.entity.OrderStatus).READY, 'Ready for Pickup',
-                        T(com.restaurant.store.entity.OrderStatus).OUT_FOR_DELIVERY, 'Out for Delivery',
-                        T(com.restaurant.store.entity.OrderStatus).DELIVERED, 'Completed'
-                 )},
-                 currentIndex=${trackingStatuses.contains(order.status) ? trackingStatuses.indexOf(order.status) : -1}">
+            <div class="card-shell p-6 order-tracking-wrapper">
                 <div class="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                     <div>
                         <p class="section-label">Order Progress</p>
@@ -228,56 +211,46 @@
                     </div>
                 </div>
 
-                <div class="bg-gray-50 rounded-2xl p-4 mt-4"
-                     th:with="stepCount=${trackingStatuses.size()},
-                              isCancelled=${order.status == T(com.restaurant.store.entity.OrderStatus).CANCELLED},
-                              hasValidStatus=${trackingStatuses.contains(order.status)},
-                              completedSteps=${isCancelled ? 0 : (hasValidStatus ? currentIndex + 1 : 0)},
-                              progressPercent=${isCancelled ? 0 : (hasValidStatus ? (completedSteps * 100.0) / stepCount : 0)},
-                              nextStep=${(!isCancelled && hasValidStatus && currentIndex < stepCount - 1)
-                                        ? trackingStatuses.get(currentIndex + 1) : null},
-                              remainingSteps=${(!isCancelled && hasValidStatus && currentIndex < stepCount - 1)
-                                        ? trackingStatuses.subList(currentIndex + 1, stepCount)
-                                        : T(java.util.Collections).emptyList()}">
+                <div class="bg-gray-50 rounded-2xl p-4 mt-4">
                     <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                         <div>
-                            <p class="section-label">Progress</p>
-                            <p class="text-2xl font-semibold text-gray-900"
-                               th:attr="data-tracking-progress-label=${order.id}"
-                               th:text="${isCancelled
-                                        ? 'Order Cancelled'
-                                        : (hasValidStatus
-                                            ? 'Step ' + completedSteps + ' of ' + stepCount
-                                            : 'Awaiting first update')}">Step 0 of 6</p>
+                        <p class="section-label">Progress</p>
+                        <p class="text-2xl font-semibold text-gray-900"
+                           th:attr="data-tracking-progress-label=${order.id}"
+                           th:text="${trackingIsCancelled
+                                    ? 'Order Cancelled'
+                                    : (trackingHasValidStatus
+                                        ? 'Step ' + trackingCompletedSteps + ' of ' + trackingStepCount
+                                        : 'Awaiting first update')}">Step 0 of 6</p>
                         </div>
                         <div class="text-left md:text-right">
-                            <p class="section-label">Next Step</p>
-                            <p class="text-sm font-semibold text-gray-800"
-                               th:classappend="${isCancelled} ? ' text-red-600' : ''"
-                               th:attr="data-tracking-next=${order.id}"
-                               th:text="${isCancelled
-                                        ? 'No further steps'
-                                        : (!hasValidStatus
-                                            ? 'Next: ' + statusLabels[T(com.restaurant.store.entity.OrderStatus).PENDING]
-                                            : (nextStep != null
-                                                ? 'Next: ' + statusLabels[nextStep]
-                                                : 'All steps completed'))}">Next: Pending Confirmation</p>
+                        <p class="section-label">Next Step</p>
+                        <p class="text-sm font-semibold text-gray-800"
+                           th:classappend="${trackingIsCancelled} ? ' text-red-600' : ''"
+                           th:attr="data-tracking-next=${order.id}"
+                           th:text="${trackingIsCancelled
+                                    ? 'No further steps'
+                                    : (!trackingHasValidStatus
+                                       ? 'Next: ' + statusLabels[T(com.restaurant.store.entity.OrderStatus).PENDING]
+                                       : (trackingNextStep != null
+                                           ? 'Next: ' + statusLabels[trackingNextStep]
+                                           : 'All steps completed'))}">Next: Pending Confirmation</p>
                         </div>
                     </div>
                     <div class="relative mt-4 h-1.5 bg-white rounded-full overflow-hidden">
                         <div class="absolute inset-y-0 left-0 bg-gradient-to-r from-blue-400 via-blue-500 to-indigo-500 rounded-full transition-all duration-500"
                              style="width: 0%;"
-                             th:styleappend="${'width: ' + #numbers.formatDecimal(progressPercent, 0, 'POINT', 0, 'POINT') + '%;'}"
+                           th:styleappend="${'width: ' + #numbers.formatDecimal(trackingProgressPercent, 0, 'POINT', 0, 'POINT') + '%;'}"
                              th:attr="data-tracking-progress=${order.id}"></div>
                     </div>
                     <p class="text-sm text-gray-600 mt-3"
                        th:attr="data-tracking-remaining=${order.id}">
-                        <span th:if="${isCancelled}">This order was cancelled before completion.</span>
-                        <span th:if="${!isCancelled && !hasValidStatus}">We will show the remaining steps once your order is confirmed.</span>
-                        <span th:if="${!isCancelled && hasValidStatus && currentIndex >= stepCount - 1}">All steps are complete. Enjoy your meal!</span>
-                        <span th:if="${!isCancelled && hasValidStatus && currentIndex < stepCount - 1}">
+                        <span th:if="${trackingIsCancelled}">This order was cancelled before completion.</span>
+                        <span th:if="${!trackingIsCancelled && !trackingHasValidStatus}">We will show the remaining steps once your order is confirmed.</span>
+                        <span th:if="${!trackingIsCancelled && trackingHasValidStatus && trackingCurrentIndex >= trackingStepCount - 1}">All steps are complete. Enjoy your meal!</span>
+                        <span th:if="${!trackingIsCancelled && trackingHasValidStatus && trackingCurrentIndex < trackingStepCount - 1}">
                             Still to come:
-                            <span th:each="remainingStep, iter : ${remainingSteps}">
+                            <span th:each="remainingStep, iter : ${trackingRemainingSteps}">
                                 <span th:text="${statusLabels[remainingStep]}"></span>
                                 <span th:if="${!iter.last}"> → </span>
                             </span>
@@ -292,15 +265,15 @@
                          th:class="${'tracking-step ' +
                                 (order.status == T(com.restaurant.store.entity.OrderStatus).CANCELLED
                                     ? (stepIndex == 0 ? 'tracking-step-cancelled' : 'tracking-step-upcoming')
-                                    : (currentIndex > stepIndex
+                                    : (trackingCurrentIndex > stepIndex
                                         ? 'tracking-step-completed'
-                                        : (currentIndex == stepIndex ? 'tracking-step-active' : 'tracking-step-upcoming')))}"
+                                        : (trackingCurrentIndex == stepIndex ? 'tracking-step-active' : 'tracking-step-upcoming')))}"
                          th:attr="data-tracking-step=${step.name()}">
                         <div class="tracking-marker" th:text="${stepIndex + 1}"></div>
                         <div class="tracking-connector" aria-hidden="true"></div>
                         <div class="space-y-1">
                             <p class="text-xs uppercase tracking-wide text-gray-400"
-                               th:text="${'Step ' + (stepIndex + 1) + ' of ' + trackingStatuses.size()}"></p>
+                                th:text="${'Step ' + (stepIndex + 1) + ' of ' + trackingStepCount}"></p>
                             <p class="font-semibold text-gray-800" th:text="${statusLabels[step]}"></p>
                             <p class="text-sm text-gray-500" th:switch="${step}">
                                 <span th:case="${T(com.restaurant.store.entity.OrderStatus).PENDING}">We received your order.</span>
