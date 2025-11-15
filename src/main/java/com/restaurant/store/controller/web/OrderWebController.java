@@ -71,10 +71,11 @@ public class OrderWebController {
             log.debug("Unauthorized order details access: {}", ex.getMessage());
             redirectAttributes.addFlashAttribute("errorMessage", "Please login to view your orders");
             return "redirect:/login";
-        } catch (ResourceNotFoundException ex) {
-            log.warn("Order {} not found for customer: {}", orderId, ex.getMessage());
-            redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());
-            return "redirect:/orders";
+        } catch (BadRequestException | ResourceNotFoundException ex) {
+            log.warn("Unable to load order {} for details view: {}", orderId, ex.getMessage());
+            model.addAttribute("errorMessage", ex.getMessage());
+            model.addAttribute("order", null);
+            return "order-details";
         }
     }
 
