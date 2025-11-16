@@ -15,7 +15,7 @@ public class WebSocketDocumentationService {
                 WebSocketTopic.builder()
                         .topic("/topic/orders/{orderId}")
                         .description("Real-time order status updates")
-                        .subscribeEndpoint("/app/orders/{orderId}/subscribe")
+                        .subscribeEndpoint("/app/api/orders/{orderId}/subscribe")
                         .messageTypes(List.of("OrderResponse", "OrderStatusMessage"))
                         .build(),
                 WebSocketTopic.builder()
@@ -33,7 +33,7 @@ public class WebSocketDocumentationService {
                 WebSocketTopic.builder()
                         .topic("/topic/deliveries/{orderId}")
                         .description("Real-time delivery tracking updates")
-                        .subscribeEndpoint("/app/deliveries/{orderId}/subscribe")
+                        .subscribeEndpoint("/app/api/deliveries/{orderId}/subscribe")
                         .messageTypes(List.of("DeliveryResponse", "OrderStatusMessage"))
                         .build(),
                 WebSocketTopic.builder()
@@ -78,7 +78,7 @@ public class WebSocketDocumentationService {
                             });
 
                             // Send subscription message (optional, triggers confirmation)
-                            stompClient.send('/app/deliveries/123/subscribe', {}, JSON.stringify({}));
+                            stompClient.send('/app/api/deliveries/123/subscribe', {}, JSON.stringify({}));
                         });
 
                         stompClient.onError = (error) => {

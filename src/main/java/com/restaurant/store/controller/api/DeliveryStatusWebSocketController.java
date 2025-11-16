@@ -2,7 +2,7 @@ package com.restaurant.store.controller.api;
 
 import com.restaurant.store.dto.response.DeliveryResponse;
 import com.restaurant.store.dto.response.OrderStatusMessage;
-import io.swagger.v3.oas.annotations.Hidden;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.handler.annotation.DestinationVariable;
@@ -40,17 +40,17 @@ import java.time.LocalDateTime;
 @Controller
 @RequiredArgsConstructor
 @Slf4j
-@Hidden
+@Tag(name = "WebSocket - Deliveries", description = "STOMP endpoints for real-time delivery tracking")
 public class DeliveryStatusWebSocketController {
 
     private final SimpMessagingTemplate messagingTemplate;
 
     /**
      * Subscribe to delivery updates for a specific order.
-     * Client sends to: /app/deliveries/{orderId}/subscribe
+     * Client sends to: /app/api/deliveries/{orderId}/subscribe
      * Receives on: /topic/deliveries/{orderId}
      */
-    @MessageMapping("/deliveries/{orderId}/subscribe")
+    @MessageMapping("/api/deliveries/{orderId}/subscribe")
     @SendTo("/topic/deliveries/{orderId}")
     public OrderStatusMessage subscribeToDelivery(@DestinationVariable Long orderId) {
         log.info("Client subscribed to delivery tracking for order: {}", orderId);

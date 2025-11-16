@@ -43,7 +43,7 @@ public class WebSocketDocumentation {
         private String description;
 
         @Schema(description = "Endpoint to send subscription message (if applicable)",
-                example = "/app/deliveries/{orderId}/subscribe")
+                example = "/app/api/deliveries/{orderId}/subscribe")
         private String subscribeEndpoint;
 
         @Schema(description = "Types of messages sent on this topic",

@@ -2,7 +2,7 @@ package com.restaurant.store.controller.api;
 
 import com.restaurant.store.dto.response.OrderResponse;
 import com.restaurant.store.dto.response.OrderStatusMessage;
-import io.swagger.v3.oas.annotations.Hidden;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.handler.annotation.DestinationVariable;
@@ -32,12 +32,12 @@ import java.time.LocalDateTime;
 @Controller
 @RequiredArgsConstructor
 @Slf4j
-@Hidden
+@Tag(name = "WebSocket - Orders", description = "STOMP endpoints for real-time order status updates")
 public class OrderStatusWebSocketController {
 
     private final SimpMessagingTemplate messagingTemplate;
 
-    @MessageMapping("/orders/{orderId}/subscribe")
+    @MessageMapping("/api/orders/{orderId}/subscribe")
     @SendTo("/topic/orders/{orderId}")
     public OrderStatusMessage subscribeToOrder(@DestinationVariable Long orderId) {
         log.info("Client subscribed to order updates: {}", orderId);

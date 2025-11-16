@@ -55,7 +55,7 @@ public class WebSocketDocumentationController {
                                                   {
                                                     "topic": "/topic/orders/{orderId}",
                                                     "description": "Real-time order status updates",
-                                                    "subscribeEndpoint": "/app/orders/{orderId}/subscribe",
+                                                    "subscribeEndpoint": "/app/api/orders/{orderId}/subscribe",
                                                     "messageTypes": ["OrderResponse", "OrderStatusMessage"]
                                                   }
                                                 ],

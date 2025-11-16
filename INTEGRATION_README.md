@@ -349,7 +349,7 @@ final channel = WebSocketChannel.connect(
 
 // Subscribe to order updates
 channel.sink.add(jsonEncode({
-  'destination': '/app/orders/$orderId/subscribe',
+  'destination': '/app/api/orders/$orderId/subscribe',
 }));
 
 // Listen for updates

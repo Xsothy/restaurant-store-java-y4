@@ -77,13 +77,13 @@ public class WebSocketInfoController {
                               {
                                 "topic": "/topic/orders/{orderId}",
                                 "description": "Order status updates",
-                                "subscribeEndpoint": "/app/orders/{orderId}/subscribe",
+                                "subscribeEndpoint": "/app/api/orders/{orderId}/subscribe",
                                 "messageTypes": ["OrderResponse", "OrderStatusMessage"]
                               },
                               {
                                 "topic": "/topic/deliveries/{orderId}",
                                 "description": "Delivery tracking updates",
-                                "subscribeEndpoint": "/app/deliveries/{orderId}/subscribe",
+                                "subscribeEndpoint": "/app/api/deliveries/{orderId}/subscribe",
                                 "messageTypes": ["DeliveryResponse", "OrderStatusMessage"]
                               }
                             ],
