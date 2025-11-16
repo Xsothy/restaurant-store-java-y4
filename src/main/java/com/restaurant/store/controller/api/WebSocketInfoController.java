@@ -1,6 +1,8 @@
 package com.restaurant.store.controller.api;
 
 import com.restaurant.store.dto.response.ApiResponse;
+import com.restaurant.store.dto.websocket.WebSocketDocumentation;
+import com.restaurant.store.service.WebSocketDocumentationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
@@ -11,6 +13,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -29,7 +32,10 @@ import java.util.Map;
 @RequestMapping("/api/websocket")
 @CrossOrigin(origins = "*")
 @Tag(name = "WebSocket Information", description = "Documentation for WebSocket endpoints and real-time features")
+@RequiredArgsConstructor
 public class WebSocketInfoController {
+
+    private final WebSocketDocumentationService documentationService;
 
     @GetMapping("/info")
     @Operation(
@@ -91,136 +97,13 @@ public class WebSocketInfoController {
             )
         )
     })
-    public ResponseEntity<ApiResponse<WebSocketInfo>> getWebSocketInfo() {
-        WebSocketInfo info = WebSocketInfo.builder()
-                .endpoint("ws://localhost:8080/ws")
-                .protocol("STOMP over SockJS")
-                .topics(List.of(
-                        WebSocketTopicInfo.builder()
-                                .topic("/topic/orders/{orderId}")
-                                .description("Real-time order status updates")
-                                .subscribeEndpoint("/app/orders/{orderId}/subscribe")
-                                .messageTypes(List.of("OrderResponse", "OrderStatusMessage"))
-                                .build(),
-                        WebSocketTopicInfo.builder()
-                                .topic("/topic/orders/{orderId}/status")
-                                .description("Detailed order status messages")
-                                .subscribeEndpoint("Subscribe to /topic/orders/{orderId}")
-                                .messageTypes(List.of("OrderStatusMessage"))
-                                .build(),
-                        WebSocketTopicInfo.builder()
-                                .topic("/topic/orders/{orderId}/notifications")
-                                .description("Order notifications and alerts")
-                                .subscribeEndpoint("Subscribe to /topic/orders/{orderId}")
-                                .messageTypes(List.of("OrderStatusMessage"))
-                                .build(),
-                        WebSocketTopicInfo.builder()
-                                .topic("/topic/deliveries/{orderId}")
-                                .description("Real-time delivery tracking updates")
-                                .subscribeEndpoint("/app/deliveries/{orderId}/subscribe")
-                                .messageTypes(List.of("DeliveryResponse", "OrderStatusMessage"))
-                                .build(),
-                        WebSocketTopicInfo.builder()
-                                .topic("/topic/deliveries/{orderId}/status")
-                                .description("Detailed delivery status messages")
-                                .subscribeEndpoint("Subscribe to /topic/deliveries/{orderId}")
-                                .messageTypes(List.of("OrderStatusMessage"))
-                                .build(),
-                        WebSocketTopicInfo.builder()
-                                .topic("/topic/deliveries/{orderId}/location")
-                                .description("Real-time delivery location updates")
-                                .subscribeEndpoint("Subscribe to /topic/deliveries/{orderId}")
-                                .messageTypes(List.of("OrderStatusMessage with location data"))
-                                .build(),
-                        WebSocketTopicInfo.builder()
-                                .topic("/topic/deliveries/{orderId}/notifications")
-                                .description("Delivery notifications (driver assigned, arriving soon, etc.)")
-                                .subscribeEndpoint("Subscribe to /topic/deliveries/{orderId}")
-                                .messageTypes(List.of("OrderStatusMessage"))
-                                .build()
-                ))
-                .exampleCode(Map.of(
-                        "javascript", """
-                                // Using SockJS and STOMP.js
-                                const socket = new SockJS('http://localhost:8080/ws');
-                                const stompClient = Stomp.over(socket);
-                                
-                                stompClient.connect({}, () => {
-                                    console.log('Connected to WebSocket');
-                                    
-                                    // Subscribe to order updates
-                                    stompClient.subscribe('/topic/orders/123', (message) => {
-                                        const orderUpdate = JSON.parse(message.body);
-                                        console.log('Order update:', orderUpdate);
-                                    });
-                                    
-                                    // Subscribe to delivery tracking
-                                    stompClient.subscribe('/topic/deliveries/123', (message) => {
-                                        const deliveryUpdate = JSON.parse(message.body);
-                                        console.log('Delivery update:', deliveryUpdate);
-                                    });
-                                    
-                                    // Send subscription message (optional, triggers confirmation)
-                                    stompClient.send('/app/deliveries/123/subscribe', {}, JSON.stringify({}));
-                                });
-                                
-                                stompClient.onError = (error) => {
-                                    console.error('WebSocket error:', error);
-                                };
-                                """,
-                        "html", """
-                                <!-- Include SockJS and STOMP libraries -->
-                                <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
-                                <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
-                                """
-                ))
-                .build();
+    public ResponseEntity<ApiResponse<WebSocketDocumentation>> getWebSocketInfo() {
+        WebSocketDocumentation info = documentationService.getDocumentation();
 
         return ResponseEntity.ok(ApiResponse.success(
-                "WebSocket connection information retrieved successfully", 
+                "WebSocket connection information retrieved successfully",
                 info
         ));
-    }
-
-    @Data
-    @Builder
-    @NoArgsConstructor
-    @AllArgsConstructor
-    @Schema(description = "WebSocket connection and topic information")
-    public static class WebSocketInfo {
-        @Schema(description = "WebSocket endpoint URL", example = "ws://localhost:8080/ws")
-        private String endpoint;
-
-        @Schema(description = "Protocol used", example = "STOMP over SockJS")
-        private String protocol;
-
-        @Schema(description = "Available WebSocket topics")
-        private List<WebSocketTopicInfo> topics;
-
-        @Schema(description = "Example code for connecting to WebSocket")
-        private Map<String, String> exampleCode;
-    }
-
-    @Data
-    @Builder
-    @NoArgsConstructor
-    @AllArgsConstructor
-    @Schema(description = "Information about a specific WebSocket topic")
-    public static class WebSocketTopicInfo {
-        @Schema(description = "Topic path", example = "/topic/deliveries/{orderId}")
-        private String topic;
-
-        @Schema(description = "Description of what this topic provides", 
-                example = "Real-time delivery tracking updates")
-        private String description;
-
-        @Schema(description = "Endpoint to send subscription message (if applicable)", 
-                example = "/app/deliveries/{orderId}/subscribe")
-        private String subscribeEndpoint;
-
-        @Schema(description = "Types of messages sent on this topic", 
-                example = "[\"DeliveryResponse\", \"OrderStatusMessage\"]")
-        private List<String> messageTypes;
     }
 
     @Data
@@ -236,6 +119,6 @@ public class WebSocketInfoController {
         private String message;
 
         @Schema(description = "WebSocket connection information")
-        private WebSocketInfo data;
+        private WebSocketDocumentation data;
     }
 }
