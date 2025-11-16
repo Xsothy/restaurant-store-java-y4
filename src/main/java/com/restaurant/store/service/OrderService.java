@@ -17,6 +17,7 @@ import com.restaurant.store.repository.*;
 import com.restaurant.store.security.JwtUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -52,6 +53,8 @@ public class OrderService {
     private final AdminIntegrationService adminIntegrationService;
     private final CartService cartService;
     private final OrderStatusWebSocketController orderStatusWebSocketController;
+    @Value("${admin.api.websocket.bridge.enabled:false}")
+    private boolean adminWebsocketBridgeEnabled;
 
     private static final EnumSet<PaymentStatus> REUSABLE_PAYMENT_STATUSES =
             EnumSet.of(PaymentStatus.PENDING, PaymentStatus.PROCESSING);
@@ -61,11 +64,18 @@ public class OrderService {
 
     @Transactional
     public OrderResponse createOrder(CreateOrderRequest request, String token) {
-        // Extract customer from token
-        String email = jwtUtil.extractUsername(token.substring(7));
-        Customer customer = customerRepository.findByEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException("Customer not found"));
+        Customer customer = getCustomerFromToken(token);
+        return createOrderInternal(request, customer);
+    }
 
+    @Transactional
+    public OrderResponse createOrderForCustomer(CreateOrderRequest request, Long customerId) {
+        Customer customer = customerRepository.findById(customerId)
+                .orElseThrow(() -> new ResourceNotFoundException("Customer not found"));
+        return createOrderInternal(request, customer);
+    }
+
+    private OrderResponse createOrderInternal(CreateOrderRequest request, Customer customer) {
         validateOrderDetails(request);
 
         // Validate and calculate total price
@@ -133,7 +143,9 @@ public class OrderService {
         ensureProductsSyncedWithAdmin(persistedItems);
         syncOrderWithAdmin(order, persistedItems);
         OrderResponse response = orderMapper.toResponse(order, persistedItems);
-        orderStatusWebSocketController.sendOrderUpdate(order.getId(), response);
+        if (!adminWebsocketBridgeEnabled) {
+            orderStatusWebSocketController.sendOrderUpdate(order.getId(), response);
+        }
         publishStatusUpdate(order,
                 "ORDER_CREATED",
                 "Order placed",
@@ -369,7 +381,9 @@ public class OrderService {
 
         List<OrderItem> orderItems = orderItemRepository.findByOrderId(orderId);
         OrderResponse response = enrichOrderResponse(orderMapper.toResponse(order, orderItems), order);
-        orderStatusWebSocketController.sendOrderUpdate(orderId, response);
+        if (!adminWebsocketBridgeEnabled) {
+            orderStatusWebSocketController.sendOrderUpdate(orderId, response);
+        }
         publishStatusUpdate(order,
                 "ORDER_CANCELLED",
                 "Order cancelled",
@@ -430,6 +444,12 @@ public class OrderService {
             return;
         }
 
+        if (adminWebsocketBridgeEnabled) {
+            log.debug("Skipping local order snapshot broadcast for order {} because admin bridge will relay updates.",
+                    order.getId());
+            return;
+        }
+
         List<OrderItem> items = orderItems != null ? orderItems : orderItemRepository.findByOrderId(order.getId());
         OrderResponse response = enrichOrderResponse(orderMapper.toResponse(order, items), order);
         orderStatusWebSocketController.sendOrderUpdate(order.getId(), response);
@@ -458,6 +478,12 @@ public class OrderService {
             adminIntegrationService.updateOrderStatus(order);
         } catch (Exception e) {
             log.error("Failed to forward order {} status {} to Admin backend", order.getId(), order.getStatus(), e);
+        }
+
+        if (adminWebsocketBridgeEnabled) {
+            log.debug("Skipping local WebSocket status broadcast for order {} because admin bridge will relay updates.",
+                    order.getId());
+            return;
         }
 
         orderStatusWebSocketController.sendOrderStatusUpdate(order.getId(), statusMessage);
