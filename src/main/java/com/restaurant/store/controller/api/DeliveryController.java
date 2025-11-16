@@ -2,9 +2,12 @@ package com.restaurant.store.controller.api;
 
 import com.restaurant.store.dto.response.ApiResponse;
 import com.restaurant.store.dto.response.DeliveryResponse;
+import com.restaurant.store.entity.DeliveryStatus;
 import com.restaurant.store.service.DeliveryService;
+import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -20,6 +23,7 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/deliveries")
 @CrossOrigin(origins = "*")
 @Tag(name = "Deliveries", description = "Delivery tracking and management (REST). For real-time updates, use WebSocket at /ws")
+@Slf4j
 public class DeliveryController {
     
     @Autowired
@@ -57,23 +61,62 @@ public class DeliveryController {
         return ResponseEntity.ok(ApiResponse.success("Delivery tracking information retrieved successfully", response));
     }
     
-    @PutMapping("/{deliveryId}/update-location")
-    public ResponseEntity<ApiResponse<String>> updateDeliveryLocation(
-            @PathVariable Long deliveryId,
-            @RequestParam String location,
-            @RequestHeader("Authorization") String authToken) {
-        
-        // TODO: Implement delivery location update logic (for driver/admin use)
-        return ResponseEntity.ok(ApiResponse.success("Delivery location updated successfully", null));
-    }
-    
-    @PutMapping("/{deliveryId}/update-status")
-    public ResponseEntity<ApiResponse<String>> updateDeliveryStatus(
-            @PathVariable Long deliveryId,
+    @PostMapping("/{orderId}/status")
+    @Hidden
+    @Operation(summary = "Update Delivery Status (Admin/Driver Only)", 
+               description = "Updates delivery status and broadcasts via WebSocket. This endpoint is for admin/driver use only.")
+    public ResponseEntity<ApiResponse<DeliveryResponse>> updateDeliveryStatus(
+            @PathVariable Long orderId,
             @RequestParam String status,
-            @RequestHeader("Authorization") String authToken) {
-        
-        // TODO: Implement delivery status update logic (for driver/admin use)
-        return ResponseEntity.ok(ApiResponse.success("Delivery status updated successfully", null));
+            @RequestParam(required = false) String location) {
+
+        log.info("Received delivery status update for order: {} - New status: {}, Location: {}", 
+                orderId, status, location);
+
+        DeliveryStatus deliveryStatus = DeliveryStatus.valueOf(status);
+        DeliveryResponse response = deliveryService.updateDeliveryStatus(orderId, deliveryStatus, location);
+
+        return ResponseEntity.ok(ApiResponse.success(
+                "Delivery status updated successfully",
+                response
+        ));
+    }
+
+    @PostMapping("/{orderId}/location")
+    @Hidden
+    @Operation(summary = "Update Delivery Location (Driver Only)", 
+               description = "Updates driver location and broadcasts via WebSocket. This endpoint is for driver use only.")
+    public ResponseEntity<ApiResponse<String>> updateDeliveryLocation(
+            @PathVariable Long orderId,
+            @RequestParam String location) {
+
+        log.info("Received delivery location update for order: {} - Location: {}", orderId, location);
+
+        deliveryService.updateDeliveryLocation(orderId, location);
+
+        return ResponseEntity.ok(ApiResponse.success(
+                "Delivery location updated successfully",
+                "Location updated to: " + location
+        ));
+    }
+
+    @PostMapping("/{orderId}/driver")
+    @Hidden
+    @Operation(summary = "Assign Driver to Delivery (Admin Only)", 
+               description = "Assigns a driver to a delivery and broadcasts notification via WebSocket. This endpoint is for admin use only.")
+    public ResponseEntity<ApiResponse<DeliveryResponse>> assignDriver(
+            @PathVariable Long orderId,
+            @RequestParam String driverName,
+            @RequestParam String driverPhone,
+            @RequestParam(required = false) String vehicleInfo) {
+
+        log.info("Assigning driver to delivery for order: {} - Driver: {}", orderId, driverName);
+
+        DeliveryResponse response = deliveryService.assignDriver(orderId, driverName, driverPhone, vehicleInfo);
+
+        return ResponseEntity.ok(ApiResponse.success(
+                "Driver assigned successfully",
+                response
+        ));
     }
 }
