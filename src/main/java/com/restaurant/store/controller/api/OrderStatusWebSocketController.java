@@ -2,6 +2,7 @@ package com.restaurant.store.controller.api;
 
 import com.restaurant.store.dto.response.OrderResponse;
 import com.restaurant.store.dto.response.OrderStatusMessage;
+import io.swagger.v3.oas.annotations.Hidden;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.handler.annotation.DestinationVariable;
@@ -12,9 +13,26 @@ import org.springframework.stereotype.Controller;
 
 import java.time.LocalDateTime;
 
+/**
+ * WebSocket controller for real-time order status updates.
+ * Provides STOMP endpoints for subscribing to order status changes.
+ * 
+ * WebSocket Connection:
+ * - Connect to: ws://localhost:8080/ws
+ * - Use SockJS: new SockJS('http://localhost:8080/ws')
+ * - Use STOMP client over SockJS
+ * 
+ * Topics:
+ * - /topic/orders/{orderId} - Order updates
+ * - /topic/orders/{orderId}/status - Order status messages
+ * - /topic/orders/{orderId}/notifications - Order notifications
+ * 
+ * See /api/websocket/info for detailed connection instructions.
+ */
 @Controller
 @RequiredArgsConstructor
 @Slf4j
+@Hidden
 public class OrderStatusWebSocketController {
 
     private final SimpMessagingTemplate messagingTemplate;
