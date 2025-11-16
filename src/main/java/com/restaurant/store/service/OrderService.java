@@ -41,6 +41,7 @@ public class OrderService {
     private final OrderRepository orderRepository;
     private final OrderItemRepository orderItemRepository;
     private final ProductRepository productRepository;
+    private final CategoryRepository categoryRepository;
     private final CustomerRepository customerRepository;
     private final PaymentRepository paymentRepository;
     private final DeliveryRepository deliveryRepository;
@@ -128,15 +129,9 @@ public class OrderService {
             pickup = createPickupRecord(order, request, customer);
         }
 
-        // Sync order to Admin backend
-        try {
-            log.info("Syncing order {} to Admin backend", order.getId());
-            adminIntegrationService.syncOrderToAdmin(order.getId());
-        } catch (Exception e) {
-            log.error("Failed to sync order to Admin backend", e);
-        }
-
         List<OrderItem> persistedItems = orderItemRepository.findByOrderId(order.getId());
+        ensureProductsSyncedWithAdmin(persistedItems);
+        syncOrderWithAdmin(order, persistedItems);
         OrderResponse response = orderMapper.toResponse(order, persistedItems);
         orderStatusWebSocketController.sendOrderUpdate(order.getId(), response);
         publishStatusUpdate(order,
@@ -459,8 +454,70 @@ public class OrderService {
                 .metadata(buildOrderMetadata(order, metadata, pickupOverride))
                 .build();
 
+        try {
+            adminIntegrationService.updateOrderStatus(order);
+        } catch (Exception e) {
+            log.error("Failed to forward order {} status {} to Admin backend", order.getId(), order.getStatus(), e);
+        }
+
         orderStatusWebSocketController.sendOrderStatusUpdate(order.getId(), statusMessage);
         orderStatusWebSocketController.sendOrderNotification(order.getId(), statusMessage);
+    }
+
+    private void ensureProductsSyncedWithAdmin(List<OrderItem> orderItems) {
+        if (orderItems == null || orderItems.isEmpty()) {
+            return;
+        }
+
+        for (OrderItem orderItem : orderItems) {
+            Product product = orderItem.getProduct();
+            if (product == null) {
+                continue;
+            }
+
+            Category category = product.getCategory();
+            if (category != null && category.getExternalId() == null) {
+                try {
+                    adminIntegrationService.pushCategory(category).ifPresent(externalId -> {
+                        category.setExternalId(externalId);
+                        category.setSyncedAt(LocalDateTime.now());
+                        categoryRepository.save(category);
+                    });
+                } catch (Exception e) {
+                    log.error("Failed to sync category {} for product {}", category.getId(), product.getId(), e);
+                }
+            }
+
+            if (product.getExternalId() != null) {
+                continue;
+            }
+
+            try {
+                adminIntegrationService.pushProduct(product).ifPresent(externalId -> {
+                    product.setExternalId(externalId);
+                    product.setSyncedAt(LocalDateTime.now());
+                    productRepository.save(product);
+                });
+            } catch (Exception e) {
+                log.error("Failed to sync product {} to Admin backend", product.getId(), e);
+            }
+        }
+    }
+
+    private void syncOrderWithAdmin(Order order, List<OrderItem> orderItems) {
+        if (order == null || orderItems == null || orderItems.isEmpty()) {
+            return;
+        }
+
+        try {
+            adminIntegrationService.syncOrderToAdmin(order, orderItems).ifPresent(externalId -> {
+                order.setExternalId(externalId);
+                order.setSyncedAt(LocalDateTime.now());
+                orderRepository.save(order);
+            });
+        } catch (Exception e) {
+            log.error("Failed to sync order {} to Admin backend", order.getId(), e);
+        }
     }
 
     private List<OrderItemRequest> resolveOrderItems(CreateOrderRequest request, Customer customer) {

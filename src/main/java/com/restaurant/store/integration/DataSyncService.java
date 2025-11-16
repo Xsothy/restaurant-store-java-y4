@@ -50,11 +50,14 @@ public class DataSyncService {
     }
 
     @Transactional
+    @Transactional
     public void syncAllData() {
         log.info("Starting data sync from Admin API");
         try {
-            syncCategories();
-            syncProducts();
+            syncCategoriesFromAdmin();
+            syncProductsFromAdmin();
+            pushLocalCategoriesToAdmin();
+            pushLocalProductsToAdmin();
             log.info("Data sync completed successfully");
         } catch (Exception e) {
             log.error("Error during data sync", e);
@@ -63,25 +66,31 @@ public class DataSyncService {
 
     @Transactional
     public void syncCategories() {
+        syncCategoriesFromAdmin();
+        pushLocalCategoriesToAdmin();
+    }
+
+    @Transactional
+    public void syncProducts() {
+        syncProductsFromAdmin();
+        pushLocalProductsToAdmin();
+    }
+
+    private void syncCategoriesFromAdmin() {
         log.info("Syncing categories from Admin API");
         List<AdminCategoryDto> adminCategories = adminIntegrationService.fetchCategories();
 
         if (adminCategories.isEmpty()) {
-            log.warn("No categories to sync");
+            log.warn("No categories to sync from Admin API");
             return;
         }
 
         for (AdminCategoryDto adminCategory : adminCategories) {
             Optional<Category> existingCategory = categoryRepository.findByExternalId(adminCategory.getId());
 
-            Category category;
-            if (existingCategory.isPresent()) {
-                category = existingCategory.get();
-                log.debug("Updating existing category: {}", category.getName());
-            } else {
-                category = new Category();
+            Category category = existingCategory.orElseGet(Category::new);
+            if (category.getExternalId() == null) {
                 category.setExternalId(adminCategory.getId());
-                log.debug("Creating new category: {}", adminCategory.getName());
             }
 
             category.setName(adminCategory.getName());
@@ -91,16 +100,15 @@ public class DataSyncService {
             categoryRepository.save(category);
         }
 
-        log.info("Synced {} categories", adminCategories.size());
+        log.info("Pulled {} categories from Admin API", adminCategories.size());
     }
 
-    @Transactional
-    public void syncProducts() {
+    private void syncProductsFromAdmin() {
         log.info("Syncing products from Admin API");
         List<AdminProductDto> adminProducts = adminIntegrationService.fetchProducts();
 
         if (adminProducts.isEmpty()) {
-            log.warn("No products to sync");
+            log.warn("No products to sync from Admin API");
             return;
         }
 
@@ -115,14 +123,9 @@ public class DataSyncService {
                             .orElseThrow(() -> new RuntimeException("Category not found for external ID: " + id))
             );
 
-            Product product;
-            if (existingProduct.isPresent()) {
-                product = existingProduct.get();
-                log.debug("Updating existing product: {}", product.getName());
-            } else {
-                product = new Product();
+            Product product = existingProduct.orElseGet(Product::new);
+            if (product.getExternalId() == null) {
                 product.setExternalId(adminProduct.getId());
-                log.debug("Creating new product: {}", adminProduct.getName());
             }
 
             product.setName(adminProduct.getName());
@@ -136,6 +139,67 @@ public class DataSyncService {
             productRepository.save(product);
         }
 
-        log.info("Synced {} products", adminProducts.size());
+        log.info("Pulled {} products from Admin API", adminProducts.size());
+    }
+
+    private void pushLocalCategoriesToAdmin() {
+        List<Category> categories = categoryRepository.findAll();
+        if (categories.isEmpty()) {
+            return;
+        }
+
+        for (Category category : categories) {
+            boolean needsSync = category.getExternalId() == null ||
+                    (category.getUpdatedAt() != null && (category.getSyncedAt() == null || category.getUpdatedAt().isAfter(category.getSyncedAt())));
+
+            if (!needsSync) {
+                continue;
+            }
+
+            try {
+                adminIntegrationService.pushCategory(category).ifPresent(externalId -> {
+                    category.setExternalId(externalId);
+                    category.setSyncedAt(LocalDateTime.now());
+                    categoryRepository.save(category);
+                });
+            } catch (Exception e) {
+                log.error("Failed to push category {} to Admin API", category.getId(), e);
+            }
+        }
+    }
+
+    private void pushLocalProductsToAdmin() {
+        List<Product> products = productRepository.findAll();
+        if (products.isEmpty()) {
+            return;
+        }
+
+        for (Product product : products) {
+            boolean needsSync = product.getExternalId() == null ||
+                    (product.getUpdatedAt() != null && (product.getSyncedAt() == null || product.getUpdatedAt().isAfter(product.getSyncedAt())));
+
+            if (!needsSync) {
+                continue;
+            }
+
+            Category category = product.getCategory();
+            if (category != null && category.getExternalId() == null) {
+                adminIntegrationService.pushCategory(category).ifPresent(externalId -> {
+                    category.setExternalId(externalId);
+                    category.setSyncedAt(LocalDateTime.now());
+                    categoryRepository.save(category);
+                });
+            }
+
+            try {
+                adminIntegrationService.pushProduct(product).ifPresent(externalId -> {
+                    product.setExternalId(externalId);
+                    product.setSyncedAt(LocalDateTime.now());
+                    productRepository.save(product);
+                });
+            } catch (Exception e) {
+                log.error("Failed to push product {} to Admin API", product.getId(), e);
+            }
+        }
     }
 }
