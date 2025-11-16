@@ -1,6 +1,16 @@
 package com.restaurant.store.integration;
 
+import com.restaurant.store.dto.admin.CategoryDTO;
+import com.restaurant.store.dto.admin.OrderDTO;
+import com.restaurant.store.dto.admin.ProductDTO;
+import com.restaurant.store.dto.admin.request.CreateOrderItemRequestDTO;
+import com.restaurant.store.dto.admin.request.CreateOrderRequestDTO;
 import com.restaurant.store.dto.admin.request.LoginRequestDTO;
+import com.restaurant.store.dto.admin.request.UpdateOrderStatusRequestDTO;
+import com.restaurant.store.entity.Category;
+import com.restaurant.store.entity.Order;
+import com.restaurant.store.entity.OrderItem;
+import com.restaurant.store.entity.Product;
 import com.restaurant.store.integration.dto.AdminApiResponse;
 import com.restaurant.store.integration.dto.AdminCategoryDto;
 import com.restaurant.store.integration.dto.AdminLoginResponse;
@@ -15,6 +25,8 @@ import org.springframework.web.reactive.function.client.WebClientResponseExcepti
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 
@@ -99,14 +111,200 @@ public class AdminApiClient implements AdminIntegrationService {
     }
 
     @Override
-    public void syncOrderToAdmin(Long orderId) {
+    public Optional<Long> pushCategory(Category category) {
+        if (category == null) {
+            return Optional.empty();
+        }
+
         try {
-            log.info("Syncing order {} to Admin API", orderId);
-            // This would be implemented based on Admin API's order creation endpoint
-            // For now, we'll just log it
-            log.info("Order sync placeholder - to be implemented");
+            String token = authenticate();
+            if (token == null) {
+                log.warn("Unable to authenticate with Admin API while pushing category {}", category.getId());
+                return Optional.empty();
+            }
+
+            CategoryDTO payload = CategoryDTO.builder()
+                    .name(category.getName())
+                    .description(category.getDescription())
+                    .build();
+
+            ParameterizedTypeReference<AdminApiResponse<CategoryDTO>> responseType =
+                    new ParameterizedTypeReference<>() {};
+
+            AdminApiResponse<CategoryDTO> response = (category.getExternalId() == null)
+                    ? adminWebClient.post()
+                    .uri("/categories")
+                    .headers(headers -> headers.setBearerAuth(token))
+                    .bodyValue(payload)
+                    .retrieve()
+                    .bodyToMono(responseType)
+                    .block()
+                    : adminWebClient.put()
+                    .uri("/categories/{id}", category.getExternalId())
+                    .headers(headers -> headers.setBearerAuth(token))
+                    .bodyValue(payload)
+                    .retrieve()
+                    .bodyToMono(responseType)
+                    .block();
+
+            if (response != null && Boolean.TRUE.equals(response.getSuccess()) && response.getData() != null) {
+                Long externalId = response.getData().getId();
+                log.info("Category {} synced to Admin with external ID {}", category.getId(), externalId);
+                return Optional.ofNullable(externalId);
+            }
+        } catch (WebClientResponseException e) {
+            log.error("Error pushing category {} to Admin API: {} - {}", category.getId(), e.getStatusCode(), e.getMessage());
         } catch (Exception e) {
-            log.error("Error syncing order to Admin API", e);
+            log.error("Unexpected error pushing category {} to Admin API", category.getId(), e);
+        }
+
+        return Optional.empty();
+    }
+
+    @Override
+    public Optional<Long> pushProduct(Product product) {
+        if (product == null) {
+            return Optional.empty();
+        }
+
+        Category category = product.getCategory();
+        if (category == null || category.getExternalId() == null) {
+            log.warn("Cannot sync product {} because its category is not synced", product.getId());
+            return Optional.empty();
+        }
+
+        try {
+            String token = authenticate();
+            if (token == null) {
+                log.warn("Unable to authenticate with Admin API while pushing product {}", product.getId());
+                return Optional.empty();
+            }
+
+            ProductDTO payload = ProductDTO.builder()
+                    .name(product.getName())
+                    .description(product.getDescription())
+                    .price(product.getPrice())
+                    .available(product.getIsAvailable())
+                    .imageUrl(product.getImageUrl())
+                    .category(CategoryDTO.builder()
+                            .id(category.getExternalId())
+                            .name(category.getName())
+                            .description(category.getDescription())
+                            .build())
+                    .build();
+
+            ParameterizedTypeReference<AdminApiResponse<ProductDTO>> responseType =
+                    new ParameterizedTypeReference<>() {};
+
+            AdminApiResponse<ProductDTO> response = (product.getExternalId() == null)
+                    ? adminWebClient.post()
+                    .uri("/products")
+                    .headers(headers -> headers.setBearerAuth(token))
+                    .bodyValue(payload)
+                    .retrieve()
+                    .bodyToMono(responseType)
+                    .block()
+                    : adminWebClient.put()
+                    .uri("/products/{id}", product.getExternalId())
+                    .headers(headers -> headers.setBearerAuth(token))
+                    .bodyValue(payload)
+                    .retrieve()
+                    .bodyToMono(responseType)
+                    .block();
+
+            if (response != null && Boolean.TRUE.equals(response.getSuccess()) && response.getData() != null) {
+                Long externalId = response.getData().getId();
+                log.info("Product {} synced to Admin with external ID {}", product.getId(), externalId);
+                return Optional.ofNullable(externalId);
+            }
+        } catch (WebClientResponseException e) {
+            log.error("Error pushing product {} to Admin API: {} - {}", product.getId(), e.getStatusCode(), e.getMessage());
+        } catch (Exception e) {
+            log.error("Unexpected error pushing product {} to Admin API", product.getId(), e);
+        }
+
+        return Optional.empty();
+    }
+
+    @Override
+    public Optional<Long> syncOrderToAdmin(Order order, List<OrderItem> orderItems) {
+        if (order == null || orderItems == null || orderItems.isEmpty()) {
+            return Optional.empty();
+        }
+
+        try {
+            String token = authenticate();
+            if (token == null) {
+                log.warn("Unable to authenticate with Admin API while syncing order {}", order.getId());
+                return Optional.empty();
+            }
+
+            List<CreateOrderItemRequestDTO> itemsPayload = buildOrderItemsPayload(orderItems);
+            if (itemsPayload.isEmpty()) {
+                log.warn("Skipping Admin order sync for {} because required product identifiers are missing", order.getId());
+                return Optional.empty();
+            }
+
+            CreateOrderRequestDTO payload = CreateOrderRequestDTO.builder()
+                    .customerName(order.getCustomer().getName())
+                    .customerPhone(resolveCustomerPhone(order))
+                    .customerAddress(resolveCustomerAddress(order))
+                    .notes(order.getSpecialInstructions())
+                    .totalAmount(order.getTotalPrice())
+                    .orderType(order.getOrderType())
+                    .items(itemsPayload)
+                    .build();
+
+            AdminApiResponse<OrderDTO> response = adminWebClient.post()
+                    .uri("/orders")
+                    .headers(headers -> headers.setBearerAuth(token))
+                    .bodyValue(payload)
+                    .retrieve()
+                    .bodyToMono(new ParameterizedTypeReference<AdminApiResponse<OrderDTO>>() {})
+                    .block();
+
+            if (response != null && Boolean.TRUE.equals(response.getSuccess()) && response.getData() != null) {
+                Long externalId = response.getData().getId();
+                log.info("Order {} synced to Admin with external ID {}", order.getId(), externalId);
+                return Optional.ofNullable(externalId);
+            }
+        } catch (WebClientResponseException e) {
+            log.error("Error syncing order {} to Admin API: {} - {}", order.getId(), e.getStatusCode(), e.getMessage());
+        } catch (Exception e) {
+            log.error("Unexpected error syncing order {} to Admin API", order.getId(), e);
+        }
+
+        return Optional.empty();
+    }
+
+    @Override
+    public void updateOrderStatus(Order order) {
+        if (order == null || order.getExternalId() == null) {
+            return;
+        }
+
+        try {
+            String token = authenticate();
+            if (token == null) {
+                log.warn("Unable to authenticate with Admin API while updating order status for {}", order.getId());
+                return;
+            }
+
+            UpdateOrderStatusRequestDTO request = UpdateOrderStatusRequestDTO.builder()
+                    .status(order.getStatus())
+                    .build();
+
+            adminWebClient.patch()
+                    .uri("/orders/{id}/status", order.getExternalId())
+                    .headers(headers -> headers.setBearerAuth(token))
+                    .bodyValue(request)
+                    .retrieve()
+                    .bodyToMono(Void.class)
+                    .block();
+        } catch (WebClientResponseException e) {
+            log.error("Error forwarding status for order {} to Admin API: {} - {}", order.getId(), e.getStatusCode(), e.getMessage());
+        } catch (Exception e) {
+            log.error("Unexpected error forwarding status for order {} to Admin API", order.getId(), e);
         }
     }
 
@@ -140,5 +338,37 @@ public class AdminApiClient implements AdminIntegrationService {
         }
 
         return null;
+    }
+
+    private List<CreateOrderItemRequestDTO> buildOrderItemsPayload(List<OrderItem> orderItems) {
+        boolean hasMissingProduct = orderItems.stream()
+                .anyMatch(item -> item.getProduct() == null || item.getProduct().getExternalId() == null);
+
+        if (hasMissingProduct) {
+            return Collections.emptyList();
+        }
+
+        return orderItems.stream()
+                .map(item -> CreateOrderItemRequestDTO.builder()
+                        .productId(item.getProduct().getExternalId())
+                        .quantity(item.getQuantity())
+                        .price(item.getPrice())
+                        .build())
+                .collect(Collectors.toList());
+    }
+
+    private String resolveCustomerPhone(Order order) {
+        if (order.getPhoneNumber() != null && !order.getPhoneNumber().isBlank()) {
+            return order.getPhoneNumber();
+        }
+        String fallback = order.getCustomer().getPhone();
+        return (fallback == null || fallback.isBlank()) ? "N/A" : fallback;
+    }
+
+    private String resolveCustomerAddress(Order order) {
+        if (order.getDeliveryAddress() != null && !order.getDeliveryAddress().isBlank()) {
+            return order.getDeliveryAddress();
+        }
+        return order.getCustomer().getAddress();
     }
 }
