@@ -1,8 +1,11 @@
 package com.restaurant.store.service;
 
+import com.restaurant.store.controller.api.DeliveryStatusWebSocketController;
 import com.restaurant.store.dto.response.DeliveryResponse;
+import com.restaurant.store.dto.response.OrderStatusMessage;
 import com.restaurant.store.entity.Customer;
 import com.restaurant.store.entity.Delivery;
+import com.restaurant.store.entity.DeliveryStatus;
 import com.restaurant.store.entity.Order;
 import com.restaurant.store.exception.BadRequestException;
 import com.restaurant.store.exception.ResourceNotFoundException;
@@ -11,10 +14,15 @@ import com.restaurant.store.repository.CustomerRepository;
 import com.restaurant.store.repository.DeliveryRepository;
 import com.restaurant.store.repository.OrderRepository;
 import com.restaurant.store.security.JwtUtil;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDateTime;
 
 @Service
+@Slf4j
 public class DeliveryService {
 
     @Autowired
@@ -31,6 +39,9 @@ public class DeliveryService {
 
     @Autowired
     private DeliveryMapper deliveryMapper;
+
+    @Autowired
+    private DeliveryStatusWebSocketController deliveryStatusWebSocketController;
 
     public DeliveryResponse getDeliveryByOrderId(Long orderId, String token) {
         String email = jwtUtil.extractUsername(token.substring(7));
@@ -52,6 +63,176 @@ public class DeliveryService {
 
     public DeliveryResponse trackDelivery(Long orderId, String token) {
         return getDeliveryByOrderId(orderId, token);
+    }
+
+    @Transactional
+    public DeliveryResponse updateDeliveryStatus(Long orderId, DeliveryStatus newStatus, String location) {
+        log.info("Updating delivery status for order: {} - New status: {}", orderId, newStatus);
+
+        Delivery delivery = deliveryRepository.findByOrderId(orderId)
+                .orElseThrow(() -> new ResourceNotFoundException("Delivery not found for order id: " + orderId));
+
+        DeliveryStatus oldStatus = delivery.getStatus();
+        delivery.setStatus(newStatus);
+
+        if (location != null) {
+            delivery.setCurrentLocation(location);
+        }
+
+        if (newStatus == DeliveryStatus.PICKED_UP && delivery.getPickupTime() == null) {
+            delivery.setPickupTime(LocalDateTime.now());
+        }
+
+        if (newStatus == DeliveryStatus.DELIVERED && delivery.getActualDeliveryTime() == null) {
+            delivery.setActualDeliveryTime(LocalDateTime.now());
+        }
+
+        delivery = deliveryRepository.save(delivery);
+
+        DeliveryResponse response = deliveryMapper.toResponse(delivery);
+        deliveryStatusWebSocketController.sendDeliveryUpdate(orderId, response);
+
+        OrderStatusMessage statusMessage = buildStatusMessage(orderId, oldStatus, newStatus, location);
+        deliveryStatusWebSocketController.sendDeliveryStatusUpdate(orderId, statusMessage);
+
+        if (shouldSendNotification(oldStatus, newStatus)) {
+            OrderStatusMessage notification = buildNotificationMessage(orderId, newStatus, delivery);
+            deliveryStatusWebSocketController.sendDeliveryNotification(orderId, notification);
+        }
+
+        log.info("Delivery status updated successfully for order: {} - {} -> {}", orderId, oldStatus, newStatus);
+        return response;
+    }
+
+    @Transactional
+    public void updateDeliveryLocation(Long orderId, String location) {
+        log.info("Updating delivery location for order: {} - Location: {}", orderId, location);
+
+        Delivery delivery = deliveryRepository.findByOrderId(orderId)
+                .orElseThrow(() -> new ResourceNotFoundException("Delivery not found for order id: " + orderId));
+
+        delivery.setCurrentLocation(location);
+        deliveryRepository.save(delivery);
+
+        deliveryStatusWebSocketController.sendLocationUpdate(orderId, location);
+        log.info("Delivery location updated for order: {}", orderId);
+    }
+
+    @Transactional
+    public DeliveryResponse assignDriver(Long orderId, String driverName, String driverPhone, String vehicleInfo) {
+        log.info("Assigning driver to delivery for order: {} - Driver: {}", orderId, driverName);
+
+        Delivery delivery = deliveryRepository.findByOrderId(orderId)
+                .orElseThrow(() -> new ResourceNotFoundException("Delivery not found for order id: " + orderId));
+
+        delivery.setDriverName(driverName);
+        delivery.setDriverPhone(driverPhone);
+        delivery.setVehicleInfo(vehicleInfo);
+        delivery.setStatus(DeliveryStatus.ASSIGNED);
+
+        delivery = deliveryRepository.save(delivery);
+
+        DeliveryResponse response = deliveryMapper.toResponse(delivery);
+        deliveryStatusWebSocketController.sendDeliveryUpdate(orderId, response);
+
+        OrderStatusMessage notification = OrderStatusMessage.builder()
+                .orderId(orderId)
+                .eventType("DRIVER_ASSIGNED")
+                .status(DeliveryStatus.ASSIGNED.name())
+                .title("Driver Assigned")
+                .message("Your driver " + driverName + " has been assigned to your delivery")
+                .timestamp(LocalDateTime.now())
+                .build();
+        deliveryStatusWebSocketController.sendDeliveryNotification(orderId, notification);
+
+        log.info("Driver assigned successfully to order: {}", orderId);
+        return response;
+    }
+
+    private OrderStatusMessage buildStatusMessage(Long orderId, DeliveryStatus oldStatus, 
+                                                    DeliveryStatus newStatus, String location) {
+        return OrderStatusMessage.builder()
+                .orderId(orderId)
+                .eventType("DELIVERY_STATUS_CHANGED")
+                .status(newStatus.name())
+                .title(getStatusTitle(newStatus))
+                .message(getStatusMessage(newStatus))
+                .timestamp(LocalDateTime.now())
+                .build();
+    }
+
+    private OrderStatusMessage buildNotificationMessage(Long orderId, DeliveryStatus status, Delivery delivery) {
+        return OrderStatusMessage.builder()
+                .orderId(orderId)
+                .eventType(getNotificationEvent(status))
+                .status(status.name())
+                .title(getNotificationTitle(status))
+                .message(getNotificationMessage(status, delivery))
+                .timestamp(LocalDateTime.now())
+                .build();
+    }
+
+    private boolean shouldSendNotification(DeliveryStatus oldStatus, DeliveryStatus newStatus) {
+        return newStatus == DeliveryStatus.ASSIGNED ||
+               newStatus == DeliveryStatus.PICKED_UP ||
+               newStatus == DeliveryStatus.ON_THE_WAY ||
+               newStatus == DeliveryStatus.DELIVERED;
+    }
+
+    private String getStatusTitle(DeliveryStatus status) {
+        return switch (status) {
+            case PENDING -> "Delivery Pending";
+            case ASSIGNED -> "Driver Assigned";
+            case PICKED_UP -> "Order Picked Up";
+            case ON_THE_WAY -> "On the Way";
+            case DELIVERED -> "Delivered";
+            case CANCELLED -> "Delivery Cancelled";
+        };
+    }
+
+    private String getStatusMessage(DeliveryStatus status) {
+        return switch (status) {
+            case PENDING -> "Your delivery is pending assignment";
+            case ASSIGNED -> "A driver has been assigned to your delivery";
+            case PICKED_UP -> "Your order has been picked up by the driver";
+            case ON_THE_WAY -> "Your order is on the way";
+            case DELIVERED -> "Your order has been delivered";
+            case CANCELLED -> "Your delivery has been cancelled";
+        };
+    }
+
+    private String getNotificationEvent(DeliveryStatus status) {
+        return switch (status) {
+            case ASSIGNED -> "DRIVER_ASSIGNED";
+            case PICKED_UP -> "ORDER_PICKED_UP";
+            case ON_THE_WAY -> "DRIVER_ON_THE_WAY";
+            case DELIVERED -> "ORDER_DELIVERED";
+            default -> "DELIVERY_UPDATE";
+        };
+    }
+
+    private String getNotificationTitle(DeliveryStatus status) {
+        return switch (status) {
+            case ASSIGNED -> "Driver Assigned";
+            case PICKED_UP -> "Order Picked Up";
+            case ON_THE_WAY -> "Driver On The Way";
+            case DELIVERED -> "Order Delivered";
+            default -> "Delivery Update";
+        };
+    }
+
+    private String getNotificationMessage(DeliveryStatus status, Delivery delivery) {
+        return switch (status) {
+            case ASSIGNED -> delivery.getDriverName() != null
+                    ? "Your driver " + delivery.getDriverName() + " will deliver your order"
+                    : "A driver has been assigned to your delivery";
+            case PICKED_UP -> "Your order is with the driver and on its way to you";
+            case ON_THE_WAY -> delivery.getEstimatedArrivalTime() != null
+                    ? "Your order will arrive around " + delivery.getEstimatedArrivalTime()
+                    : "Your driver is on the way";
+            case DELIVERED -> "Your order has been successfully delivered. Enjoy your meal!";
+            default -> "Your delivery status has been updated";
+        };
     }
 }
 

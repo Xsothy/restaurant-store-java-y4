@@ -3,7 +3,9 @@ package com.restaurant.store.controller.api.internal;
 import com.restaurant.store.controller.api.OrderStatusWebSocketController;
 import com.restaurant.store.dto.request.OrderStatusUpdateRequest;
 import com.restaurant.store.dto.response.ApiResponse;
+import com.restaurant.store.dto.response.DeliveryResponse;
 import com.restaurant.store.dto.response.OrderStatusMessage;
+import com.restaurant.store.entity.DeliveryStatus;
 import com.restaurant.store.entity.Order;
 import com.restaurant.store.entity.OrderItem;
 import com.restaurant.store.entity.OrderStatus;
@@ -17,6 +19,7 @@ import com.restaurant.store.repository.OrderItemRepository;
 import com.restaurant.store.repository.OrderRepository;
 import com.restaurant.store.repository.PaymentRepository;
 import com.restaurant.store.repository.PickupRepository;
+import com.restaurant.store.service.DeliveryService;
 import io.swagger.v3.oas.annotations.Hidden;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -41,6 +44,7 @@ public class InternalApiController {
     private final OrderStatusWebSocketController webSocketController;
     private final PaymentRepository paymentRepository;
     private final PickupRepository pickupRepository;
+    private final DeliveryService deliveryService;
 
     @PostMapping("/orders/{orderId}/status")
     public ResponseEntity<ApiResponse<Object>> updateOrderStatus(
@@ -174,5 +178,55 @@ public class InternalApiController {
         }
 
         return metadata;
+    }
+
+    @PostMapping("/deliveries/{orderId}/status")
+    public ResponseEntity<ApiResponse<DeliveryResponse>> updateDeliveryStatus(
+            @PathVariable Long orderId,
+            @RequestParam String status,
+            @RequestParam(required = false) String location) {
+
+        log.info("Received delivery status update for order: {} - New status: {}, Location: {}", 
+                orderId, status, location);
+
+        DeliveryStatus deliveryStatus = DeliveryStatus.valueOf(status);
+        DeliveryResponse response = deliveryService.updateDeliveryStatus(orderId, deliveryStatus, location);
+
+        return ResponseEntity.ok(ApiResponse.success(
+                "Delivery status updated successfully",
+                response
+        ));
+    }
+
+    @PostMapping("/deliveries/{orderId}/location")
+    public ResponseEntity<ApiResponse<String>> updateDeliveryLocation(
+            @PathVariable Long orderId,
+            @RequestParam String location) {
+
+        log.info("Received delivery location update for order: {} - Location: {}", orderId, location);
+
+        deliveryService.updateDeliveryLocation(orderId, location);
+
+        return ResponseEntity.ok(ApiResponse.success(
+                "Delivery location updated successfully",
+                "Location updated to: " + location
+        ));
+    }
+
+    @PostMapping("/deliveries/{orderId}/driver")
+    public ResponseEntity<ApiResponse<DeliveryResponse>> assignDriver(
+            @PathVariable Long orderId,
+            @RequestParam String driverName,
+            @RequestParam String driverPhone,
+            @RequestParam(required = false) String vehicleInfo) {
+
+        log.info("Assigning driver to delivery for order: {} - Driver: {}", orderId, driverName);
+
+        DeliveryResponse response = deliveryService.assignDriver(orderId, driverName, driverPhone, vehicleInfo);
+
+        return ResponseEntity.ok(ApiResponse.success(
+                "Driver assigned successfully",
+                response
+        ));
     }
 }
