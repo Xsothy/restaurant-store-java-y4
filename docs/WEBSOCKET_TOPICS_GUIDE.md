@@ -391,9 +391,9 @@ stompClient.subscribe('/topic/deliveries/123/notifications', (message) => {
 </html>
 ```
 
-## Internal API Endpoints (Admin Backend)
+## Admin/Driver API Endpoints
 
-These endpoints are used by the Admin Backend to trigger WebSocket broadcasts.
+These endpoints are used by the Admin Backend and Driver apps to trigger WebSocket broadcasts.
 
 ### Order Status Updates
 
@@ -414,7 +414,7 @@ These endpoints are used by the Admin Backend to trigger WebSocket broadcasts.
 
 ### Delivery Status Updates
 
-**Endpoint**: `POST /api/internal/deliveries/{orderId}/status`
+**Endpoint**: `POST /api/deliveries/{orderId}/status`
 
 **Parameters**:
 - `status` (required): `PENDING`, `ASSIGNED`, `PICKED_UP`, `ON_THE_WAY`, `DELIVERED`, `CANCELLED`
@@ -422,7 +422,7 @@ These endpoints are used by the Admin Backend to trigger WebSocket broadcasts.
 
 **Example**:
 ```bash
-curl -X POST "http://localhost:8080/api/internal/deliveries/123/status?status=ON_THE_WAY&location=Main%20St%20%26%205th%20Ave"
+curl -X POST "http://localhost:8080/api/deliveries/123/status?status=ON_THE_WAY&location=Main%20St%20%26%205th%20Ave"
 ```
 
 **Triggers**:
@@ -432,14 +432,14 @@ curl -X POST "http://localhost:8080/api/internal/deliveries/123/status?status=ON
 
 ### Delivery Location Updates
 
-**Endpoint**: `POST /api/internal/deliveries/{orderId}/location`
+**Endpoint**: `POST /api/deliveries/{orderId}/location`
 
 **Parameters**:
 - `location` (required): Current location string
 
 **Example**:
 ```bash
-curl -X POST "http://localhost:8080/api/internal/deliveries/123/location?location=Main%20St%20%26%206th%20Ave"
+curl -X POST "http://localhost:8080/api/deliveries/123/location?location=Main%20St%20%26%206th%20Ave"
 ```
 
 **Triggers**:
@@ -447,7 +447,7 @@ curl -X POST "http://localhost:8080/api/internal/deliveries/123/location?locatio
 
 ### Assign Driver to Delivery
 
-**Endpoint**: `POST /api/internal/deliveries/{orderId}/driver`
+**Endpoint**: `POST /api/deliveries/{orderId}/driver`
 
 **Parameters**:
 - `driverName` (required): Driver's name
@@ -456,7 +456,7 @@ curl -X POST "http://localhost:8080/api/internal/deliveries/123/location?locatio
 
 **Example**:
 ```bash
-curl -X POST "http://localhost:8080/api/internal/deliveries/123/driver?driverName=John%20Doe&driverPhone=%2B1234567890&vehicleInfo=Red%20Honda%20Civic%20-%20ABC123"
+curl -X POST "http://localhost:8080/api/deliveries/123/driver?driverName=John%20Doe&driverPhone=%2B1234567890&vehicleInfo=Red%20Honda%20Civic%20-%20ABC123"
 ```
 
 **Triggers**:
