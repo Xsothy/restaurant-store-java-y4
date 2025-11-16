@@ -28,7 +28,20 @@ public class OpenApiConfig {
                 .info(new Info()
                         .title("Restaurant Store API")
                         .version("1.0.0")
-                        .description("REST API for Restaurant Store Backend - A comprehensive ordering system for restaurant management with customer authentication, menu browsing, cart management, order processing, payment integration, and delivery tracking.")
+                        .description("""
+                                REST API for Restaurant Store Backend - A comprehensive ordering system for restaurant management 
+                                with customer authentication, menu browsing, cart management, order processing, payment integration, 
+                                and delivery tracking.
+                                
+                                **WebSocket Support:**
+                                This API also provides real-time updates via WebSocket (STOMP over SockJS).
+                                - WebSocket Endpoint: `ws://localhost:8080/ws`
+                                - Order Tracking: `/topic/orders/{orderId}`
+                                - Delivery Tracking: `/topic/deliveries/{orderId}`
+                                - Documentation: GET `/api/websocket/info`
+                                
+                                For detailed WebSocket connection instructions and available topics, see the WebSocket Information endpoint.
+                                """)
                         .contact(new Contact()
                                 .name("Restaurant Store Team")
                                 .email("support@restaurant-store.com")

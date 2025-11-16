@@ -3,13 +3,23 @@ package com.restaurant.store.controller.api;
 import com.restaurant.store.dto.response.ApiResponse;
 import com.restaurant.store.dto.response.DeliveryResponse;
 import com.restaurant.store.service.DeliveryService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+/**
+ * REST API controller for delivery management and tracking.
+ * 
+ * Note: This controller provides REST endpoints for polling delivery status.
+ * For real-time delivery tracking, use WebSocket endpoints instead.
+ * See /api/websocket/info for WebSocket connection details.
+ */
 @RestController
 @RequestMapping("/api/deliveries")
 @CrossOrigin(origins = "*")
+@Tag(name = "Deliveries", description = "Delivery tracking and management (REST). For real-time updates, use WebSocket at /ws")
 public class DeliveryController {
     
     @Autowired
@@ -25,6 +35,20 @@ public class DeliveryController {
     }
     
     @GetMapping("/track/{orderId}")
+    @Operation(
+        summary = "Track Delivery (REST/Polling)",
+        description = """
+            Get current delivery status for an order via REST API.
+            This endpoint is for polling-based tracking.
+            
+            **For Real-Time Tracking:** Use WebSocket instead!
+            - Connect to: ws://localhost:8080/ws
+            - Subscribe to: /topic/deliveries/{orderId}
+            - See /api/websocket/info for full documentation
+            
+            This REST endpoint should only be used if WebSocket is not available.
+            """
+    )
     public ResponseEntity<ApiResponse<DeliveryResponse>> trackDelivery(
             @PathVariable Long orderId,
             @RequestHeader("Authorization") String authToken) {
