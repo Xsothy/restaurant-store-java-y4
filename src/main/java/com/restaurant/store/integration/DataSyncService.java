@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -29,6 +30,7 @@ public class DataSyncService {
     private final AdminIntegrationService adminIntegrationService;
     private final CategoryRepository categoryRepository;
     private final ProductRepository productRepository;
+    private final ApplicationContext applicationContext;
 
     @Value("${admin.api.sync.enabled}")
     private boolean syncEnabled;
@@ -37,7 +39,8 @@ public class DataSyncService {
     public void syncOnStartup() {
         if (syncEnabled) {
             log.info("Application ready - initiating startup data sync");
-            syncAllData();
+            // Call through the Spring proxy so @Transactional on syncAllData is applied
+            applicationContext.getBean(DataSyncService.class).syncAllData();
         }
     }
 
@@ -45,17 +48,17 @@ public class DataSyncService {
     public void scheduledSync() {
         if (syncEnabled) {
             log.info("Running scheduled data sync");
-            syncAllData();
+            // Call through the Spring proxy so @Transactional on syncAllData is applied
+            applicationContext.getBean(DataSyncService.class).syncAllData();
         }
     }
 
     @Transactional
-    @Transactional
     public void syncAllData() {
         log.info("Starting data sync from Admin API");
         try {
-            syncCategoriesFromAdmin();
-            syncProductsFromAdmin();
+//            syncCategoriesFromAdmin();
+//            syncProductsFromAdmin();
             pushLocalCategoriesToAdmin();
             pushLocalProductsToAdmin();
             log.info("Data sync completed successfully");
@@ -183,12 +186,19 @@ public class DataSyncService {
             }
 
             Category category = product.getCategory();
-            if (category != null && category.getExternalId() == null) {
-                adminIntegrationService.pushCategory(category).ifPresent(externalId -> {
-                    category.setExternalId(externalId);
-                    category.setSyncedAt(LocalDateTime.now());
-                    categoryRepository.save(category);
-                });
+            if (category != null) {
+                Long categoryId = category.getId();
+                Category managedCategory = categoryId != null
+                        ? categoryRepository.findById(categoryId).orElse(null)
+                        : null;
+
+                if (managedCategory != null && managedCategory.getExternalId() == null) {
+                    adminIntegrationService.pushCategory(managedCategory).ifPresent(externalId -> {
+                        managedCategory.setExternalId(externalId);
+                        managedCategory.setSyncedAt(LocalDateTime.now());
+                        categoryRepository.save(managedCategory);
+                    });
+                }
             }
 
             try {

@@ -7,6 +7,7 @@ import com.restaurant.store.dto.admin.request.CreateOrderItemRequestDTO;
 import com.restaurant.store.dto.admin.request.CreateOrderRequestDTO;
 import com.restaurant.store.dto.admin.request.LoginRequestDTO;
 import com.restaurant.store.dto.admin.request.UpdateOrderStatusRequestDTO;
+import com.restaurant.store.dto.admin.response.PagedResponseDTO;
 import com.restaurant.store.entity.Category;
 import com.restaurant.store.entity.Order;
 import com.restaurant.store.entity.OrderItem;
@@ -19,6 +20,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
@@ -87,16 +89,16 @@ public class AdminApiClient implements AdminIntegrationService {
                 return Collections.emptyList();
             }
 
-            AdminApiResponse<List<AdminProductDto>> response = adminWebClient.get()
+            AdminApiResponse<PagedResponseDTO<AdminProductDto>> response = adminWebClient.get()
                     .uri("/products")
                     .headers(headers -> headers.setBearerAuth(token))
                     .retrieve()
-                    .bodyToMono(new ParameterizedTypeReference<AdminApiResponse<List<AdminProductDto>>>() {})
+                    .bodyToMono(new ParameterizedTypeReference<AdminApiResponse<PagedResponseDTO<AdminProductDto>>>() {})
                     .block();
 
             if (response != null && response.getSuccess() && response.getData() != null) {
-                log.info("Successfully fetched {} products", response.getData().size());
-                return response.getData();
+                log.info("Successfully fetched {} products", response.getData().getContent().size());
+                return response.getData().getContent();
             }
 
             log.warn("No products returned from Admin API");
@@ -131,21 +133,43 @@ public class AdminApiClient implements AdminIntegrationService {
             ParameterizedTypeReference<AdminApiResponse<CategoryDTO>> responseType =
                     new ParameterizedTypeReference<>() {};
 
-            AdminApiResponse<CategoryDTO> response = (category.getExternalId() == null)
-                    ? adminWebClient.post()
-                    .uri("/categories")
-                    .headers(headers -> headers.setBearerAuth(token))
-                    .bodyValue(payload)
-                    .retrieve()
-                    .bodyToMono(responseType)
-                    .block()
-                    : adminWebClient.put()
-                    .uri("/categories/{id}", category.getExternalId())
-                    .headers(headers -> headers.setBearerAuth(token))
-                    .bodyValue(payload)
-                    .retrieve()
-                    .bodyToMono(responseType)
-                    .block();
+            AdminApiResponse<CategoryDTO> response;
+
+            if (category.getExternalId() == null) {
+                // Normal create
+                response = adminWebClient.post()
+                        .uri("/categories")
+                        .headers(h -> h.setBearerAuth(token))
+                        .bodyValue(payload)
+                        .retrieve()
+                        .bodyToMono(responseType)
+                        .block();
+            } else {
+                try {
+                    // Try update first
+                    response = adminWebClient.put()
+                            .uri("/categories/{id}", category.getExternalId())
+                            .headers(h -> h.setBearerAuth(token))
+                            .bodyValue(payload)
+                            .retrieve()
+                            .bodyToMono(responseType)
+                            .block();
+                } catch (WebClientResponseException e) {
+                    if (e.getStatusCode() == HttpStatus.NOT_FOUND) {
+                        log.warn("Admin category {} not found (404), creating new record", category.getExternalId());
+                        // Fallback: create instead
+                        response = adminWebClient.post()
+                                .uri("/categories")
+                                .headers(h -> h.setBearerAuth(token))
+                                .bodyValue(payload)
+                                .retrieve()
+                                .bodyToMono(responseType)
+                                .block();
+                    } else {
+                        throw e; // handled by outer catch
+                    }
+                }
+            }
 
             if (response != null && Boolean.TRUE.equals(response.getSuccess()) && response.getData() != null) {
                 Long externalId = response.getData().getId();
@@ -196,21 +220,43 @@ public class AdminApiClient implements AdminIntegrationService {
             ParameterizedTypeReference<AdminApiResponse<ProductDTO>> responseType =
                     new ParameterizedTypeReference<>() {};
 
-            AdminApiResponse<ProductDTO> response = (product.getExternalId() == null)
-                    ? adminWebClient.post()
-                    .uri("/products")
-                    .headers(headers -> headers.setBearerAuth(token))
-                    .bodyValue(payload)
-                    .retrieve()
-                    .bodyToMono(responseType)
-                    .block()
-                    : adminWebClient.put()
-                    .uri("/products/{id}", product.getExternalId())
-                    .headers(headers -> headers.setBearerAuth(token))
-                    .bodyValue(payload)
-                    .retrieve()
-                    .bodyToMono(responseType)
-                    .block();
+            AdminApiResponse<ProductDTO> response;
+
+            if (product.getExternalId() == null) {
+                // Normal create
+                response = adminWebClient.post()
+                        .uri("/products")
+                        .headers(headers -> headers.setBearerAuth(token))
+                        .bodyValue(payload)
+                        .retrieve()
+                        .bodyToMono(responseType)
+                        .block();
+            } else {
+                try {
+                    // Try update first
+                    response = adminWebClient.put()
+                            .uri("/products/{id}", product.getExternalId())
+                            .headers(headers -> headers.setBearerAuth(token))
+                            .bodyValue(payload)
+                            .retrieve()
+                            .bodyToMono(responseType)
+                            .block();
+                } catch (WebClientResponseException e) {
+                    if (e.getStatusCode() == HttpStatus.NOT_FOUND) {
+                        log.warn("Admin product {} not found (404), creating new record", product.getExternalId());
+                        // Fallback: create instead
+                        response = adminWebClient.post()
+                                .uri("/products")
+                                .headers(headers -> headers.setBearerAuth(token))
+                                .bodyValue(payload)
+                                .retrieve()
+                                .bodyToMono(responseType)
+                                .block();
+                    } else {
+                        throw e;
+                    }
+                }
+            }
 
             if (response != null && Boolean.TRUE.equals(response.getSuccess()) && response.getData() != null) {
                 Long externalId = response.getData().getId();
@@ -315,15 +361,18 @@ public class AdminApiClient implements AdminIntegrationService {
                     .password(adminPassword)
                     .build();
 
-            AdminLoginResponse response = adminWebClient.post()
+            AdminApiResponse<AdminLoginResponse> response = adminWebClient.post()
                     .uri("/auth/login")
                     .bodyValue(loginRequest)
                     .retrieve()
-                    .bodyToMono(AdminLoginResponse.class)
+                    .bodyToMono(new ParameterizedTypeReference<AdminApiResponse<AdminLoginResponse>>() {})
                     .block();
 
-            if (response != null && Boolean.TRUE.equals(response.getSuccess()) && response.getToken() != null) {
-                return response.getToken();
+            if (response != null
+                    && Boolean.TRUE.equals(response.getSuccess())
+                    && response.getData() != null
+                    && response.getData().getToken() != null) {
+                return response.getData().getToken();
             }
 
             if (response != null) {

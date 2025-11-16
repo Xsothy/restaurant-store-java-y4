@@ -2,6 +2,7 @@ package com.restaurant.store.integration;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.restaurant.store.controller.api.DeliveryStatusWebSocketController;
 import com.restaurant.store.controller.api.OrderStatusWebSocketController;
 import com.restaurant.store.dto.admin.websocket.WebSocketMessageDTO;
 import com.restaurant.store.dto.response.OrderStatusMessage;
@@ -46,6 +47,7 @@ public class AdminWebSocketBridge {
 
     private final OrderRepository orderRepository;
     private final OrderStatusWebSocketController orderStatusWebSocketController;
+    private final DeliveryStatusWebSocketController deliveryStatusWebSocketController;
     private final ObjectMapper objectMapper;
     private final WebSocketStompClient stompClient;
     private final ThreadPoolTaskScheduler taskScheduler;
@@ -58,19 +60,24 @@ public class AdminWebSocketBridge {
     private final AtomicInteger reconnectAttempts = new AtomicInteger();
     private final String websocketUrl;
     private final String subscriptionTopic;
+    private final String deliverySubscriptionTopic;
 
     private volatile StompSession session;
 
     public AdminWebSocketBridge(OrderRepository orderRepository,
                                 OrderStatusWebSocketController orderStatusWebSocketController,
+                                DeliveryStatusWebSocketController deliveryStatusWebSocketController,
                                 ObjectMapper objectMapper,
                                 @Value("${admin.api.websocket.url}") String websocketUrl,
-                                @Value("${admin.api.websocket.topic:/topic/admin/orders}") String subscriptionTopic) {
+                                @Value("${admin.api.websocket.topic:/topic/admin/orders}") String subscriptionTopic,
+                                @Value("${admin.api.websocket.delivery-topic:/topic/deliveries}") String deliverySubscriptionTopic) {
         this.orderRepository = orderRepository;
         this.orderStatusWebSocketController = orderStatusWebSocketController;
+        this.deliveryStatusWebSocketController = deliveryStatusWebSocketController;
         this.objectMapper = objectMapper;
         this.websocketUrl = websocketUrl;
         this.subscriptionTopic = subscriptionTopic;
+        this.deliverySubscriptionTopic = deliverySubscriptionTopic;
         this.taskScheduler = new ThreadPoolTaskScheduler();
         this.taskScheduler.setThreadNamePrefix("admin-ws-heartbeat-");
         this.taskScheduler.initialize();
@@ -126,12 +133,22 @@ public class AdminWebSocketBridge {
         try {
             WebSocketMessageDTO dto = objectMapper.readValue(payload, WebSocketMessageDTO.class);
             forwardAdminMessage(dto);
+            log.info("Websocket message", dto);
         } catch (Exception e) {
             log.error("Failed to parse Admin WebSocket payload", e);
         }
     }
 
     private void forwardAdminMessage(WebSocketMessageDTO message) {
+        String type = Optional.ofNullable(message.getType()).orElse("");
+        if (type.contains("DELIVERY")) {
+            forwardAdminDeliveryMessage(message);
+        } else {
+            forwardAdminOrderMessage(message);
+        }
+    }
+
+    private void forwardAdminOrderMessage(WebSocketMessageDTO message) {
         Map<String, Object> data = extractData(message.getData());
         Long adminOrderId = extractOrderId(data);
         if (adminOrderId == null) {
@@ -168,6 +185,29 @@ public class AdminWebSocketBridge {
 
         orderStatusWebSocketController.sendOrderStatusUpdate(order.getId(), statusMessage);
         orderStatusWebSocketController.sendOrderNotification(order.getId(), statusMessage);
+    }
+
+    private void forwardAdminDeliveryMessage(WebSocketMessageDTO message) {
+        Map<String, Object> data = extractData(message.getData());
+        Long orderId = extractOrderId(data);
+        if (orderId == null) {
+            log.debug("Ignoring Admin delivery WebSocket message without order id: {}", message);
+            return;
+        }
+
+        OrderStatusMessage statusMessage = OrderStatusMessage.builder()
+                .orderId(orderId)
+                .status(Optional.ofNullable(extractString(data, List.of("status", "deliveryStatus")))
+                        .orElse("UPDATED"))
+                .eventType(Optional.ofNullable(message.getType()).orElse("DELIVERY_STATUS_UPDATED"))
+                .title("Delivery status updated")
+                .message(Optional.ofNullable(message.getMessage()).orElse("Delivery update received"))
+                .timestamp(Optional.ofNullable(message.getTimestamp()).orElse(LocalDateTime.now()))
+                .metadata(data.isEmpty() ? Collections.emptyMap() : data)
+                .build();
+
+        deliveryStatusWebSocketController.sendDeliveryStatusUpdate(orderId, statusMessage);
+        deliveryStatusWebSocketController.sendDeliveryNotification(orderId, statusMessage);
     }
 
     private boolean applyAdminOrderData(Order order, Map<String, Object> data) {
@@ -278,6 +318,10 @@ public class AdminWebSocketBridge {
             AdminWebSocketBridge.this.session = session;
             session.subscribe(subscriptionTopic, this);
             log.info("Subscribed to Admin WebSocket topic {}", subscriptionTopic);
+            if (!deliverySubscriptionTopic.equals(subscriptionTopic)) {
+                session.subscribe(deliverySubscriptionTopic, this);
+                log.info("Subscribed to Admin WebSocket delivery topic {}", deliverySubscriptionTopic);
+            }
         }
 
         @Override

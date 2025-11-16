@@ -253,7 +253,7 @@ public class OrderService {
             payment.setUpdatedAt(LocalDateTime.now());
             paymentRepository.save(payment);
 
-            order.setStatus(OrderStatus.CONFIRMED);
+            order.setStatus(OrderStatus.PENDING);
             order = orderRepository.save(order);
             updatePickupStatus(order, PickupStatus.PREPARING);
 
@@ -278,7 +278,7 @@ public class OrderService {
 
         try {
             paymentService.handlePaymentSuccess(request.getTransactionId());
-            order.setStatus(OrderStatus.CONFIRMED);
+            order.setStatus(OrderStatus.PENDING);
             order = orderRepository.save(order);
             updatePickupStatus(order, PickupStatus.PREPARING);
 
