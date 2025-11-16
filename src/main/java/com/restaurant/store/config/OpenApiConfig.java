@@ -38,7 +38,7 @@ public class OpenApiConfig {
                                 - WebSocket Endpoint: `ws://localhost:8080/ws`
                                 - Order Tracking: `/topic/orders/{orderId}`
                                 - Delivery Tracking: `/topic/deliveries/{orderId}`
-                                - Documentation: GET `/api/websocket/info`
+                                - Documentation: GET `/api/websocket/info` or `/api/ws`
                                 
                                 For detailed WebSocket connection instructions and available topics, see the WebSocket Information endpoint.
                                 """)
