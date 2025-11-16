@@ -5,6 +5,7 @@ import com.restaurant.store.entity.OrderStatus;
 import com.restaurant.store.entity.OrderType;
 import com.restaurant.store.entity.PaymentMethod;
 import com.restaurant.store.entity.PaymentStatus;
+import com.restaurant.store.entity.PickupStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -42,4 +43,11 @@ public class OrderResponse {
     private String deliveryDriverPhone;
     private LocalDateTime deliveryEstimatedArrivalTime;
     private LocalDateTime deliveryActualDeliveryTime;
+    private PickupStatus pickupStatus;
+    private String pickupCode;
+    private LocalDateTime pickupReadyAt;
+    private LocalDateTime pickupWindowStart;
+    private LocalDateTime pickupWindowEnd;
+    private LocalDateTime pickupPickedUpAt;
+    private String pickupInstructions;
 }
