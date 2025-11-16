@@ -97,6 +97,18 @@ ws://localhost:8080/ws
 
 The Admin Backend can push status updates via the Internal API, which will be broadcast to connected clients.
 
+#### Admin WebSocket Bridge
+
+To keep the Admin backend as the single source of truth for tracking events, the Store API can connect directly to the Admin WebSocket endpoint and relay each message to customer devices. Set the following properties (enabled by default in `application.properties`):
+
+```properties
+admin.api.websocket.bridge.enabled=true
+admin.api.websocket.url=ws://localhost:8081/ws
+admin.api.websocket.topic=/topic/admin/orders
+```
+
+When the bridge is enabled, local WebSocket broadcasts are suppressed and only Admin-sourced updates are sent to customers, ensuring both systems see identical tracking events.
+
 ### 4. Internal API for Admin Backend
 
 These endpoints allow the Admin Backend to update order statuses and sync information.

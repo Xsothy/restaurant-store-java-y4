@@ -183,6 +183,7 @@
     <script th:inline="javascript">
         /*<![CDATA[*/
         const STRIPE_PUBLIC_KEY = /*[[${stripePublicKey}]]*/ 'pk_test_key';
+        const PLACE_ORDER_URL = /*[[@{/checkout/place-order}]]*/ '/checkout/place-order';
         
         function checkoutApp() {
             return {
@@ -302,7 +303,7 @@
                             price: item.price
                         }));
                         
-                        const orderResponse = await fetch(`${API_BASE_URL}/orders`, {
+                        const orderResponse = await fetch(PLACE_ORDER_URL, {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json',

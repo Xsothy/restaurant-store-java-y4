@@ -1,5 +1,9 @@
 package com.restaurant.store.integration;
 
+import com.restaurant.store.entity.Category;
+import com.restaurant.store.entity.Order;
+import com.restaurant.store.entity.OrderItem;
+import com.restaurant.store.entity.Product;
 import com.restaurant.store.integration.dto.AdminCategoryDto;
 import com.restaurant.store.integration.dto.AdminProductDto;
 import lombok.extern.slf4j.Slf4j;
@@ -10,6 +14,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @Slf4j
@@ -82,7 +87,40 @@ public class AdminApiStubClient implements AdminIntegrationService {
     }
 
     @Override
-    public void syncOrderToAdmin(Long orderId) {
-        log.info("Stubbed Admin API received order {} for sync", orderId);
+    public Optional<Long> pushCategory(Category category) {
+        if (category == null) {
+            return Optional.empty();
+        }
+        long externalId = category.getExternalId() != null ? category.getExternalId() : 9000L + category.getId();
+        log.info("Stubbed Admin API synced category {} -> external {}", category.getId(), externalId);
+        return Optional.of(externalId);
+    }
+
+    @Override
+    public Optional<Long> pushProduct(Product product) {
+        if (product == null) {
+            return Optional.empty();
+        }
+        long externalId = product.getExternalId() != null ? product.getExternalId() : 12000L + product.getId();
+        log.info("Stubbed Admin API synced product {} -> external {}", product.getId(), externalId);
+        return Optional.of(externalId);
+    }
+
+    @Override
+    public Optional<Long> syncOrderToAdmin(Order order, List<OrderItem> orderItems) {
+        if (order == null) {
+            return Optional.empty();
+        }
+        long externalId = order.getExternalId() != null ? order.getExternalId() : 15000L + order.getId();
+        log.info("Stubbed Admin API received order {} for sync -> external {}", order.getId(), externalId);
+        return Optional.of(externalId);
+    }
+
+    @Override
+    public void updateOrderStatus(Order order) {
+        if (order == null) {
+            return;
+        }
+        log.info("Stubbed Admin API received status {} for order {}", order.getStatus(), order.getExternalId());
     }
 }
