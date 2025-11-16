@@ -90,7 +90,13 @@
                     </div>
                 </div>
 
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <details class="mt-4 group">
+                    <summary class="text-sm text-gray-600 cursor-pointer select-none flex items-center justify-between">
+                        <span>View items and delivery details</span>
+                        <span class="text-xs text-gray-400 group-open:hidden">Click to expand</span>
+                        <span class="text-xs text-gray-400 hidden group-open:inline">Click to collapse</span>
+                    </summary>
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-3">
                     <div class="lg:col-span-2 space-y-3" th:attr="data-items-container=${order.id}">
                         <div th:each="item : ${order.orderItems}" class="flex items-center gap-4 py-2">
                             <img th:src="${item.productImageUrl != null ? item.productImageUrl : 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=100&q=80'}"
@@ -160,7 +166,8 @@
                             View Details
                         </a>
                     </div>
-                </div>
+                    </div>
+                </details>
             </div>
         </div>
     </main>

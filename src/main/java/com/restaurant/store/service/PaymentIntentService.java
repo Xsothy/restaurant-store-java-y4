@@ -76,7 +76,9 @@ public class PaymentIntentService implements PaymentService {
         payment.setOrder(order);
         payment.setAmount(order.getTotalPrice());
         payment.setMethod(PaymentMethod.STRIPE);
-        payment.setStatus(PaymentStatus.AWAITING_WEBHOOK);
+        // Use PROCESSING here to avoid violating legacy DB check constraints
+        // that do not allow the newer AWAITING_WEBHOOK status value.
+        payment.setStatus(PaymentStatus.PROCESSING);
         payment.setTransactionId(paymentIntent.getId());
         if (payment.getCreatedAt() == null) {
             payment.setCreatedAt(LocalDateTime.now());
