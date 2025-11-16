@@ -3,16 +3,20 @@ package com.restaurant.store.controller.api.internal;
 import com.restaurant.store.controller.api.OrderStatusWebSocketController;
 import com.restaurant.store.dto.request.OrderStatusUpdateRequest;
 import com.restaurant.store.dto.response.ApiResponse;
+import com.restaurant.store.dto.response.OrderStatusMessage;
 import com.restaurant.store.entity.Order;
 import com.restaurant.store.entity.OrderItem;
 import com.restaurant.store.entity.OrderStatus;
+import com.restaurant.store.entity.OrderType;
 import com.restaurant.store.entity.Payment;
 import com.restaurant.store.entity.PaymentMethod;
 import com.restaurant.store.entity.PaymentStatus;
+import com.restaurant.store.entity.PickupStatus;
 import com.restaurant.store.mapper.OrderMapper;
 import com.restaurant.store.repository.OrderItemRepository;
 import com.restaurant.store.repository.OrderRepository;
 import com.restaurant.store.repository.PaymentRepository;
+import com.restaurant.store.repository.PickupRepository;
 import io.swagger.v3.oas.annotations.Hidden;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -20,7 +24,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/internal")
@@ -34,6 +40,7 @@ public class InternalApiController {
     private final OrderMapper orderMapper;
     private final OrderStatusWebSocketController webSocketController;
     private final PaymentRepository paymentRepository;
+    private final PickupRepository pickupRepository;
 
     @PostMapping("/orders/{orderId}/status")
     public ResponseEntity<ApiResponse<Object>> updateOrderStatus(
@@ -54,6 +61,7 @@ public class InternalApiController {
         }
 
         orderRepository.save(order);
+        syncPickupStatus(order, newStatus);
 
         if (newStatus == OrderStatus.DELIVERED) {
             markCashOnDeliveryPaymentsAsCompleted(orderId);
@@ -61,6 +69,17 @@ public class InternalApiController {
 
         List<OrderItem> orderItems = orderItemRepository.findByOrderId(orderId);
         webSocketController.sendOrderUpdate(orderId, orderMapper.toResponse(order, orderItems));
+
+        OrderStatusMessage statusMessage = OrderStatusMessage.builder()
+                .status(order.getStatus().name())
+                .eventType("ORDER_STATUS_CHANGED")
+                .title("Order status updated")
+                .message("Your order is now " + newStatus.name())
+                .estimatedDeliveryTime(order.getEstimatedDeliveryTime())
+                .metadata(buildMetadata(order, request))
+                .build();
+        webSocketController.sendOrderStatusUpdate(orderId, statusMessage);
+        webSocketController.sendOrderNotification(orderId, statusMessage);
 
         return ResponseEntity.ok(ApiResponse.success(
                 "Order status updated successfully",
@@ -107,5 +126,53 @@ public class InternalApiController {
                 "Order synced successfully",
                 orderMapper.toResponse(order, orderItems)
         ));
+    }
+
+    private void syncPickupStatus(Order order, OrderStatus newStatus) {
+        if (order.getOrderType() != OrderType.PICKUP) {
+            return;
+        }
+
+        pickupRepository.findByOrderId(order.getId()).ifPresent(pickup -> {
+            switch (newStatus) {
+                case PREPARING -> pickup.setStatus(PickupStatus.PREPARING);
+                case READY -> pickup.setStatus(PickupStatus.READY_FOR_PICKUP);
+                case DELIVERED -> {
+                    pickup.setStatus(PickupStatus.COMPLETED);
+                    pickup.setPickedUpAt(LocalDateTime.now());
+                }
+                case CANCELLED -> pickup.setStatus(PickupStatus.CANCELLED);
+                default -> { }
+            }
+
+            if (pickup.getStatus() == PickupStatus.READY_FOR_PICKUP) {
+                LocalDateTime now = LocalDateTime.now();
+                pickup.setReadyAt(now);
+                pickup.setWindowStart(now.minusMinutes(5));
+                pickup.setWindowEnd(now.plusHours(1));
+            }
+
+            pickupRepository.save(pickup);
+        });
+    }
+
+    private Map<String, Object> buildMetadata(Order order, OrderStatusUpdateRequest request) {
+        Map<String, Object> metadata = new HashMap<>();
+        metadata.put("orderId", order.getId());
+        metadata.put("orderType", order.getOrderType().name());
+        if (request.getEstimatedDeliveryTime() != null) {
+            metadata.put("estimatedDeliveryTime", request.getEstimatedDeliveryTime());
+        }
+
+        if (order.getOrderType() == OrderType.PICKUP) {
+            pickupRepository.findByOrderId(order.getId()).ifPresent(pickup -> {
+                metadata.put("pickupStatus", pickup.getStatus().name());
+                metadata.put("pickupCode", pickup.getPickupCode());
+                metadata.put("pickupWindowStart", pickup.getWindowStart());
+                metadata.put("pickupWindowEnd", pickup.getWindowEnd());
+            });
+        }
+
+        return metadata;
     }
 }

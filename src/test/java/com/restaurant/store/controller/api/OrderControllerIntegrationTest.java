@@ -140,6 +140,7 @@ class OrderControllerIntegrationTest {
         // Create order
         CreateOrderRequest orderRequest = new CreateOrderRequest();
         orderRequest.setDeliveryAddress("123 Delivery St");
+        orderRequest.setPhoneNumber("1234567890");
         orderRequest.setOrderType(OrderType.DELIVERY);
 
         mockMvc.perform(post("/api/orders")
@@ -162,6 +163,7 @@ class OrderControllerIntegrationTest {
     void testCreateOrder_EmptyCart() throws Exception {
         CreateOrderRequest orderRequest = new CreateOrderRequest();
         orderRequest.setDeliveryAddress("123 Delivery St");
+        orderRequest.setPhoneNumber("1234567890");
         orderRequest.setOrderType(OrderType.DELIVERY);
 
         mockMvc.perform(post("/api/orders")
@@ -176,6 +178,7 @@ class OrderControllerIntegrationTest {
     void testCreateOrder_Unauthorized() throws Exception {
         CreateOrderRequest orderRequest = new CreateOrderRequest();
         orderRequest.setDeliveryAddress("123 Delivery St");
+        orderRequest.setPhoneNumber("1234567890");
         orderRequest.setOrderType(OrderType.DELIVERY);
 
         mockMvc.perform(post("/api/orders")
@@ -199,6 +202,7 @@ class OrderControllerIntegrationTest {
 
         CreateOrderRequest orderRequest = new CreateOrderRequest();
         orderRequest.setDeliveryAddress("123 Delivery St");
+        orderRequest.setPhoneNumber("1234567890");
         orderRequest.setOrderType(OrderType.DELIVERY);
 
         String orderResponse = mockMvc.perform(post("/api/orders")
@@ -245,6 +249,7 @@ class OrderControllerIntegrationTest {
 
         CreateOrderRequest orderRequest = new CreateOrderRequest();
         orderRequest.setDeliveryAddress("123 Delivery St");
+        orderRequest.setPhoneNumber("1234567890");
         orderRequest.setOrderType(OrderType.DELIVERY);
 
         String orderResponse = mockMvc.perform(post("/api/orders")
@@ -281,6 +286,7 @@ class OrderControllerIntegrationTest {
 
         CreateOrderRequest orderRequest1 = new CreateOrderRequest();
         orderRequest1.setDeliveryAddress("123 Delivery St");
+        orderRequest1.setPhoneNumber("1234567890");
         orderRequest1.setOrderType(OrderType.DELIVERY);
         mockMvc.perform(post("/api/orders")
                         .header("Authorization", authToken)
@@ -300,6 +306,7 @@ class OrderControllerIntegrationTest {
 
         CreateOrderRequest orderRequest2 = new CreateOrderRequest();
         orderRequest2.setDeliveryAddress("456 Delivery Ave");
+        orderRequest2.setPhoneNumber("1234567890");
         orderRequest2.setOrderType(OrderType.PICKUP);
         mockMvc.perform(post("/api/orders")
                         .header("Authorization", authToken)
@@ -341,6 +348,7 @@ class OrderControllerIntegrationTest {
 
         CreateOrderRequest orderRequest = new CreateOrderRequest();
         orderRequest.setDeliveryAddress("123 Delivery St");
+        orderRequest.setPhoneNumber("1234567890");
         orderRequest.setOrderType(OrderType.DELIVERY);
 
         String orderResponse = mockMvc.perform(post("/api/orders")
@@ -390,6 +398,7 @@ class OrderControllerIntegrationTest {
 
         CreateOrderRequest orderRequest = new CreateOrderRequest();
         orderRequest.setDeliveryAddress("123 Delivery St");
+        orderRequest.setPhoneNumber("1234567890");
         orderRequest.setOrderType(OrderType.DELIVERY);
 
         String orderResponse = mockMvc.perform(post("/api/orders")
