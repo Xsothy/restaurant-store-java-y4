@@ -4,6 +4,8 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.restaurant.store.controller.api.DeliveryStatusWebSocketController;
 import com.restaurant.store.controller.api.OrderStatusWebSocketController;
+import com.restaurant.store.dto.admin.DeliveryDTO;
+import com.restaurant.store.dto.admin.OrderDTO;
 import com.restaurant.store.dto.admin.websocket.WebSocketMessageDTO;
 import com.restaurant.store.dto.response.OrderStatusMessage;
 import com.restaurant.store.entity.Order;
@@ -17,6 +19,7 @@ import org.springframework.messaging.simp.stomp.StompFrameHandler;
 import org.springframework.messaging.simp.stomp.StompHeaders;
 import org.springframework.messaging.simp.stomp.StompSession;
 import org.springframework.messaging.simp.stomp.StompSessionHandlerAdapter;
+import org.springframework.util.StringUtils;
 import org.springframework.util.concurrent.ListenableFuture;
 import org.springframework.web.socket.messaging.WebSocketStompClient;
 
@@ -24,8 +27,10 @@ import java.lang.reflect.Type;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeParseException;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -37,6 +42,15 @@ import java.util.stream.Collectors;
 public class MyStompSessionHandler extends StompSessionHandlerAdapter {
 
     private static final TypeReference<Map<String, Object>> MAP_TYPE = new TypeReference<>() { };
+    private static final EnumSet<WebSocketMessageDTO.MessageType> ORDER_MESSAGE_TYPES = EnumSet.of(
+            WebSocketMessageDTO.MessageType.ORDER_CREATED,
+            WebSocketMessageDTO.MessageType.ORDER_UPDATED,
+            WebSocketMessageDTO.MessageType.ORDER_STATUS_CHANGED
+    );
+    private static final EnumSet<WebSocketMessageDTO.MessageType> DELIVERY_MESSAGE_TYPES = EnumSet.of(
+            WebSocketMessageDTO.MessageType.DELIVERY_ASSIGNED,
+            WebSocketMessageDTO.MessageType.DELIVERY_STATUS_UPDATED
+    );
 
     private final OrderRepository orderRepository;
     private final OrderStatusWebSocketController orderStatusWebSocketController;
@@ -95,16 +109,6 @@ public class MyStompSessionHandler extends StompSessionHandlerAdapter {
         log.error("Admin WebSocket command {} failed", command, exception);
     }
 
-    @Override
-    public Type getPayloadType(StompHeaders headers) {
-        return WebSocketMessageDTO.class;
-    }
-
-    @Override
-    public void handleFrame(StompHeaders headers, Object payload) {
-        log.debug("Received Admin WebSocket frame for command {}", headers.getCommand());
-    }
-
     @PreDestroy
     public void shutdown() {
         reconnectExecutor.shutdownNow();
@@ -122,17 +126,17 @@ public class MyStompSessionHandler extends StompSessionHandlerAdapter {
         reconnectExecutor.schedule(() -> {
             log.info("Attempting Admin WebSocket reconnect to {}", websocketUrl);
             try {
-                ListenableFuture<StompSession> future = stompClient.connectAsync(websocketUrl, this);
-                future.addCallback(
-                        stompSession -> {
-                            log.info("Admin WebSocket reconnected");
-                            this.session = stompSession;
-                        },
-                        ex -> {
-                            log.error("Failed to reconnect Admin WebSocket", ex);
-                            scheduleReconnect();
-                        }
-                );
+                CompletableFuture<StompSession> future = stompClient.connectAsync(websocketUrl, this);
+                future.whenComplete((stompSession, throwable) -> {
+                    if (throwable != null) {
+                        log.error("Failed to reconnect Admin WebSocket", throwable);
+                        scheduleReconnect();
+                        return;
+                    }
+
+                    log.info("Admin WebSocket reconnected");
+                    this.session = stompSession;
+                });
             } catch (Exception ex) {
                 log.error("Unexpected error while reconnecting Admin WebSocket", ex);
                 scheduleReconnect();
@@ -140,31 +144,49 @@ public class MyStompSessionHandler extends StompSessionHandlerAdapter {
         }, delaySeconds, TimeUnit.SECONDS);
     }
 
-    private void handlePayload(WebSocketMessageDTO message) {
+    private void handlePayload(WebSocketMessageDTO<?> message) {
         if (message == null) {
             return;
         }
 
         try {
             forwardAdminMessage(message);
-            log.info("Received Admin WebSocket message: {}", message);
+            log.info("Received Admin WebSocket message: {}", message.getType());
         } catch (Exception e) {
             log.error("Failed to process Admin WebSocket payload", e);
         }
     }
 
-    private void forwardAdminMessage(WebSocketMessageDTO message) {
-        String type = Optional.ofNullable(message.getType()).orElse("");
-        if (type.contains("DELIVERY")) {
-            forwardAdminDeliveryMessage(message);
-        } else {
-            forwardAdminOrderMessage(message);
+    private void forwardAdminMessage(WebSocketMessageDTO<?> message) {
+        WebSocketMessageDTO.MessageType messageType = resolveMessageType(message.getType());
+        if (messageType == null) {
+            log.warn("Ignoring Admin WebSocket payload with unknown type: {}", message.getType());
+            return;
         }
+
+        if (ORDER_MESSAGE_TYPES.contains(messageType)) {
+            forwardAdminOrderMessage(message, messageType);
+            return;
+        }
+
+        if (DELIVERY_MESSAGE_TYPES.contains(messageType)) {
+            forwardAdminDeliveryMessage(message, messageType);
+            return;
+        }
+
+        log.debug("Admin WebSocket message type {} does not require forwarding", messageType);
     }
 
-    private void forwardAdminOrderMessage(WebSocketMessageDTO message) {
-        Map<String, Object> data = extractData(message.getData());
-        Long adminOrderId = extractOrderId(data);
+    private void forwardAdminOrderMessage(WebSocketMessageDTO<?> message, WebSocketMessageDTO.MessageType messageType) {
+        OrderDTO orderData = convertPayload(message.getData(), OrderDTO.class);
+        if (orderData == null) {
+            log.debug("Ignoring Admin order message without convertible payload: {}", message.getData());
+            return;
+        }
+
+        Map<String, Object> metadata = convertDataToMap(orderData);
+        Long adminOrderId = Optional.ofNullable(orderData.getId())
+                .orElseGet(() -> extractOrderId(metadata));
         if (adminOrderId == null) {
             log.debug("Ignoring Admin WebSocket message without order id: {}", message);
             return;
@@ -181,29 +203,26 @@ public class MyStompSessionHandler extends StompSessionHandlerAdapter {
         }
 
         Order order = optionalOrder.get();
-        boolean updated = applyAdminOrderData(order, data);
+        boolean updated = applyAdminOrderData(order, metadata);
         if (updated) {
             orderRepository.save(order);
         }
 
-        OrderStatusMessage statusMessage = OrderStatusMessage.builder()
-                .orderId(order.getId())
-                .status(order.getStatus().name())
-                .eventType(resolveEventType(message))
-                .title(resolveTitle(message))
-                .message(Optional.ofNullable(message.getMessage()).orElse("Order update received"))
-                .estimatedDeliveryTime(order.getEstimatedDeliveryTime())
-                .timestamp(Optional.ofNullable(message.getTimestamp()).orElse(LocalDateTime.now()))
-                .metadata(data.isEmpty() ? Collections.emptyMap() : data)
-                .build();
-
+        OrderStatusMessage statusMessage = buildStatusMessage(order, message, messageType, metadata, "Order update received");
         orderStatusWebSocketController.sendOrderStatusUpdate(order.getId(), statusMessage);
         orderStatusWebSocketController.sendOrderNotification(order.getId(), statusMessage);
     }
 
-    private void forwardAdminDeliveryMessage(WebSocketMessageDTO message) {
-        Map<String, Object> data = extractData(message.getData());
-        Long adminOrderId = extractOrderId(data);
+    private void forwardAdminDeliveryMessage(WebSocketMessageDTO<?> message, WebSocketMessageDTO.MessageType messageType) {
+        DeliveryDTO deliveryData = convertPayload(message.getData(), DeliveryDTO.class);
+        if (deliveryData == null) {
+            log.debug("Ignoring Admin delivery message without convertible payload: {}", message.getData());
+            return;
+        }
+
+        Map<String, Object> metadata = convertDataToMap(deliveryData);
+        Long adminOrderId = Optional.ofNullable(deliveryData.getOrderId())
+                .orElseGet(() -> extractOrderId(metadata));
         if (adminOrderId == null) {
             log.debug("Ignoring Admin WebSocket delivery message without order id: {}", message);
             return;
@@ -220,26 +239,17 @@ public class MyStompSessionHandler extends StompSessionHandlerAdapter {
         }
 
         Order order = optionalOrder.get();
-        boolean updated = applyAdminOrderData(order, data);
+        boolean updated = applyAdminOrderData(order, metadata);
         if (updated) {
             orderRepository.save(order);
         }
 
-        orderStatusWebSocketController.sendOrderNotification(order.getId(), OrderStatusMessage.builder()
-                .orderId(order.getId())
-                .status(order.getStatus().name())
-                .eventType(resolveEventType(message))
-                .title(resolveTitle(message))
-                .message(Optional.ofNullable(message.getMessage()).orElse("Delivery update received"))
-                .estimatedDeliveryTime(order.getEstimatedDeliveryTime())
-                .timestamp(Optional.ofNullable(message.getTimestamp()).orElse(LocalDateTime.now()))
-                .metadata(data.isEmpty() ? Collections.emptyMap() : data)
-                .build());
-
-        deliveryStatusWebSocketController.sendDeliveryStatusUpdate(order.getId(), message);
+        OrderStatusMessage statusMessage = buildStatusMessage(order, message, messageType, metadata, "Delivery update received");
+        orderStatusWebSocketController.sendOrderNotification(order.getId(), statusMessage);
+        deliveryStatusWebSocketController.sendDeliveryStatusUpdate(order.getId(), statusMessage);
     }
 
-    private Map<String, Object> extractData(Object data) {
+    private Map<String, Object> convertDataToMap(Object data) {
         if (data == null) {
             return Collections.emptyMap();
         }
@@ -314,12 +324,73 @@ public class MyStompSessionHandler extends StompSessionHandlerAdapter {
         }
     }
 
-    private String resolveEventType(WebSocketMessageDTO message) {
+    private <T> T convertPayload(Object payload, Class<T> targetType) {
+        if (payload == null) {
+            return null;
+        }
+
+        if (targetType.isInstance(payload)) {
+            return targetType.cast(payload);
+        }
+
+        try {
+            return objectMapper.convertValue(payload, targetType);
+        } catch (IllegalArgumentException ex) {
+            log.warn("Failed to convert Admin WebSocket payload to {}", targetType.getSimpleName(), ex);
+            return null;
+        }
+    }
+
+    private WebSocketMessageDTO.MessageType resolveMessageType(String rawType) {
+        if (!StringUtils.hasText(rawType)) {
+            return null;
+        }
+
+        try {
+            return WebSocketMessageDTO.MessageType.valueOf(rawType.toUpperCase());
+        } catch (IllegalArgumentException ex) {
+            log.warn("Unknown Admin WebSocket message type {}", rawType, ex);
+            return null;
+        }
+    }
+
+    private OrderStatusMessage buildStatusMessage(Order order,
+                                                  WebSocketMessageDTO<?> message,
+                                                  WebSocketMessageDTO.MessageType messageType,
+                                                  Map<String, Object> metadata,
+                                                  String defaultMessage) {
+        return OrderStatusMessage.builder()
+                .orderId(order.getId())
+                .status(order.getStatus().name())
+                .eventType(resolveEventType(messageType, message))
+                .title(resolveTitle(message, messageType))
+                .message(Optional.ofNullable(message.getMessage()).orElse(defaultMessage))
+                .estimatedDeliveryTime(order.getEstimatedDeliveryTime())
+                .timestamp(Optional.ofNullable(message.getTimestamp()).orElse(LocalDateTime.now()))
+                .metadata(metadata.isEmpty() ? Collections.emptyMap() : metadata)
+                .build();
+    }
+
+    private String resolveEventType(WebSocketMessageDTO.MessageType messageType, WebSocketMessageDTO<?> message) {
+        if (messageType != null) {
+            return messageType.name();
+        }
         return Optional.ofNullable(message.getType()).orElse("ORDER_UPDATE");
     }
 
-    private String resolveTitle(WebSocketMessageDTO message) {
-        return Optional.ofNullable(message.getTitle()).orElse("Order Update");
+    private String resolveTitle(WebSocketMessageDTO<?> message, WebSocketMessageDTO.MessageType messageType) {
+        if (StringUtils.hasText(message.getTitle())) {
+            return message.getTitle();
+        }
+
+        if (messageType == null) {
+            return "Order Update";
+        }
+
+        String normalized = messageType.name().toLowerCase().replace('_', ' ');
+        return normalized.isEmpty()
+                ? "Order Update"
+                : Character.toUpperCase(normalized.charAt(0)) + normalized.substring(1);
     }
 
     private class AdminEventFrameHandler implements StompFrameHandler {
@@ -331,7 +402,7 @@ public class MyStompSessionHandler extends StompSessionHandlerAdapter {
 
         @Override
         public void handleFrame(StompHeaders headers, Object payload) {
-            handlePayload((WebSocketMessageDTO) payload);
+            handlePayload((WebSocketMessageDTO<?>) payload);
         }
     }
 }
