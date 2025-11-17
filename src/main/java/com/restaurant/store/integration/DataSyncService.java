@@ -57,8 +57,8 @@ public class DataSyncService {
     public void syncAllData() {
         log.info("Starting data sync from Admin API");
         try {
-//            syncCategoriesFromAdmin();
-//            syncProductsFromAdmin();
+            syncCategoriesFromAdmin();
+            syncProductsFromAdmin();
             pushLocalCategoriesToAdmin();
             pushLocalProductsToAdmin();
             log.info("Data sync completed successfully");

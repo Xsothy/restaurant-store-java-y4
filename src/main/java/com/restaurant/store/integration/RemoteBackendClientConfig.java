@@ -1,15 +1,11 @@
 package com.restaurant.store.integration;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.restaurant.store.controller.api.DeliveryStatusWebSocketController;
-import com.restaurant.store.controller.api.OrderStatusWebSocketController;
-import com.restaurant.store.repository.OrderRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Primary;
 import org.springframework.messaging.converter.MappingJackson2MessageConverter;
 import org.springframework.messaging.simp.stomp.StompSession;
 import org.springframework.scheduling.TaskScheduler;
@@ -21,12 +17,11 @@ import org.springframework.web.socket.messaging.WebSocketStompClient;
 import java.util.concurrent.ExecutionException;
 
 @Configuration
-@ConditionalOnProperty(name = "admin.api.websocket.bridge.enabled", havingValue = "true")
+@ConditionalOnExpression("${admin.api.websocket.bridge.enabled:true} && !${admin.api.order-status.polling.enabled:false}")
 @Slf4j
 public class RemoteBackendClientConfig {
 
     @Bean(destroyMethod = "shutdown")
-    @Primary
     public ThreadPoolTaskScheduler adminWebSocketTaskScheduler() {
         ThreadPoolTaskScheduler scheduler = new ThreadPoolTaskScheduler();
         scheduler.setPoolSize(1);
@@ -45,17 +40,13 @@ public class RemoteBackendClientConfig {
     }
 
     @Bean
-    public MyStompSessionHandler myStompSessionHandler(OrderRepository orderRepository,
-                                                      OrderStatusWebSocketController orderStatusWebSocketController,
-                                                      DeliveryStatusWebSocketController deliveryStatusWebSocketController,
+    public MyStompSessionHandler myStompSessionHandler(AdminOrderEventForwarder adminOrderEventForwarder,
                                                       ObjectMapper objectMapper,
                                                       WebSocketStompClient stompClient,
                                                       @Value("${admin.api.websocket.url}") String websocketUrl,
                                                       @Value("${admin.api.websocket.topic:/topic/admin/orders}") String subscriptionTopic,
                                                       @Value("${admin.api.websocket.delivery-topic:/topic/deliveries}") String deliverySubscriptionTopic) {
-        return new MyStompSessionHandler(orderRepository,
-                orderStatusWebSocketController,
-                deliveryStatusWebSocketController,
+        return new MyStompSessionHandler(adminOrderEventForwarder,
                 objectMapper,
                 stompClient,
                 websocketUrl,
@@ -68,6 +59,8 @@ public class RemoteBackendClientConfig {
                                 MyStompSessionHandler sessionHandler,
                                 @Value("${admin.api.websocket.url}") String websocketUrl) throws ExecutionException, InterruptedException {
         log.info("Connecting to Admin WebSocket endpoint {}", websocketUrl);
-        return stompClient.connect(websocketUrl, sessionHandler).get();
+        StompSession session = stompClient.connect(websocketUrl, sessionHandler).get();
+        log.info("Connected to Admin WebSocket session {}", session.getSessionId());
+        return session;
     }
 }

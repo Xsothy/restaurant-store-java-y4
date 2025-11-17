@@ -11,6 +11,7 @@ import com.restaurant.store.dto.admin.response.PagedResponseDTO;
 import com.restaurant.store.entity.Category;
 import com.restaurant.store.entity.Order;
 import com.restaurant.store.entity.OrderItem;
+import com.restaurant.store.entity.OrderStatus;
 import com.restaurant.store.entity.Product;
 import com.restaurant.store.integration.dto.AdminApiResponse;
 import com.restaurant.store.integration.dto.AdminCategoryDto;
@@ -45,6 +46,9 @@ public class AdminApiClient implements AdminIntegrationService {
 
     @Value("${admin.api.password}")
     private String adminPassword;
+
+    @Value("${admin.api.order-status.polling.page-size:50}")
+    private int orderStatusPollingPageSize;
 
     @Override
     public List<AdminCategoryDto> fetchCategories() {
@@ -392,6 +396,53 @@ public class AdminApiClient implements AdminIntegrationService {
         } catch (Exception e) {
             log.error("Unexpected error forwarding status for order {} to Admin API", order.getId(), e);
         }
+    }
+
+    @Override
+    public List<OrderDTO> fetchOrdersByStatus(OrderStatus status) {
+        if (status == null) {
+            return Collections.emptyList();
+        }
+
+        try {
+            String token = authenticate();
+            if (token == null) {
+                log.warn("Unable to authenticate with Admin API while polling orders for status {}", status);
+                return Collections.emptyList();
+            }
+
+            ParameterizedTypeReference<AdminApiResponse<PagedResponseDTO<OrderDTO>>> responseType =
+                    new ParameterizedTypeReference<>() { };
+
+            AdminApiResponse<PagedResponseDTO<OrderDTO>> response = adminWebClient.get()
+                    .uri(uriBuilder -> uriBuilder
+                            .path("/orders")
+                            .queryParam("status", status.name())
+                            .queryParam("size", orderStatusPollingPageSize)
+                            .queryParam("sortBy", "updatedAt")
+                            .queryParam("sortDir", "desc")
+                            .build())
+                    .headers(headers -> headers.setBearerAuth(token))
+                    .retrieve()
+                    .bodyToMono(responseType)
+                    .block();
+
+            if (response != null && Boolean.TRUE.equals(response.getSuccess()) && response.getData() != null) {
+                List<OrderDTO> orders = response.getData().getContent();
+                if (orders != null) {
+                    log.info("Fetched {} Admin orders for status {}", orders.size(), status);
+                    return orders;
+                }
+            }
+
+            log.warn("Admin API returned no orders for status {}", status);
+        } catch (WebClientResponseException e) {
+            log.error("Error polling orders with status {} from Admin API: {} - {}", status, e.getStatusCode(), e.getMessage());
+        } catch (Exception e) {
+            log.error("Unexpected error polling orders with status {} from Admin API", status, e);
+        }
+
+        return Collections.emptyList();
     }
 
     private String authenticate() {
