@@ -45,6 +45,16 @@ public class AdminApiStubClient implements AdminIntegrationService {
     }
 
     @Override
+    public Optional<AdminCategoryDto> fetchCategoryById(Long categoryId) {
+        if (categoryId == null) {
+            return Optional.empty();
+        }
+        return fetchCategories().stream()
+                .filter(category -> categoryId.equals(category.getId()))
+                .findFirst();
+    }
+
+    @Override
     public List<AdminProductDto> fetchProducts() {
         log.info("Using stubbed Admin API products");
 

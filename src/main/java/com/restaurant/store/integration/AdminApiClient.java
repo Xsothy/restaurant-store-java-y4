@@ -80,6 +80,46 @@ public class AdminApiClient implements AdminIntegrationService {
     }
 
     @Override
+    public Optional<AdminCategoryDto> fetchCategoryById(Long categoryId) {
+        if (categoryId == null) {
+            return Optional.empty();
+        }
+
+        try {
+            log.info("Fetching category {} from Admin API", categoryId);
+            String token = authenticate();
+            if (token == null) {
+                log.warn("Unable to authenticate with Admin API while fetching category {}", categoryId);
+                return Optional.empty();
+            }
+
+            AdminApiResponse<AdminCategoryDto> response = adminWebClient.get()
+                    .uri("/categories/{id}", categoryId)
+                    .headers(headers -> headers.setBearerAuth(token))
+                    .retrieve()
+                    .bodyToMono(new ParameterizedTypeReference<AdminApiResponse<AdminCategoryDto>>() {})
+                    .block();
+
+            if (response != null && Boolean.TRUE.equals(response.getSuccess()) && response.getData() != null) {
+                log.info("Successfully fetched category {} from Admin API", categoryId);
+                return Optional.of(response.getData());
+            }
+
+            log.warn("Category {} not returned from Admin API", categoryId);
+        } catch (WebClientResponseException e) {
+            if (e.getStatusCode() == HttpStatus.NOT_FOUND) {
+                log.warn("Category {} not found in Admin API", categoryId);
+            } else {
+                log.error("Error fetching category {} from Admin API: {} - {}", categoryId, e.getStatusCode(), e.getMessage());
+            }
+        } catch (Exception e) {
+            log.error("Unexpected error fetching category {} from Admin API", categoryId, e);
+        }
+
+        return Optional.empty();
+    }
+
+    @Override
     public List<AdminProductDto> fetchProducts() {
         try {
             log.info("Fetching products from Admin API");
