@@ -212,7 +212,9 @@
                         }
                     });
                     stompClient.subscribe(`/topic/orders/${orderId}/status`, message => {
-                        updateOrderStatus(orderId, message.body);
+                        const payload = JSON.parse(message.body);
+
+                        updateOrderStatus(orderId, payload.status);
                     });
                 });
             }, error => {

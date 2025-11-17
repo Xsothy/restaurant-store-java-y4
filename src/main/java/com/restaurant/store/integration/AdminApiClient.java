@@ -419,7 +419,7 @@ public class AdminApiClient implements AdminIntegrationService {
                             .path("/orders")
                             .queryParam("status", status.name())
                             .queryParam("size", orderStatusPollingPageSize)
-                            .queryParam("sortBy", "updatedAt")
+                            .queryParam("sortBy", "createdAt")
                             .queryParam("sortDir", "desc")
                             .build())
                     .headers(headers -> headers.setBearerAuth(token))

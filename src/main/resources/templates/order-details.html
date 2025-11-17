@@ -523,13 +523,15 @@
                 stompClient.subscribe(`/topic/orders/${orderId}`, message => {
                     try {
                         const payload = JSON.parse(message.body);
+                        console.log("Payload", payload);
                         updateOrderDetails(orderId, payload);
                     } catch (error) {
                         console.error('Failed to parse order update', error);
                     }
                 });
                 stompClient.subscribe(`/topic/orders/${orderId}/status`, message => {
-                    updateOrderStatus(orderId, message.body);
+                    const payload = JSON.parse(message.body);
+                    updateOrderStatus(orderId, payload.status);
                 });
             }, error => {
                 console.warn('Unable to connect to order updates', error);
@@ -541,6 +543,7 @@
             if (!badge || !status) {
                 return;
             }
+            console.log("status", status);
             badge.textContent = formatEnumValue(status) || status;
             badge.className = 'status-badge';
             badge.classList.add(detailStatusClassMap[status] || 'status-PENDING');
