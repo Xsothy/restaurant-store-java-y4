@@ -11,10 +11,11 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class WebSocketMessageDTO {
+public class WebSocketMessageDTO<T> {
     private String type;
+    private String title;
     private String message;
-    private Object data;
+    private T data;
     private String userId;
     private LocalDateTime timestamp;
     
