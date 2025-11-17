@@ -6,6 +6,8 @@ import com.restaurant.store.entity.OrderItem;
 import com.restaurant.store.entity.Product;
 import com.restaurant.store.integration.dto.AdminCategoryDto;
 import com.restaurant.store.integration.dto.AdminProductDto;
+import com.restaurant.store.dto.admin.OrderDTO;
+import com.restaurant.store.entity.OrderStatus;
 
 import java.util.List;
 import java.util.Optional;
@@ -13,6 +15,8 @@ import java.util.Optional;
 public interface AdminIntegrationService {
 
     List<AdminCategoryDto> fetchCategories();
+
+    Optional<AdminCategoryDto> fetchCategoryById(Long categoryId);
 
     List<AdminProductDto> fetchProducts();
 
@@ -23,4 +27,6 @@ public interface AdminIntegrationService {
     Optional<Long> syncOrderToAdmin(Order order, List<OrderItem> orderItems);
 
     void updateOrderStatus(Order order);
+
+    List<OrderDTO> fetchOrdersByStatus(OrderStatus status);
 }

@@ -99,7 +99,7 @@ The Admin Backend can push status updates via the Internal API, which will be br
 
 #### Admin WebSocket Bridge
 
-To keep the Admin backend as the single source of truth for tracking events, the Store API can connect directly to the Admin WebSocket endpoint and relay each message to customer devices. Set the following properties (enabled by default in `application.properties`):
+To keep the Admin backend as the single source of truth for tracking events, the Store API can connect directly to the Admin WebSocket endpoint and relay each message to customer devices. Set the following properties (enabled by default in `application.properties`). The bridge only starts when `admin.api.order-status.polling.enabled=false`:
 
 ```properties
 admin.api.websocket.bridge.enabled=true
@@ -108,6 +108,18 @@ admin.api.websocket.topic=/topic/admin/orders
 ```
 
 When the bridge is enabled, local WebSocket broadcasts are suppressed and only Admin-sourced updates are sent to customers, ensuring both systems see identical tracking events.
+
+#### Admin Order Polling Mode
+
+Set `admin.api.order-status.polling.enabled=true` to switch the store into polling mode and completely disable the Admin WebSocket bridge. This is useful when the upstream WebSocket endpoint is offline or not yet available, but you still want customers to receive frequent status updates:
+
+```properties
+admin.api.order-status.polling.enabled=true
+admin.api.order-status.polling.interval=2000   # milliseconds between checks
+admin.api.order-status.polling.statuses=PENDING,CONFIRMED,PREPARING,READY_FOR_PICKUP,READY_FOR_DELIVERY,OUT_FOR_DELIVERY
+```
+
+While polling mode is enabled, the Store API queries the Admin `/orders` endpoint at the configured interval and reuses the same WebSocket broadcasters to notify connected mobile and web clients about any status changes. The WebSocket bridge beans will not start until you set `admin.api.order-status.polling.enabled=false` again.
 
 ### 4. Internal API for Admin Backend
 

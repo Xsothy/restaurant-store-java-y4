@@ -1,8 +1,10 @@
 package com.restaurant.store.integration;
 
+import com.restaurant.store.dto.admin.OrderDTO;
 import com.restaurant.store.entity.Category;
 import com.restaurant.store.entity.Order;
 import com.restaurant.store.entity.OrderItem;
+import com.restaurant.store.entity.OrderStatus;
 import com.restaurant.store.entity.Product;
 import com.restaurant.store.integration.dto.AdminCategoryDto;
 import com.restaurant.store.integration.dto.AdminProductDto;
@@ -42,6 +44,16 @@ public class AdminApiStubClient implements AdminIntegrationService {
         drinks.setUpdatedAt(now.minusHours(12));
 
         return Arrays.asList(mains, drinks);
+    }
+
+    @Override
+    public Optional<AdminCategoryDto> fetchCategoryById(Long categoryId) {
+        if (categoryId == null) {
+            return Optional.empty();
+        }
+        return fetchCategories().stream()
+                .filter(category -> categoryId.equals(category.getId()))
+                .findFirst();
     }
 
     @Override
@@ -122,5 +134,11 @@ public class AdminApiStubClient implements AdminIntegrationService {
             return;
         }
         log.info("Stubbed Admin API received status {} for order {}", order.getStatus(), order.getExternalId());
+    }
+
+    @Override
+    public List<OrderDTO> fetchOrdersByStatus(OrderStatus status) {
+        log.info("Stubbed Admin API polling orders with status {}", status);
+        return List.of();
     }
 }

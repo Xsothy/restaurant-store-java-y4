@@ -57,8 +57,8 @@ public class DataSyncService {
     public void syncAllData() {
         log.info("Starting data sync from Admin API");
         try {
-//            syncCategoriesFromAdmin();
-//            syncProductsFromAdmin();
+            syncCategoriesFromAdmin();
+            syncProductsFromAdmin();
             pushLocalCategoriesToAdmin();
             pushLocalProductsToAdmin();
             log.info("Data sync completed successfully");
@@ -122,9 +122,13 @@ public class DataSyncService {
 
             Category category = categoryCache.computeIfAbsent(
                     adminProduct.getCategoryId(),
-                    id -> categoryRepository.findByExternalId(id)
-                            .orElseThrow(() -> new RuntimeException("Category not found for external ID: " + id))
+                    this::resolveCategory
             );
+
+            if (category == null) {
+                log.warn("Skipping product {} because category {} could not be resolved", adminProduct.getId(), adminProduct.getCategoryId());
+                continue;
+            }
 
             Product product = existingProduct.orElseGet(Product::new);
             if (product.getExternalId() == null) {
@@ -211,5 +215,27 @@ public class DataSyncService {
                 log.error("Failed to push product {} to Admin API", product.getId(), e);
             }
         }
+    }
+
+    private Category resolveCategory(Long externalCategoryId) {
+        if (externalCategoryId == null) {
+            return null;
+        }
+
+        return categoryRepository.findByExternalId(externalCategoryId)
+                .orElseGet(() -> fetchAndPersistCategory(externalCategoryId));
+    }
+
+    private Category fetchAndPersistCategory(Long externalCategoryId) {
+        return adminIntegrationService.fetchCategoryById(externalCategoryId)
+                .map(adminCategory -> {
+                    Category category = new Category();
+                    category.setExternalId(adminCategory.getId());
+                    category.setName(adminCategory.getName());
+                    category.setDescription(adminCategory.getDescription());
+                    category.setSyncedAt(LocalDateTime.now());
+                    return categoryRepository.save(category);
+                })
+                .orElse(null);
     }
 }
