@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 import org.springframework.messaging.converter.MappingJackson2MessageConverter;
 import org.springframework.messaging.simp.stomp.StompSession;
 import org.springframework.scheduling.TaskScheduler;
@@ -25,6 +26,7 @@ import java.util.concurrent.ExecutionException;
 public class RemoteBackendClientConfig {
 
     @Bean(destroyMethod = "shutdown")
+    @Primary
     public ThreadPoolTaskScheduler adminWebSocketTaskScheduler() {
         ThreadPoolTaskScheduler scheduler = new ThreadPoolTaskScheduler();
         scheduler.setPoolSize(1);
