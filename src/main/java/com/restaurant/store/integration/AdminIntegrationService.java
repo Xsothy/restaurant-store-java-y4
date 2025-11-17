@@ -14,6 +14,8 @@ public interface AdminIntegrationService {
 
     List<AdminCategoryDto> fetchCategories();
 
+    Optional<AdminCategoryDto> fetchCategoryById(Long categoryId);
+
     List<AdminProductDto> fetchProducts();
 
     Optional<Long> pushCategory(Category category);
