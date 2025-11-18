@@ -2,11 +2,13 @@
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
     <th:block th:replace="~{fragments/layout :: head('My Orders - Restaurant Store')}"></th:block>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Kantumruy+Pro:wght@400;500;600;700&display=swap');
         body {
             font-family: 'Kantumruy Pro', sans-serif;
         }
+        [x-cloak] { display: none !important; }
         .status-badge {
             display: inline-flex;
             align-items: center;
@@ -51,7 +53,7 @@
 <body class="bg-gradient-to-br from-gray-50 to-gray-100 min-h-screen">
     <th:block th:replace="~{fragments/layout :: header}"></th:block>
 
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 py-8" x-data="ordersPage()" x-init="init()" x-cloak>
         <div class="mb-8">
             <h1 class="text-3xl font-bold text-gray-800">My Orders</h1>
             <p class="text-gray-600 mt-2">Track and manage your orders</p>
@@ -64,7 +66,14 @@
             <span th:text="${errorMessage}"></span>
         </div>
 
-        <div th:if="${orders == null || #lists.isEmpty(orders)}" class="text-center py-20">
+        <div x-show="runtimeError" x-cloak class="mb-6 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-amber-700" x-text="runtimeError"></div>
+
+        <div x-show="!ready" x-cloak class="text-center py-16 text-gray-500">
+            <p class="text-lg font-medium">Loading your latest orders...</p>
+            <p class="text-sm">One moment while we prepare your dashboard.</p>
+        </div>
+
+        <div x-show="ready && orders.length === 0" x-cloak class="text-center py-20">
             <svg class="w-24 h-24 mx-auto text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
             </svg>
@@ -74,101 +83,90 @@
             </button>
         </div>
 
-        <div th:if="${orders != null && !#lists.isEmpty(orders)}" class="space-y-6">
-            <div th:each="order : ${orders}" class="bg-white rounded-xl shadow-md p-6" th:attr="data-order-id=${order.id}">
-                <div class="flex flex-col md:flex-row md:items-center justify-between mb-4 pb-4 border-b">
-                    <div>
-                        <h3 class="text-xl font-bold text-gray-800 mb-1">
-                            Order #<span th:text="${order.id}"></span>
-                        </h3>
-                        <p class="text-sm text-gray-500" th:text="${#temporals.format(order.createdAt, 'MMM dd, yyyy HH:mm')}"></p>
+        <div x-show="ready && orders.length > 0" x-cloak class="space-y-6">
+            <template x-for="order in orders" :key="order.id">
+                <div class="bg-white rounded-xl shadow-md p-6">
+                    <div class="flex flex-col md:flex-row md:items-center justify-between mb-4 pb-4 border-b">
+                        <div>
+                            <h3 class="text-xl font-bold text-gray-800 mb-1">
+                                Order #<span x-text="order.id"></span>
+                            </h3>
+                            <p class="text-sm text-gray-500" x-text="formatDateTime(order.createdAt)"></p>
+                        </div>
+                        <div class="mt-3 md:mt-0 flex flex-col md:flex-row md:items-center gap-4 text-right md:text-left">
+                            <span class="status-badge" :class="statusBadgeClass(order.status)" x-text="formatEnum(order.status)"></span>
+                            <span class="text-2xl font-bold text-red-600" x-text="formatCurrency(order.totalPrice)"></span>
+                        </div>
                     </div>
-                    <div class="mt-3 md:mt-0 flex flex-col md:flex-row md:items-center gap-4 text-right md:text-left">
-                        <span class="status-badge" th:classappend="' status-' + ${order.status}" th:text="${order.status}"
-                              th:attr="data-status-badge=${order.id}"></span>
-                        <span class="text-2xl font-bold text-red-600" th:text="${#numbers.formatDecimal(order.totalPrice, 0, 'COMMA', 0, 'POINT')} + '៛'"></span>
-                    </div>
+
+                    <details class="mt-4 group">
+                        <summary class="text-sm text-gray-600 cursor-pointer select-none flex items-center justify-between">
+                            <span>View items and delivery details</span>
+                            <span class="text-xs text-gray-400 group-open:hidden">Click to expand</span>
+                            <span class="text-xs text-gray-400 hidden group-open:inline">Click to collapse</span>
+                        </summary>
+                        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-3">
+                            <div class="lg:col-span-2 space-y-3">
+                                <template x-for="item in orderItemsList(order)" :key="item.id || `${order.id}-${item.productId || item.productName}`">
+                                    <div class="flex items-center gap-4 py-2">
+                                        <img :src="item.productImageUrl || placeholderImage"
+                                             :alt="item.productName"
+                                             class="w-16 h-16 object-cover rounded-lg"
+                                             @error.once="$event.target.src = placeholderImage">
+                                        <div class="flex-1">
+                                            <h4 class="font-semibold text-gray-800" x-text="item.productName"></h4>
+                                            <p class="text-sm text-gray-500">
+                                                <span x-text="item.quantity"></span>
+                                                ×
+                                                <span x-text="formatCurrency(item.unitPrice)"></span>
+                                            </p>
+                                        </div>
+                                        <div class="text-right">
+                                            <p class="font-semibold text-gray-800" x-text="formatCurrency(item.totalPrice)"></p>
+                                        </div>
+                                    </div>
+                                </template>
+                            </div>
+
+                            <div class="space-y-4">
+                                <div class="bg-gray-50 rounded-lg p-4">
+                                    <h4 class="font-semibold text-gray-800 mb-2">Payment</h4>
+                                    <p class="text-sm text-gray-600">
+                                        Method:
+                                        <span class="font-medium" x-text="paymentMethodLabel(order)"></span>
+                                    </p>
+                                    <p class="text-sm text-gray-600">
+                                        Status:
+                                        <span class="payment-badge" :class="paymentStatusClass(order.paymentStatus)" x-text="paymentStatusLabel(order.paymentStatus)"></span>
+                                    </p>
+                                </div>
+
+                                <div class="bg-blue-50 rounded-lg p-4" x-show="order.orderType === 'DELIVERY'">
+                                    <h4 class="font-semibold text-gray-800 mb-2">Delivery</h4>
+                                    <p class="text-sm text-gray-600">
+                                        Status:
+                                        <span class="font-medium" x-text="deliveryStatusLabel(order.deliveryStatus)"></span>
+                                    </p>
+                                    <p class="text-sm text-gray-600">
+                                        Driver:
+                                        <span class="font-medium" x-text="driverNameLabel(order)"></span>
+                                        <span class="text-gray-400" x-text="driverPhoneLabel(order)"></span>
+                                    </p>
+                                    <p class="text-sm text-gray-600" x-show="order.deliveryEstimatedArrivalTime">
+                                        ETA:
+                                        <span class="font-medium" x-text="formatDateTime(order.deliveryEstimatedArrivalTime)"></span>
+                                    </p>
+                                </div>
+
+                                <a :href="`/orders/${order.id}`"
+                                   class="inline-flex items-center justify-center w-full px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors">
+                                    View Details
+                                </a>
+                            </div>
+                        </div>
+                    </details>
                 </div>
-
-                <details class="mt-4 group">
-                    <summary class="text-sm text-gray-600 cursor-pointer select-none flex items-center justify-between">
-                        <span>View items and delivery details</span>
-                        <span class="text-xs text-gray-400 group-open:hidden">Click to expand</span>
-                        <span class="text-xs text-gray-400 hidden group-open:inline">Click to collapse</span>
-                    </summary>
-                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-3">
-                    <div class="lg:col-span-2 space-y-3" th:attr="data-items-container=${order.id}">
-                        <div th:each="item : ${order.orderItems}" class="flex items-center gap-4 py-2">
-                            <img th:src="${item.productImageUrl != null ? item.productImageUrl : 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=100&q=80'}"
-                                 th:alt="${item.productName}"
-                                 class="w-16 h-16 object-cover rounded-lg">
-                            <div class="flex-1">
-                                <h4 class="font-semibold text-gray-800" th:text="${item.productName}"></h4>
-                                <p class="text-sm text-gray-500">
-                                    <span th:text="${item.quantity}"></span>
-                                    ×
-                                    <span th:text="${#numbers.formatDecimal(item.unitPrice, 0, 'COMMA', 0, 'POINT')} + '៛'"></span>
-                                </p>
-                            </div>
-                            <div class="text-right">
-                                <p class="font-semibold text-gray-800" th:text="${#numbers.formatDecimal(item.totalPrice, 0, 'COMMA', 0, 'POINT')} + '៛'"></p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="space-y-4">
-                        <div class="bg-gray-50 rounded-lg p-4">
-                            <h4 class="font-semibold text-gray-800 mb-2">Payment</h4>
-                            <p class="text-sm text-gray-600">
-                                Method:
-                                <span class="font-medium"
-                                      th:text="${order.paymentMethod != null ? #strings.replace(order.paymentMethod.name(), '_', ' ') : 'N/A'}"
-                                      th:attr="data-payment-method=${order.id}"></span>
-                            </p>
-                            <p class="text-sm text-gray-600">
-                                Status:
-                                <span class="payment-badge"
-                                      th:classappend="${order.paymentStatus != null} ? ' payment-' + order.paymentStatus : ''"
-                                      th:text="${order.paymentStatus != null ? #strings.replace(order.paymentStatus.name(), '_', ' ') : 'N/A'}"
-                                      th:attr="data-payment-status=${order.id}"></span>
-                            </p>
-                        </div>
-
-                        <div class="bg-blue-50 rounded-lg p-4"
-                             th:if="${order.orderType == T(com.restaurant.store.entity.OrderType).DELIVERY}"
-                             th:attr="data-delivery-card=${order.id}">
-                            <h4 class="font-semibold text-gray-800 mb-2">Delivery</h4>
-                            <p class="text-sm text-gray-600">
-                                Status:
-                                <span class="font-medium"
-                                      th:text="${order.deliveryStatus != null ? #strings.replace(order.deliveryStatus.name(), '_', ' ') : 'Pending'}"
-                                      th:attr="data-delivery-status=${order.id}"></span>
-                            </p>
-                            <p class="text-sm text-gray-600">
-                                Driver:
-                                <span class="font-medium"
-                                      th:text="${order.deliveryDriverName != null ? order.deliveryDriverName : 'Not assigned yet'}"
-                                      th:attr="data-delivery-driver=${order.id}"></span>
-                                <span class="text-gray-400"
-                                      th:text="${order.deliveryDriverPhone != null ? '(' + order.deliveryDriverPhone + ')' : ''}"
-                                      th:attr="data-delivery-phone=${order.id}"></span>
-                            </p>
-                            <p class="text-sm text-gray-600" th:if="${order.deliveryEstimatedArrivalTime != null}">
-                                ETA:
-                                <span class="font-medium"
-                                      th:text="${#temporals.format(order.deliveryEstimatedArrivalTime, 'MMM dd, yyyy HH:mm') }"
-                                      th:attr="data-delivery-eta=${order.id}"></span>
-                            </p>
-                        </div>
-
-                        <a th:href="@{/orders/{id}(id=${order.id})}"
-                           class="inline-flex items-center justify-center w-full px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors">
-                            View Details
-                        </a>
-                    </div>
-                    </div>
-                </details>
-            </div>
+            </template>
         </div>
     </main>
 
@@ -179,7 +177,13 @@
     <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
     <script th:inline="javascript">
-        const statusClassMap = {
+        window.INITIAL_ORDERS = /*[[${orders}]]*/ [];
+        if (!Array.isArray(window.INITIAL_ORDERS)) {
+            window.INITIAL_ORDERS = window.INITIAL_ORDERS ? [window.INITIAL_ORDERS] : [];
+        }
+    </script>
+    <script>
+        const ORDER_STATUS_CLASS_MAP = {
             'PENDING': 'status-PENDING',
             'CONFIRMED': 'status-CONFIRMED',
             'PREPARING': 'status-PREPARING',
@@ -190,109 +194,7 @@
             'DELIVERED': 'status-DELIVERED'
         };
 
-        document.addEventListener('DOMContentLoaded', () => {
-            const orderCards = document.querySelectorAll('[data-order-id]');
-            if (!orderCards.length || typeof SockJS === 'undefined' || typeof Stomp === 'undefined') {
-                return;
-            }
-
-            const socket = new SockJS('/ws');
-            const stompClient = Stomp.over(socket);
-            stompClient.reconnect_delay = 5000;
-
-            stompClient.connect({}, () => {
-                orderCards.forEach(card => {
-                    const orderId = card.dataset.orderId;
-                    stompClient.subscribe(`/topic/orders/${orderId}`, message => {
-                        try {
-                            const payload = JSON.parse(message.body);
-                            updateOrderCard(orderId, payload);
-                        } catch (error) {
-                            console.error('Failed to parse order update', error);
-                        }
-                    });
-                    stompClient.subscribe(`/topic/orders/${orderId}/status`, message => {
-                        const payload = JSON.parse(message.body);
-
-                        updateOrderStatus(orderId, payload.status);
-                    });
-                });
-            }, error => {
-                console.warn('Unable to connect to order updates', error);
-            });
-        });
-
-        function updateOrderStatus(orderId, status) {
-            const badge = document.querySelector(`[data-status-badge="${orderId}"]`);
-            if (!badge || !status) {
-                return;
-            }
-
-            badge.textContent = formatEnumValue(status) || status;
-            badge.className = 'status-badge';
-            const normalized = statusClassMap[status] || 'status-PENDING';
-            badge.classList.add(normalized);
-        }
-
-        function updateOrderCard(orderId, order) {
-            if (!order) {
-                return;
-            }
-
-            updateOrderStatus(orderId, order.status);
-
-            const paymentMethodEl = document.querySelector(`[data-payment-method="${orderId}"]`);
-            if (paymentMethodEl) {
-                paymentMethodEl.textContent = formatEnumValue(order.paymentMethod) || 'N/A';
-            }
-
-            const paymentStatusEl = document.querySelector(`[data-payment-status="${orderId}"]`);
-            updatePaymentStatus(paymentStatusEl, order.paymentStatus);
-
-            const deliveryStatusEl = document.querySelector(`[data-delivery-status="${orderId}"]`);
-            if (deliveryStatusEl) {
-                deliveryStatusEl.textContent = formatEnumValue(order.deliveryStatus) || 'Pending';
-            }
-
-            const deliveryEtaEl = document.querySelector(`[data-delivery-eta="${orderId}"]`);
-            if (deliveryEtaEl) {
-                if (order.deliveryEstimatedArrivalTime) {
-                    deliveryEtaEl.textContent = formatDate(order.deliveryEstimatedArrivalTime);
-                } else {
-                    deliveryEtaEl.textContent = 'N/A';
-                }
-            }
-
-            const driverNameEl = document.querySelector(`[data-delivery-driver="${orderId}"]`);
-            if (driverNameEl) {
-                driverNameEl.textContent = order.deliveryDriverName || 'Not assigned yet';
-            }
-
-            const driverPhoneEl = document.querySelector(`[data-delivery-phone="${orderId}"]`);
-            if (driverPhoneEl) {
-                driverPhoneEl.textContent = order.deliveryDriverPhone ? `(${order.deliveryDriverPhone})` : '';
-            }
-        }
-
-        function formatDate(value) {
-            try {
-                const date = new Date(value);
-                if (!isNaN(date.getTime())) {
-                    return date.toLocaleString('en-US', {
-                        year: 'numeric',
-                        month: 'short',
-                        day: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                    });
-                }
-            } catch (error) {
-                console.warn('Unable to format date', value, error);
-            }
-            return value;
-        }
-
-        const paymentStatusClassMap = {
+        const PAYMENT_STATUS_CLASS_MAP = {
             'PENDING': 'payment-PENDING',
             'AWAITING_SESSION': 'payment-AWAITING_SESSION',
             'AWAITING_WEBHOOK': 'payment-AWAITING_WEBHOOK',
@@ -304,29 +206,309 @@
             'REFUNDED': 'payment-REFUNDED'
         };
 
-        function updatePaymentStatus(element, status) {
-            if (!element) {
-                return;
-            }
+        function ordersPage() {
+            return {
+                orders: [],
+                ready: false,
+                runtimeError: '',
+                stompClient: null,
+                pollTimerId: null,
+                subscriptions: new Map(),
+                placeholderImage: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=100&q=80',
 
-            element.textContent = formatEnumValue(status) || 'N/A';
-            element.className = 'payment-badge';
+                init() {
+                    this.orders = this.normalizeOrders(window.INITIAL_ORDERS || []);
+                    this.ready = true;
+                    this.connectWebsocket();
+                    this.startPolling();
+                    window.addEventListener('beforeunload', () => this.teardown());
+                },
 
-            if (status && paymentStatusClassMap[status]) {
-                element.classList.add(paymentStatusClassMap[status]);
-            }
-        }
+                normalizeOrders(list) {
+                    if (!Array.isArray(list)) {
+                        return [];
+                    }
+                    return list
+                        .filter(Boolean)
+                        .map(order => this.prepareOrder(order));
+                },
 
-        function formatEnumValue(value) {
-            if (!value) {
-                return '';
-            }
+                prepareOrder(order) {
+                    if (!order) {
+                        return null;
+                    }
+                    const normalized = {
+                        ...order
+                    };
+                    normalized.orderItems = Array.isArray(order.orderItems) ? order.orderItems : [];
+                    if (!normalized.paymentMethod && normalized.paymentStatus === 'CASH_PENDING') {
+                        normalized.paymentMethod = 'CASH_ON_DELIVERY';
+                    }
+                    return normalized;
+                },
 
-            return value
-                .toString()
-                .split('_')
-                .map(part => part.charAt(0) + part.slice(1).toLowerCase())
-                .join(' ');
+                connectWebsocket() {
+                    if (typeof SockJS === 'undefined' || typeof Stomp === 'undefined') {
+                        return;
+                    }
+                    const socket = new SockJS('/ws');
+                    this.stompClient = Stomp.over(socket);
+                    this.stompClient.reconnect_delay = 5000;
+                    this.stompClient.connect({}, () => {
+                        this.orders.forEach(order => this.subscribeToOrder(order.id));
+                    }, error => {
+                        console.warn('Unable to connect to order updates', error);
+                    });
+                },
+
+                subscribeToOrder(orderId) {
+                    if (!orderId || !this.stompClient || !this.stompClient.connected || this.subscriptions.has(orderId)) {
+                        return;
+                    }
+                    const subs = [];
+                    subs.push(this.stompClient.subscribe(`/topic/orders/${orderId}`, message => {
+                        this.handleIncomingUpdate(orderId, message);
+                    }));
+                    const handleStatusPayload = message => {
+                        try {
+                            const payload = JSON.parse(message.body);
+                            this.applyOrderStatusPayload(orderId, payload);
+                        } catch (error) {
+                            console.error('Failed to parse order status update', error);
+                        }
+                    };
+                    subs.push(this.stompClient.subscribe(`/topic/orders/${orderId}/status`, handleStatusPayload));
+                    subs.push(this.stompClient.subscribe(`/topic/orders/${orderId}/notifications`, handleStatusPayload));
+                    this.subscriptions.set(orderId, subs);
+                },
+
+                handleIncomingUpdate(orderId, message) {
+                    try {
+                        const payload = JSON.parse(message.body);
+                        if (!payload.id) {
+                            payload.id = orderId;
+                        }
+                        this.applyOrderUpdate(payload);
+                    } catch (error) {
+                        console.error('Failed to parse order update', error);
+                    }
+                },
+
+                resubscribeActiveOrders() {
+                    if (!this.stompClient || !this.stompClient.connected) {
+                        return;
+                    }
+                    const activeIds = new Set(this.orders.map(order => order.id));
+                    activeIds.forEach(id => this.subscribeToOrder(id));
+                    this.subscriptions.forEach((subs, id) => {
+                        if (!activeIds.has(id)) {
+                            subs.forEach(sub => sub.unsubscribe());
+                            this.subscriptions.delete(id);
+                        }
+                    });
+                },
+
+                startPolling() {
+                    if (this.pollTimerId) {
+                        clearInterval(this.pollTimerId);
+                    }
+                    this.pollTimerId = window.setInterval(() => this.refreshOrders(), 30000);
+                },
+
+                async refreshOrders() {
+                    if (!window.API_BASE_URL) {
+                        return;
+                    }
+                    const token = localStorage.getItem('token');
+                    if (!token) {
+                        this.runtimeError = 'Please login to view your orders.';
+                        return;
+                    }
+                    try {
+                        const response = await fetch(`${API_BASE_URL}/orders/my-orders`, {
+                            headers: {
+                                'Authorization': `Bearer ${token}`
+                            }
+                        });
+                        if (response.status === 401) {
+                            window.location.href = LOGIN_PAGE_URL;
+                            return;
+                        }
+                        const payload = await response.json();
+                        if (!payload.success || !Array.isArray(payload.data)) {
+                            throw new Error(payload.message || 'Unable to load orders right now.');
+                        }
+                        this.orders = this.normalizeOrders(payload.data);
+                        this.ready = true;
+                        this.runtimeError = '';
+                        this.resubscribeActiveOrders();
+                    } catch (error) {
+                        console.error('Failed to refresh orders', error);
+                        this.runtimeError = error.message || 'Unable to refresh your orders right now.';
+                    }
+                },
+
+                applyOrderUpdate(update) {
+                    if (!update || !update.id) {
+                        return;
+                    }
+                    const index = this.orders.findIndex(order => order.id === update.id);
+                    const merged = this.prepareOrder({ ...(this.orders[index] || {}), ...update });
+                    if (index === -1) {
+                        this.orders = [...this.orders, merged];
+                        if (this.stompClient?.connected) {
+                            this.subscribeToOrder(update.id);
+                        }
+                    } else {
+                        this.orders.splice(index, 1, merged);
+                    }
+                },
+
+                applyOrderStatusPayload(orderId, payload) {
+                    if (!payload) {
+                        return;
+                    }
+                    const update = { id: orderId };
+                    if (payload.status) {
+                        update.status = payload.status;
+                    }
+                    if (payload.estimatedDeliveryTime) {
+                        update.estimatedDeliveryTime = payload.estimatedDeliveryTime;
+                    }
+                    Object.assign(update, this.extractMetadataUpdates(payload.metadata));
+                    this.applyOrderUpdate(update);
+                },
+
+                extractMetadataUpdates(metadata) {
+                    if (!metadata || typeof metadata !== 'object') {
+                        return {};
+                    }
+                    const updates = {};
+                    const driverName = metadata.deliveryDriverName || metadata.driverName;
+                    const driverPhone = metadata.deliveryDriverPhone || metadata.driverPhone;
+                    const driverStatus = metadata.deliveryStatus || metadata.driverStatus;
+                    const eta = metadata.deliveryEstimatedArrivalTime || metadata.deliveryEta || metadata.estimatedArrivalTime;
+                    const actualDelivered = metadata.deliveryActualDeliveryTime || metadata.deliveredAt;
+                    if (driverName) {
+                        updates.deliveryDriverName = driverName;
+                    }
+                    if (driverPhone) {
+                        updates.deliveryDriverPhone = driverPhone;
+                    }
+                    if (driverStatus) {
+                        updates.deliveryStatus = driverStatus;
+                    }
+                    if (eta) {
+                        updates.deliveryEstimatedArrivalTime = eta;
+                    }
+                    if (actualDelivered) {
+                        updates.deliveryActualDeliveryTime = actualDelivered;
+                    }
+                    if (metadata.paymentStatus) {
+                        updates.paymentStatus = metadata.paymentStatus;
+                    }
+                    if (metadata.paymentMethod) {
+                        updates.paymentMethod = metadata.paymentMethod;
+                    }
+                    if (metadata.status) {
+                        updates.status = metadata.status;
+                    }
+                    if (metadata.orderStatus) {
+                        updates.status = metadata.orderStatus;
+                    }
+                    return updates;
+                },
+
+                teardown() {
+                    if (this.pollTimerId) {
+                        clearInterval(this.pollTimerId);
+                        this.pollTimerId = null;
+                    }
+                    this.subscriptions.forEach(subs => subs.forEach(sub => sub.unsubscribe()));
+                    this.subscriptions.clear();
+                    if (this.stompClient) {
+                        try {
+                            this.stompClient.disconnect();
+                        } catch (error) {
+                            console.warn('Error disconnecting socket', error);
+                        }
+                        this.stompClient = null;
+                    }
+                },
+
+                orderItemsList(order) {
+                    return Array.isArray(order?.orderItems) ? order.orderItems : [];
+                },
+
+                statusBadgeClass(status) {
+                    return ORDER_STATUS_CLASS_MAP[status] || 'status-PENDING';
+                },
+
+                paymentStatusClass(status) {
+                    return status ? (PAYMENT_STATUS_CLASS_MAP[status] || '') : '';
+                },
+
+                paymentMethodLabel(order) {
+                    const method = order?.paymentMethod || (order?.paymentStatus === 'CASH_PENDING' ? 'CASH_ON_DELIVERY' : null);
+                    return method ? this.formatEnum(method) : 'N/A';
+                },
+
+                paymentStatusLabel(status) {
+                    return status ? this.formatEnum(status) : 'N/A';
+                },
+
+                deliveryStatusLabel(status) {
+                    return status ? this.formatEnum(status) : 'Pending';
+                },
+
+                driverNameLabel(order) {
+                    return order?.deliveryDriverName || 'Not assigned yet';
+                },
+
+                driverPhoneLabel(order) {
+                    return order?.deliveryDriverPhone ? `(${order.deliveryDriverPhone})` : '';
+                },
+
+                formatCurrency(value) {
+                    const number = Number(value);
+                    if (!Number.isNaN(number) && Number.isFinite(number)) {
+                        return `${number.toLocaleString('en-US')}៛`;
+                    }
+                    return value ? `${value}៛` : '0៛';
+                },
+
+                formatDateTime(value) {
+                    if (!value) {
+                        return '';
+                    }
+                    try {
+                        const date = new Date(value);
+                        if (!Number.isNaN(date.getTime())) {
+                            return date.toLocaleString('en-US', {
+                                year: 'numeric',
+                                month: 'short',
+                                day: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                            });
+                        }
+                    } catch (error) {
+                        console.warn('Unable to format date', value, error);
+                    }
+                    return value;
+                },
+
+                formatEnum(value) {
+                    if (!value) {
+                        return 'N/A';
+                    }
+                    return value
+                        .toString()
+                        .split('_')
+                        .map(part => part.charAt(0) + part.slice(1).toLowerCase())
+                        .join(' ');
+                }
+            };
         }
     </script>
 </body>
