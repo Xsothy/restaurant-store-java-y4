@@ -56,14 +56,21 @@
 
     <th:block th:replace="~{fragments/layout :: api-config}"></th:block>
     <script>
+        const errorMessage = document.getElementById('errorMessage');
+        const successMessage = document.getElementById('successMessage');
+        const params = new URLSearchParams(window.location.search);
+
+        if (params.has('expired')) {
+            errorMessage.textContent = 'Your session has expired. Please login again.';
+            errorMessage.classList.remove('hidden');
+        }
+
         document.getElementById('loginForm').addEventListener('submit', async (e) => {
             e.preventDefault();
 
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
             const loginBtn = document.getElementById('loginBtn');
-            const errorMessage = document.getElementById('errorMessage');
-            const successMessage = document.getElementById('successMessage');
 
             errorMessage.classList.add('hidden');
             successMessage.classList.add('hidden');
@@ -84,10 +91,10 @@
                 if (response.ok && data.success) {
                     localStorage.setItem('token', data.data.token);
                     localStorage.setItem('customer', JSON.stringify(data.data.customer));
-                    
+
                     // Also set JWT in cookie for server-side rendering
                     document.cookie = `jwt=${data.data.token}; path=/; max-age=86400; SameSite=Lax`;
-                    
+
                     successMessage.textContent = 'Login successful! Redirecting...';
                     successMessage.classList.remove('hidden');
 
