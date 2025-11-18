@@ -1,4 +1,4 @@
-<div xmlns:th="http://www.thymeleaf.org">
+<div xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
     <head th:fragment="head(title)">
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -11,9 +11,9 @@
             <div class="text-2xl font-bold text-gray-900 cursor-pointer" onclick="window.location.href='/menu'">
                 Restaurant Store
             </div>
-            
+
             <!-- Unauthenticated State -->
-            <div id="unauthNav" class="hidden items-center gap-4">
+            <div id="unauthNav" class="items-center gap-4" sec:authorize="isAnonymous()">
                 <!-- Cart Icon (visible for all users) -->
                 <button onclick="window.location.href='/cart'" class="relative px-3 py-2 text-gray-700 hover:text-gray-900 transition-colors">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -28,10 +28,19 @@
                     Register
                 </button>
             </div>
-            
+
             <!-- Authenticated State -->
-            <div id="authNav" class="hidden items-center gap-4">
-                <span id="customerName" class="text-gray-600 text-sm font-medium"></span>
+            <div id="authNav" class="items-center gap-4" sec:authorize="isAuthenticated()">
+                <div class="flex flex-col text-left">
+                    <span id="customerName" class="text-gray-600 text-sm font-medium"
+                          th:text="${session.customer != null ? 'Hi, ' + session.customer.name : ''}"></span>
+                    <div class="text-xs text-gray-500">
+                        Logged user: <span class="font-semibold" sec:authentication="name">Guest</span>
+                    </div>
+                    <div class="text-xs text-gray-500">
+                        Access level: Standard customer
+                    </div>
+                </div>
                 <!-- Cart Icon with Badge -->
                 <button onclick="window.location.href='/cart'" class="relative px-3 py-2 text-gray-700 hover:text-gray-900 transition-colors">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -77,36 +86,85 @@
 
     <th:block th:fragment="auth-utils">
         <script>
-            function logout() {
+            let isRedirectingForAuth = false;
+
+            function getStoredCustomer() {
+                const customerJson = localStorage.getItem('customer');
+                if (!customerJson) {
+                    return null;
+                }
+
+                try {
+                    return JSON.parse(customerJson);
+                } catch (error) {
+                    console.warn('Unable to parse cached customer profile.', error);
+                    return null;
+                }
+            }
+
+            function clearAuthData(updateUi = true) {
                 localStorage.removeItem('token');
                 localStorage.removeItem('customer');
-                // Also clear JWT cookie
                 document.cookie = 'jwt=; path=/; max-age=0';
-                window.location.href = LOGIN_PAGE_URL;
+
+                if (updateUi) {
+                    if (typeof updateCartBadge === 'function') {
+                        updateCartBadge();
+                    }
+                    const customerName = document.getElementById('customerName');
+                    if (customerName) {
+                        customerName.textContent = '';
+                    }
+                }
             }
-            
+
+            function logout(redirectToLogin = true) {
+                clearAuthData();
+                if (redirectToLogin) {
+                    window.location.href = LOGIN_PAGE_URL;
+                }
+            }
+
+            function handleAuthExpiration() {
+                if (isRedirectingForAuth) {
+                    return;
+                }
+
+                isRedirectingForAuth = true;
+                clearAuthData(false);
+
+                const params = new URLSearchParams(window.location.search);
+                params.set('expired', 'true');
+                window.location.href = `${LOGIN_PAGE_URL}?${params.toString()}`;
+            }
+
             async function updateCartBadge() {
                 const token = localStorage.getItem('token');
                 const badgeAuth = document.getElementById('cartBadgeAuth');
                 const badgeUnauth = document.getElementById('cartBadgeUnauth');
-                
+
                 if (!token) {
                     if (badgeAuth) badgeAuth.classList.add('hidden');
                     if (badgeUnauth) badgeUnauth.classList.add('hidden');
                     return;
                 }
-                
+
                 try {
                     const response = await fetch(`${API_BASE_URL}/cart`, {
                         headers: {
                             'Authorization': `Bearer ${token}`
                         }
                     });
-                    
+
+                    if (response.status === 401 || response.status === 403) {
+                        handleAuthExpiration();
+                        return;
+                    }
+
                     if (response.ok) {
                         const data = await response.json();
                         const totalItems = data.data?.itemCount || 0;
-                        
+
                         if (totalItems > 0) {
                             const displayCount = totalItems > 99 ? '99+' : totalItems;
                             if (badgeAuth) {
@@ -129,50 +187,44 @@
 
             function loadCustomer() {
                 const token = localStorage.getItem('token');
-                const customer = JSON.parse(localStorage.getItem('customer'));
+                const customer = getStoredCustomer();
                 const customerName = document.getElementById('customerName');
-                const authNav = document.getElementById('authNav');
-                const unauthNav = document.getElementById('unauthNav');
 
-                if (token && customer) {
-                    // User is authenticated
-                    if (customerName) {
-                        customerName.textContent = `Hi, ${customer.name}`;
-                    }
-                    if (authNav) {
-                        authNav.classList.remove('hidden');
-                        authNav.classList.add('flex');
-                    }
-                    if (unauthNav) {
-                        unauthNav.classList.add('hidden');
-                        unauthNav.classList.remove('flex');
-                    }
-                } else {
-                    // User is not authenticated
-                    if (customerName) {
-                        customerName.textContent = '';
-                    }
-                    if (authNav) {
-                        authNav.classList.add('hidden');
-                        authNav.classList.remove('flex');
-                    }
-                    if (unauthNav) {
-                        unauthNav.classList.remove('hidden');
-                        unauthNav.classList.add('flex');
-                    }
+                if (token && customer && customerName) {
+                    customerName.textContent = `Hi, ${customer.name}`;
+                } else if (customerName) {
+                    customerName.textContent = '';
                 }
-                
-                // Update cart badge
+
                 updateCartBadge();
             }
 
+            (function interceptFetch() {
+                const originalFetch = window.fetch;
+                window.fetch = async (...args) => {
+                    const response = await originalFetch(...args);
+                    try {
+                        const requestUrl = typeof args[0] === 'string' ? args[0] : args[0]?.url || '';
+                        const shouldHandle = requestUrl.includes('/api/');
+                        if (shouldHandle && (response.status === 401 || response.status === 403)) {
+                            handleAuthExpiration();
+                        }
+                    } catch (error) {
+                        console.warn('Unable to process auth-aware fetch response.', error);
+                    }
+                    return response;
+                };
+            })();
+
             document.addEventListener('DOMContentLoaded', () => {
                 loadCustomer();
-                
-                // Listen for storage changes to update cart badge across tabs
+
                 window.addEventListener('storage', (e) => {
                     if (e.key === 'cart') {
                         updateCartBadge();
+                    }
+                    if (e.key === 'token' || e.key === 'customer') {
+                        loadCustomer();
                     }
                 });
             });
