@@ -3,7 +3,9 @@ package com.restaurant.store.controller.api.internal;
 import com.restaurant.store.controller.api.OrderStatusWebSocketController;
 import com.restaurant.store.dto.request.OrderStatusUpdateRequest;
 import com.restaurant.store.dto.response.ApiResponse;
+import com.restaurant.store.dto.response.OrderResponse;
 import com.restaurant.store.dto.response.OrderStatusMessage;
+import com.restaurant.store.entity.Delivery;
 import com.restaurant.store.entity.Order;
 import com.restaurant.store.entity.OrderItem;
 import com.restaurant.store.entity.OrderStatus;
@@ -11,12 +13,14 @@ import com.restaurant.store.entity.OrderType;
 import com.restaurant.store.entity.Payment;
 import com.restaurant.store.entity.PaymentMethod;
 import com.restaurant.store.entity.PaymentStatus;
+import com.restaurant.store.entity.Pickup;
 import com.restaurant.store.entity.PickupStatus;
 import com.restaurant.store.mapper.OrderMapper;
 import com.restaurant.store.repository.OrderItemRepository;
 import com.restaurant.store.repository.OrderRepository;
 import com.restaurant.store.repository.PaymentRepository;
 import com.restaurant.store.repository.PickupRepository;
+import com.restaurant.store.repository.DeliveryRepository;
 import io.swagger.v3.oas.annotations.Hidden;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -41,6 +45,7 @@ public class InternalApiController {
     private final OrderStatusWebSocketController webSocketController;
     private final PaymentRepository paymentRepository;
     private final PickupRepository pickupRepository;
+    private final DeliveryRepository deliveryRepository;
 
     @PostMapping("/orders/{orderId}/status")
     public ResponseEntity<ApiResponse<Object>> updateOrderStatus(
@@ -68,7 +73,11 @@ public class InternalApiController {
         }
 
         List<OrderItem> orderItems = orderItemRepository.findByOrderId(orderId);
-        webSocketController.sendOrderUpdate(orderId, orderMapper.toResponse(order, orderItems));
+        List<Payment> payments = paymentRepository.findByOrderId(orderId);
+        Delivery delivery = deliveryRepository.findByOrderId(orderId).orElse(null);
+        Pickup pickup = pickupRepository.findByOrderId(orderId).orElse(null);
+        OrderResponse response = orderMapper.toResponse(order, orderItems, payments, delivery, pickup);
+        webSocketController.sendOrderUpdate(orderId, response);
 
         OrderStatusMessage statusMessage = OrderStatusMessage.builder()
                 .status(order.getStatus().name())
@@ -83,7 +92,7 @@ public class InternalApiController {
 
         return ResponseEntity.ok(ApiResponse.success(
                 "Order status updated successfully",
-                orderMapper.toResponse(order, orderItems)
+                response
         ));
     }
 
@@ -122,9 +131,12 @@ public class InternalApiController {
         orderRepository.save(order);
 
         List<OrderItem> orderItems = orderItemRepository.findByOrderId(orderId);
+        List<Payment> payments = paymentRepository.findByOrderId(orderId);
+        Delivery delivery = deliveryRepository.findByOrderId(orderId).orElse(null);
+        Pickup pickup = pickupRepository.findByOrderId(orderId).orElse(null);
         return ResponseEntity.ok(ApiResponse.success(
                 "Order synced successfully",
-                orderMapper.toResponse(order, orderItems)
+                orderMapper.toResponse(order, orderItems, payments, delivery, pickup)
         ));
     }
 
@@ -136,7 +148,7 @@ public class InternalApiController {
         pickupRepository.findByOrderId(order.getId()).ifPresent(pickup -> {
             switch (newStatus) {
                 case PREPARING -> pickup.setStatus(PickupStatus.PREPARING);
-                case READY_FOR_DELIVERY -> pickup.setStatus(PickupStatus.READY_FOR_PICKUP);
+                case READY_FOR_DELIVERY, READY_FOR_PICKUP -> pickup.setStatus(PickupStatus.READY_FOR_PICKUP);
                 case COMPLETED -> {
                     pickup.setStatus(PickupStatus.COMPLETED);
                     pickup.setPickedUpAt(LocalDateTime.now());

@@ -23,7 +23,8 @@
         .status-PENDING { background-color: #fef3c7; color: #92400e; }
         .status-CONFIRMED { background-color: #dbeafe; color: #1e40af; }
         .status-PREPARING { background-color: #ede9fe; color: #5b21b6; }
-        .status-READY { background-color: #e0e7ff; color: #3730a3; }
+        .status-READY_FOR_PICKUP { background-color: #ecfccb; color: #3f6212; }
+        .status-READY_FOR_DELIVERY { background-color: #e0e7ff; color: #3730a3; }
         .status-OUT_FOR_DELIVERY { background-color: #cffafe; color: #0f766e; }
         .status-COMPLETED { background-color: #dcfce7; color: #166534; }
         .status-CANCELLED { background-color: #fee2e2; color: #991b1b; }
@@ -91,6 +92,7 @@
                             <h3 class="text-xl font-bold text-gray-800 mb-1">
                                 Order #<span x-text="order.id"></span>
                             </h3>
+                            <p class="text-sm text-gray-500" x-text="formatEnum(order.orderType)"></p>
                             <p class="text-sm text-gray-500" x-text="formatDateTime(order.createdAt)"></p>
                         </div>
                         <div class="mt-3 md:mt-0 flex flex-col md:flex-row md:items-center gap-4 text-right md:text-left">
@@ -141,6 +143,34 @@
                                     </p>
                                 </div>
 
+                                <div class="bg-green-50 rounded-lg p-4" x-show="order.orderType === 'PICKUP'" x-cloak>
+                                    <h4 class="font-semibold text-gray-800 mb-2">Pickup</h4>
+                                    <p class="text-sm text-gray-600">
+                                        Status:
+                                        <span class="font-medium" x-text="pickupStatusLabel(order)"></span>
+                                    </p>
+                                    <p class="text-sm text-gray-600">
+                                        Ready at:
+                                        <span class="font-medium" x-text="pickupReadyLabel(order)"></span>
+                                    </p>
+                                    <p class="text-sm text-gray-600">
+                                        Pickup window:
+                                        <span class="font-medium" x-text="pickupWindowLabel(order)"></span>
+                                    </p>
+                                    <p class="text-sm text-gray-600" x-show="order.pickupPickedUpAt">
+                                        Picked up:
+                                        <span class="font-medium" x-text="pickupPickedUpLabel(order)"></span>
+                                    </p>
+                                    <p class="text-sm text-gray-600" x-show="order.pickupCode">
+                                        Pickup code:
+                                        <span class="font-mono text-sm" x-text="pickupCodeLabel(order)"></span>
+                                    </p>
+                                    <p class="text-sm text-gray-600">
+                                        Instructions:
+                                        <span class="font-medium" x-text="pickupInstructionsLabel(order)"></span>
+                                    </p>
+                                </div>
+
                                 <div class="bg-blue-50 rounded-lg p-4" x-show="order.orderType === 'DELIVERY'">
                                     <h4 class="font-semibold text-gray-800 mb-2">Delivery</h4>
                                     <p class="text-sm text-gray-600">
@@ -187,7 +217,8 @@
             'PENDING': 'status-PENDING',
             'CONFIRMED': 'status-CONFIRMED',
             'PREPARING': 'status-PREPARING',
-            'READY_FOR_DELIVERED': 'status-READY',
+            'READY_FOR_PICKUP': 'status-READY_FOR_PICKUP',
+            'READY_FOR_DELIVERY': 'status-READY_FOR_DELIVERY',
             'OUT_FOR_DELIVERY': 'status-OUT_FOR_DELIVERY',
             'COMPLETED': 'status-COMPLETED',
             'CANCELLED': 'status-CANCELLED',
@@ -410,6 +441,27 @@
                     if (metadata.paymentMethod) {
                         updates.paymentMethod = metadata.paymentMethod;
                     }
+                    if (metadata.pickupStatus) {
+                        updates.pickupStatus = metadata.pickupStatus;
+                    }
+                    if (metadata.pickupCode) {
+                        updates.pickupCode = metadata.pickupCode;
+                    }
+                    if (metadata.pickupWindowStart) {
+                        updates.pickupWindowStart = metadata.pickupWindowStart;
+                    }
+                    if (metadata.pickupWindowEnd) {
+                        updates.pickupWindowEnd = metadata.pickupWindowEnd;
+                    }
+                    if (metadata.pickupReadyAt) {
+                        updates.pickupReadyAt = metadata.pickupReadyAt;
+                    }
+                    if (metadata.pickupPickedUpAt) {
+                        updates.pickupPickedUpAt = metadata.pickupPickedUpAt;
+                    }
+                    if (metadata.pickupInstructions) {
+                        updates.pickupInstructions = metadata.pickupInstructions;
+                    }
                     if (metadata.status) {
                         updates.status = metadata.status;
                     }
@@ -467,6 +519,36 @@
 
                 driverPhoneLabel(order) {
                     return order?.deliveryDriverPhone ? `(${order.deliveryDriverPhone})` : '';
+                },
+
+                pickupStatusLabel(order) {
+                    const status = order?.pickupStatus;
+                    return status ? this.formatEnum(status) : 'Awaiting confirmation';
+                },
+
+                pickupReadyLabel(order) {
+                    return order?.pickupReadyAt ? this.formatDateTime(order.pickupReadyAt) : 'Not ready yet';
+                },
+
+                pickupWindowLabel(order) {
+                    const start = order?.pickupWindowStart ? this.formatDateTime(order.pickupWindowStart) : null;
+                    const end = order?.pickupWindowEnd ? this.formatDateTime(order.pickupWindowEnd) : null;
+                    if (start && end) {
+                        return `${start} → ${end}`;
+                    }
+                    return start || end || 'Pending';
+                },
+
+                pickupPickedUpLabel(order) {
+                    return order?.pickupPickedUpAt ? this.formatDateTime(order.pickupPickedUpAt) : '';
+                },
+
+                pickupCodeLabel(order) {
+                    return order?.pickupCode || 'Available when ready';
+                },
+
+                pickupInstructionsLabel(order) {
+                    return order?.pickupInstructions || 'Follow staff guidance when you arrive.';
                 },
 
                 formatCurrency(value) {

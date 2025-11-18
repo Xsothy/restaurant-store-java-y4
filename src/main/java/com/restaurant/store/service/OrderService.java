@@ -25,12 +25,10 @@ import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -142,7 +140,7 @@ public class OrderService {
         List<OrderItem> persistedItems = orderItemRepository.findByOrderId(order.getId());
         ensureProductsSyncedWithAdmin(persistedItems);
         syncOrderWithAdmin(order, persistedItems);
-        OrderResponse response = orderMapper.toResponse(order, persistedItems);
+        OrderResponse response = buildOrderResponse(order, persistedItems);
         if (!adminWebsocketBridgeEnabled) {
             orderStatusWebSocketController.sendOrderUpdate(order.getId(), response);
         }
@@ -167,7 +165,7 @@ public class OrderService {
         }
 
         List<OrderItem> orderItems = orderItemRepository.findByOrderId(orderId);
-        return enrichOrderResponse(orderMapper.toResponse(order, orderItems), order);
+        return buildOrderResponse(order, orderItems);
     }
 
     public String getOrderStatus(Long orderId, String token) {
@@ -333,9 +331,8 @@ public class OrderService {
 
         List<Order> orders = orderRepository.findByCustomerIdOrderByCreatedAtDesc(customer.getId());
         return orders.stream()
-                .map(order -> enrichOrderResponse(
-                        orderMapper.toResponse(order, orderItemRepository.findByOrderId(order.getId())),
-                        order))
+                .map(order -> buildOrderResponse(order,
+                        orderItemRepository.findByOrderId(order.getId())))
                 .collect(Collectors.toList());
     }
 
@@ -352,7 +349,7 @@ public class OrderService {
         }
 
         List<OrderItem> orderItems = orderItemRepository.findByOrderId(orderId);
-        return enrichOrderResponse(orderMapper.toResponse(order, orderItems), order);
+        return buildOrderResponse(order, orderItems);
     }
 
     @Transactional
@@ -380,7 +377,7 @@ public class OrderService {
         updatePickupStatus(order, PickupStatus.CANCELLED);
 
         List<OrderItem> orderItems = orderItemRepository.findByOrderId(orderId);
-        OrderResponse response = enrichOrderResponse(orderMapper.toResponse(order, orderItems), order);
+        OrderResponse response = buildOrderResponse(order, orderItems);
         if (!adminWebsocketBridgeEnabled) {
             orderStatusWebSocketController.sendOrderUpdate(orderId, response);
         }
@@ -393,44 +390,18 @@ public class OrderService {
         return response;
     }
 
-    private OrderResponse enrichOrderResponse(OrderResponse response, Order order) {
-        if (response == null || order == null) {
-            return response;
+    private OrderResponse buildOrderResponse(Order order, List<OrderItem> orderItems) {
+        if (order == null) {
+            return null;
         }
 
         List<Payment> payments = paymentRepository.findByOrderId(order.getId());
-        if (!payments.isEmpty()) {
-            payments.sort(Comparator.comparing(Payment::getUpdatedAt, Comparator.nullsLast(Comparator.naturalOrder())).reversed());
-            Payment latestPayment = payments.get(0);
-            response.setPaymentStatus(latestPayment.getStatus());
-            response.setPaymentMethod(latestPayment.getMethod());
-            response.setPaymentPaidAt(latestPayment.getPaidAt());
-            response.setPaymentTransactionId(latestPayment.getTransactionId());
-        }
+        Delivery delivery = deliveryRepository.findByOrderId(order.getId()).orElse(null);
+        Pickup pickup = order.getOrderType() == OrderType.PICKUP
+                ? pickupRepository.findByOrderId(order.getId()).orElse(null)
+                : null;
 
-        Optional<Delivery> deliveryOptional = deliveryRepository.findByOrderId(order.getId());
-        if (deliveryOptional.isPresent()) {
-            Delivery delivery = deliveryOptional.get();
-            response.setDeliveryStatus(delivery.getStatus());
-            response.setDeliveryDriverName(delivery.getDriverName());
-            response.setDeliveryDriverPhone(delivery.getDriverPhone());
-            response.setDeliveryEstimatedArrivalTime(delivery.getEstimatedArrivalTime());
-            response.setDeliveryActualDeliveryTime(delivery.getActualDeliveryTime());
-        }
-
-        if (order.getOrderType() == OrderType.PICKUP) {
-            pickupRepository.findByOrderId(order.getId()).ifPresent(pickup -> {
-                response.setPickupStatus(pickup.getStatus());
-                response.setPickupCode(pickup.getPickupCode());
-                response.setPickupReadyAt(pickup.getReadyAt());
-                response.setPickupWindowStart(pickup.getWindowStart());
-                response.setPickupWindowEnd(pickup.getWindowEnd());
-                response.setPickupPickedUpAt(pickup.getPickedUpAt());
-                response.setPickupInstructions(pickup.getInstructions());
-            });
-        }
-
-        return response;
+        return orderMapper.toResponse(order, orderItems, payments, delivery, pickup);
     }
 
     private Customer getCustomerFromToken(String token) {
@@ -451,7 +422,7 @@ public class OrderService {
         }
 
         List<OrderItem> items = orderItems != null ? orderItems : orderItemRepository.findByOrderId(order.getId());
-        OrderResponse response = enrichOrderResponse(orderMapper.toResponse(order, items), order);
+        OrderResponse response = buildOrderResponse(order, items);
         orderStatusWebSocketController.sendOrderUpdate(order.getId(), response);
     }
 

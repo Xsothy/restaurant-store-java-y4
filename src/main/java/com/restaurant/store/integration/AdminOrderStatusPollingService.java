@@ -27,7 +27,7 @@ public class AdminOrderStatusPollingService {
     private final AdminIntegrationService adminIntegrationService;
     private final AdminOrderEventForwarder adminOrderEventForwarder;
 
-    @Value("${admin.api.order-status.polling.statuses:PENDING,CONFIRMED,PREPARING,READY_FOR_PICKUP,READY_FOR_DELIVERY,OUT_FOR_DELIVERY}")
+    @Value("${admin.api.order-status.polling.statuses:PENDING,CONFIRMED,PREPARING,READY_FOR_PICKUP,READY_FOR_DELIVERY,OUT_FOR_DELIVERY,COMPLETED,CANCELLED}")
     private String polledStatuses;
 
     @Value("${admin.api.order-status.polling.interval:2000}")
