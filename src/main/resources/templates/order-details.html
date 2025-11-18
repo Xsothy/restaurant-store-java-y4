@@ -2,12 +2,14 @@
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
     <th:block th:replace="~{fragments/layout :: head('Order Details - Restaurant Store')}"></th:block>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Kantumruy+Pro:wght@400;500;600;700&display=swap');
         body {
             font-family: 'Kantumruy Pro', sans-serif;
             background: #f6f6f8;
         }
+        [x-cloak] { display: none !important; }
         .card-shell {
             background: #ffffff;
             border-radius: 24px;
@@ -206,249 +208,200 @@
 <body class="min-h-screen">
     <th:block th:replace="~{fragments/layout :: header}"></th:block>
 
-    <main class="max-w-3xl mx-auto px-4 sm:px-0 py-8" th:if="${order}">
+        <main class="max-w-3xl mx-auto px-4 sm:px-0 py-8" th:if="${order}" x-data="orderDetailsPage()" x-init="init()" x-cloak>
         <div class="mb-4 space-y-3">
             <div class="rounded-2xl border border-green-200 bg-green-50 px-4 py-3 text-green-700" th:text="${successMessage}"
                  th:if="${successMessage}"></div>
             <div class="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-red-700" th:text="${errorMessage}"
                  th:if="${errorMessage}"></div>
+            <div x-show="runtimeError" x-cloak class="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-amber-700" x-text="runtimeError"></div>
         </div>
 
-        <div class="space-y-6" th:attr="data-order-id=${order.id}">
-            <div class="card-shell p-6">
-                <div class="flex items-start justify-between gap-6">
-                    <div>
-                        <p class="section-label">Order</p>
-                        <h1 class="text-3xl font-semibold text-gray-900" th:text="${'Order #' + order.id}"></h1>
-                        <p class="text-sm text-gray-500 mt-1">Placed on
-                            <span th:text="${#temporals.format(order.createdAt, 'MMM dd, yyyy • HH:mm')}"></span>
-                        </p>
-                    </div>
-                    <div class="text-right">
-                        <p class="section-label text-right">Total</p>
-                        <p class="text-2xl font-bold text-gray-900"
-                           th:text="${#numbers.formatDecimal(order.totalPrice, 0, 'COMMA', 0, 'POINT') + ' ៛'}"></p>
-                        <span class="status-badge mt-3 inline-flex" th:classappend="' status-' + ${order.status}"
-                              th:text="${order.status}" th:attr="data-status-badge=${order.id}"></span>
-                    </div>
-                </div>
-                <div class="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm text-gray-600">
-                    <div>
-                        <p class="text-gray-500">Order Type</p>
-                        <p class="font-semibold text-gray-900" th:text="${order.orderType}"></p>
-                    </div>
-                    <div>
-                        <p class="text-gray-500">Contact</p>
-                        <p class="font-semibold text-gray-900">
-                            <span th:text="${order.customerName}"></span>
-                            <span th:if="${order.phoneNumber != null}"> • <span th:text="${order.phoneNumber}"></span></span>
-                        </p>
-                    </div>
-                    <div th:if="${order.estimatedDeliveryTime != null}">
-                        <p class="text-gray-500">ETA</p>
-                        <p class="font-semibold text-gray-900"
-                           th:text="${#temporals.format(order.estimatedDeliveryTime, 'MMM dd, yyyy • HH:mm')}"></p>
-                    </div>
-                    <div th:if="${order.deliveryAddress != null}">
-                        <p class="text-gray-500">Address</p>
-                        <p class="font-semibold text-gray-900" th:text="${order.deliveryAddress}"></p>
-                    </div>
-                </div>
-            </div>
+        <div x-show="!ready" x-cloak class="card-shell p-6 text-center text-gray-500">
+            <p class="font-semibold mb-1">Loading your order...</p>
+            <p class="text-sm">Please hold on while we fetch the latest details.</p>
+        </div>
 
-            <div class="card-shell p-6 order-tracking-wrapper">
-                <div class="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-                    <div>
-                        <p class="section-label">Order Progress</p>
-                        <h2 class="text-xl font-semibold text-gray-900">Track your meal</h2>
-                        <p class="text-sm text-gray-500"
-                           th:attr="data-tracking-description=${order.id}"
-                           th:text="${order.status == T(com.restaurant.store.entity.OrderStatus).CANCELLED
-                                ? 'This order was cancelled before completion.'
-                                : 'See what step comes next so you always know what to expect.'}"></p>
-                    </div>
-                    <div class="text-sm text-gray-500 flex items-center gap-2"
-                         th:attr="data-order-updated-container=${order.id}"
-                         th:classappend="${order.updatedAt == null} ? ' hidden' : ''">
-                        <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                        </svg>
-                        <span>Updated</span>
-                        <span class="font-medium text-gray-700"
-                              th:text="${order.updatedAt != null ? #temporals.format(order.updatedAt, 'MMM dd, yyyy HH:mm') : ''}"
-                              th:attr="data-order-updated=${order.id}"></span>
-                    </div>
-                </div>
-
-                <div class="bg-gray-50 rounded-2xl p-4 mt-4">
-                    <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <template x-if="ready && order">
+            <div class="space-y-6">
+                <div class="card-shell p-6">
+                    <div class="flex items-start justify-between gap-6">
                         <div>
-                        <p class="section-label">Progress</p>
-                        <p class="text-2xl font-semibold text-gray-900"
-                           th:attr="data-tracking-progress-label=${order.id}"
-                           th:text="${trackingIsCancelled
-                                    ? 'Order Cancelled'
-                                    : (trackingHasValidStatus
-                                        ? 'Step ' + trackingCompletedSteps + ' of ' + trackingStepCount
-                                        : 'Awaiting first update')}">Step 0 of 6</p>
-                        </div>
-                    </div>
-                    <div class="relative mt-4 h-1.5 bg-white rounded-full overflow-hidden">
-                        <div class="absolute inset-y-0 left-0 bg-gradient-to-r from-blue-400 via-blue-500 to-indigo-500 rounded-full transition-all duration-500"
-                             style="width: 0%;"
-                           th:styleappend="${'width: ' + #numbers.formatDecimal(trackingProgressPercent, 0, 'POINT', 0, 'POINT') + '%;'}"
-                             th:attr="data-tracking-progress=${order.id}"></div>
-                    </div>
-                    <p class="text-sm text-gray-600 mt-3"
-                       th:attr="data-tracking-remaining=${order.id}">
-                        <span th:if="${trackingIsCancelled}">This order was cancelled before completion.</span>
-                        <span th:if="${!trackingIsCancelled && !trackingHasValidStatus}">We will show the remaining steps once your order is confirmed.</span>
-                        <span th:if="${!trackingIsCancelled && trackingHasValidStatus && trackingCurrentIndex >= trackingStepCount - 1}">All steps are complete. Enjoy your meal!</span>
-                    </p>
-                </div>
-
-                <div class="order-tracking-timeline"
-                     th:attr="data-tracking='${order.id}', data-tracking-status='${order.status}'">
-                    <div th:each="step, iterStat : ${trackingStatuses}"
-                         th:with="stepIndex=${iterStat.index}"
-                         th:class="${'tracking-step ' +
-                                (order.status == T(com.restaurant.store.entity.OrderStatus).CANCELLED
-                                    ? (stepIndex == 0 ? 'tracking-step-cancelled' : 'tracking-step-upcoming')
-                                    : (trackingCurrentIndex > stepIndex
-                                        ? 'tracking-step-completed'
-                                        : (trackingCurrentIndex == stepIndex ? 'tracking-step-active' : 'tracking-step-upcoming')))}"
-                         th:attr="data-tracking-step=${step.name()}">
-                        <div class="tracking-marker" th:text="${stepIndex + 1}"></div>
-                        <div class="tracking-connector" aria-hidden="true"></div>
-                        <div class="space-y-1">
-                            <p class="text-xs uppercase tracking-wide text-gray-400"
-                                th:text="${'Step ' + (stepIndex + 1) + ' of ' + trackingStepCount}"></p>
-                            <p class="font-semibold text-gray-800" th:text="${statusLabels[step]}"></p>
-                            <p class="text-sm text-gray-500" th:switch="${step}">
-                                <span th:case="${T(com.restaurant.store.entity.OrderStatus).PENDING}">We received your order.</span>
-                                <span th:case="${T(com.restaurant.store.entity.OrderStatus).CONFIRMED}">Restaurant confirmed the order.</span>
-                                <span th:case="${T(com.restaurant.store.entity.OrderStatus).PREPARING}">Chef is preparing your meal.</span>
-                                <span th:case="${T(com.restaurant.store.entity.OrderStatus).READY}">Order ready for pickup.</span>
-                                <span th:case="${T(com.restaurant.store.entity.OrderStatus).OUT_FOR_DELIVERY}">Rider is on the way.</span>
-                                <span th:case="${T(com.restaurant.store.entity.OrderStatus).DELIVERED}">Delivered. Enjoy!</span>
-                                <span th:case="*">Stay tuned for the next update.</span>
-                            </p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="grid gap-4 md:grid-cols-2">
-                <div class="card-shell p-5 space-y-2"
-                     th:if="${order.orderType == T(com.restaurant.store.entity.OrderType).DELIVERY}"
-                     th:attr="data-delivery-card=${order.id}">
-                    <p class="section-label">Delivery partner</p>
-                    <p class="text-lg font-semibold text-gray-900"
-                       th:text="${order.deliveryDriverName != null ? order.deliveryDriverName : 'Driver assigned soon'}"
-                       th:attr="data-delivery-driver=${order.id}"></p>
-                    <p class="text-sm text-gray-500">
-                        Contact:
-                        <span class="font-medium text-gray-900"
-                              th:text="${order.deliveryDriverPhone != null ? order.deliveryDriverPhone : 'Not available yet'}"
-                              th:attr="data-delivery-phone=${order.id}"></span>
-                    </p>
-                    <p class="text-sm text-gray-500">
-                        Status:
-                        <span class="font-medium text-gray-900"
-                              th:text="${order.deliveryStatus != null ? #strings.replace(order.deliveryStatus.name(), '_', ' ') : 'Pending'}"
-                              th:attr="data-delivery-status=${order.id}"></span>
-                    </p>
-                    <p class="text-sm text-gray-500" th:if="${order.deliveryEstimatedArrivalTime != null}">
-                        ETA: <span class="font-medium text-gray-900"
-                                    th:text="${#temporals.format(order.deliveryEstimatedArrivalTime, 'MMM dd, yyyy HH:mm')}"
-                                    th:attr="data-delivery-eta=${order.id}"></span>
-                    </p>
-                    <p class="text-sm text-gray-500" th:if="${order.deliveryActualDeliveryTime != null}">
-                        Delivered: <span class="font-medium text-gray-900"
-                                          th:text="${#temporals.format(order.deliveryActualDeliveryTime, 'MMM dd, yyyy HH:mm')}"></span>
-                    </p>
-                </div>
-                <div class="card-shell p-5 space-y-2">
-                    <p class="section-label">Delivery details</p>
-                    <p class="text-sm text-gray-500">Special instructions</p>
-                    <p class="text-base text-gray-900" th:text="${order.specialInstructions != null ? order.specialInstructions : 'No additional instructions'}"></p>
-                    <p class="text-sm text-gray-500" th:if="${order.deliveryAddress != null}">Address</p>
-                    <p class="text-base text-gray-900" th:if="${order.deliveryAddress != null}" th:text="${order.deliveryAddress}"></p>
-                </div>
-            </div>
-
-            <div class="card-shell p-6">
-                <h2 class="text-lg font-semibold text-gray-900 mb-4">Order Items</h2>
-                <div class="space-y-3" th:attr="data-items-container=${order.id}">
-                    <div th:each="item : ${order.orderItems}" class="flex items-center justify-between py-3 border-b border-gray-100 last:border-0">
-                        <div class="flex items-center gap-3">
-                            <img th:src="${item.productImageUrl != null ? item.productImageUrl : '/images/placeholder-food.jpg'}"
-                                 th:alt="${item.productName}"
-                                 class="w-12 h-12 rounded-xl object-cover"
-                                 onerror="this.src='/images/placeholder-food.jpg'" />
-                            <div>
-                                <p th:text="${item.productName}" class="font-medium text-gray-900"></p>
-                                <p class="text-sm text-gray-500">
-                                    Qty <span th:text="${item.quantity}"></span>
-                                    •
-                                    <span th:text="${#numbers.formatDecimal(item.unitPrice, 0, 'COMMA', 0, 'POINT') + '៛'}"></span>
-                                </p>
-                            </div>
+                            <p class="section-label">Order</p>
+                            <h1 class="text-3xl font-semibold text-gray-900" x-text="orderTitle()"></h1>
+                            <p class="text-sm text-gray-500 mt-1" x-text="placedOnLabel()"></p>
                         </div>
                         <div class="text-right">
-                            <p th:text="${#numbers.formatDecimal(item.totalPrice, 0, 'COMMA', 0, 'POINT') + '៛'}" class="font-semibold text-gray-900"></p>
+                            <p class="section-label text-right">Total</p>
+                            <p class="text-2xl font-bold text-gray-900" x-text="formatCurrency(order?.totalPrice)"></p>
+                            <span class="status-badge mt-3 inline-flex" :class="statusBadgeClass(order?.status)" x-text="formatEnum(order?.status)"></span>
+                        </div>
+                    </div>
+                    <div class="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm text-gray-600">
+                        <div>
+                            <p class="text-gray-500">Order Type</p>
+                            <p class="font-semibold text-gray-900" x-text="formatEnum(order?.orderType)"></p>
+                        </div>
+                        <div>
+                            <p class="text-gray-500">Contact</p>
+                            <p class="font-semibold text-gray-900" x-text="contactLabel()"></p>
+                        </div>
+                        <div x-show="order?.estimatedDeliveryTime">
+                            <p class="text-gray-500">ETA</p>
+                            <p class="font-semibold text-gray-900" x-text="formatDateTime(order.estimatedDeliveryTime)"></p>
+                        </div>
+                        <div x-show="order?.deliveryAddress">
+                            <p class="text-gray-500">Address</p>
+                            <p class="font-semibold text-gray-900" x-text="order.deliveryAddress"></p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-shell p-6 order-tracking-wrapper">
+                    <div class="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                        <div>
+                            <p class="section-label">Order Progress</p>
+                            <h2 class="text-xl font-semibold text-gray-900">Track your meal</h2>
+                            <p class="text-sm text-gray-500" x-text="trackingHeroDescription()"></p>
+                        </div>
+                        <div class="text-sm text-gray-500 flex items-center gap-2" x-show="order?.updatedAt" x-cloak>
+                            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            <span>Updated</span>
+                            <span class="font-medium text-gray-700" x-text="formatDateTime(order.updatedAt)"></span>
+                        </div>
+                    </div>
+
+                    <div class="bg-gray-50 rounded-2xl p-4 mt-4">
+                        <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                            <div>
+                                <p class="section-label">Progress</p>
+                                <p class="text-2xl font-semibold text-gray-900" x-text="trackingProgressLabel()"></p>
+                            </div>
+                        </div>
+                        <div class="relative mt-4 h-1.5 bg-white rounded-full overflow-hidden">
+                            <div class="absolute inset-y-0 left-0 bg-gradient-to-r from-blue-400 via-blue-500 to-indigo-500 rounded-full transition-all duration-500"
+                                 :style="`width: ${trackingProgressPercent()}%;`"></div>
+                        </div>
+                        <p class="text-sm text-gray-600 mt-3" x-text="trackingRemainingLabel()"></p>
+                    </div>
+
+                    <div class="order-tracking-timeline">
+                        <template x-for="(step, index) in trackingSteps" :key="step.code">
+                            <div class="tracking-step" :class="trackingStepClass(step.code)">
+                                <div class="tracking-marker" x-text="index + 1"></div>
+                                <div class="tracking-connector" aria-hidden="true"></div>
+                                <div class="space-y-1">
+                                    <p class="text-xs uppercase tracking-wide text-gray-400" x-text="`Step ${index + 1} of ${trackingSteps.length}`"></p>
+                                    <p class="font-semibold text-gray-800" x-text="step.label"></p>
+                                    <p class="text-sm text-gray-500" x-text="step.description"></p>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+
+                <div class="grid gap-4 md:grid-cols-2">
+                    <div class="card-shell p-5 space-y-2" x-show="order?.orderType === 'DELIVERY'" x-cloak>
+                        <p class="section-label">Delivery partner</p>
+                        <p class="text-lg font-semibold text-gray-900" x-text="driverNameLabel()"></p>
+                        <p class="text-sm text-gray-500">
+                            Contact:
+                            <span class="font-medium text-gray-900" x-text="driverPhoneLabel()"></span>
+                        </p>
+                        <p class="text-sm text-gray-500">
+                            Status:
+                            <span class="font-medium text-gray-900" x-text="deliveryStatusLabel()"></span>
+                        </p>
+                        <p class="text-sm text-gray-500" x-show="order?.deliveryEstimatedArrivalTime">
+                            ETA: <span class="font-medium text-gray-900" x-text="formatDateTime(order.deliveryEstimatedArrivalTime)"></span>
+                        </p>
+                        <p class="text-sm text-gray-500" x-show="order?.deliveryActualDeliveryTime">
+                            Delivered: <span class="font-medium text-gray-900" x-text="formatDateTime(order.deliveryActualDeliveryTime)"></span>
+                        </p>
+                    </div>
+                    <div class="card-shell p-5 space-y-2">
+                        <p class="section-label">Delivery details</p>
+                        <p class="text-sm text-gray-500">Special instructions</p>
+                        <p class="text-base text-gray-900" x-text="order?.specialInstructions || 'No additional instructions'"></p>
+                        <p class="text-sm text-gray-500" x-show="order?.deliveryAddress">Address</p>
+                        <p class="text-base text-gray-900" x-show="order?.deliveryAddress" x-text="order.deliveryAddress"></p>
+                    </div>
+                </div>
+
+                <div class="card-shell p-6" x-show="orderItemsList().length" x-cloak>
+                    <h2 class="text-lg font-semibold text-gray-900 mb-4">Order Items</h2>
+                    <div class="space-y-3">
+                        <template x-for="item in orderItemsList()" :key="item.id || item.productId || item.productName">
+                            <div class="flex items-center justify-between py-3 border-b border-gray-100 last:border-0">
+                                <div class="flex items-center gap-3">
+                                    <img :src="item.productImageUrl || placeholderImage"
+                                         :alt="item.productName"
+                                         class="w-12 h-12 rounded-xl object-cover"
+                                         @error.once="$event.target.src = placeholderImage" />
+                                    <div>
+                                        <p class="font-medium text-gray-900" x-text="item.productName"></p>
+                                        <p class="text-sm text-gray-500">
+                                            Qty <span x-text="item.quantity"></span>
+                                            •
+                                            <span x-text="formatCurrency(item.unitPrice)"></span>
+                                        </p>
+                                    </div>
+                                </div>
+                                <div class="text-right">
+                                    <p class="font-semibold text-gray-900" x-text="formatCurrency(item.totalPrice)"></p>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+
+                <div class="grid gap-4 md:grid-cols-2">
+                    <div class="card-shell p-5 space-y-2">
+                        <p class="section-label">Payment summary</p>
+                        <p class="text-sm text-gray-600">
+                            Method:
+                            <span class="font-medium" x-text="paymentMethodLabel()"></span>
+                        </p>
+                        <p class="text-sm text-gray-600 flex items-center gap-2">
+                            Status:
+                            <span class="payment-badge" :class="paymentStatusClass()" x-text="paymentStatusLabel()"></span>
+                        </p>
+                        <p class="text-sm text-gray-600" x-show="order?.paymentPaidAt">
+                            Paid on:
+                            <span class="font-medium" x-text="formatDateTime(order.paymentPaidAt)"></span>
+                        </p>
+                        <p class="text-sm text-gray-600" x-show="order?.paymentTransactionId">
+                            Transaction ID:
+                            <span class="font-medium" x-text="order.paymentTransactionId"></span>
+                        </p>
+                    </div>
+                    <div class="card-shell p-5 space-y-2">
+                        <p class="section-label">Need to change?</p>
+                        <p class="text-sm text-gray-600">We can cancel your order until the restaurant confirms it.</p>
+                        <div class="flex flex-wrap gap-3">
+                            <button onclick="window.location.href='/orders'"
+                                    class="flex-1 rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50">
+                                Back to orders
+                            </button>
+                            <form class="flex-1"
+                                  th:if="${order.status == 'PENDING' or order.status == 'CONFIRMED'}"
+                                  th:action="@{/orders/{orderId}/cancel(orderId=${order.id})}" method="post"
+                                  onsubmit="return confirm('Are you sure you want to cancel this order?');"
+                                  x-show="canCancel()" x-cloak>
+                                <button type="submit"
+                                        class="w-full rounded-xl bg-red-600 px-4 py-3 text-sm font-semibold text-white hover:bg-red-700">
+                                    Cancel order
+                                </button>
+                            </form>
                         </div>
                     </div>
                 </div>
             </div>
-
-            <div class="grid gap-4 md:grid-cols-2">
-                <div class="card-shell p-5 space-y-2">
-                    <p class="section-label">Payment summary</p>
-                    <p class="text-sm text-gray-600">
-                        Method:
-                        <span class="font-medium"
-                              th:text="${order.paymentMethod != null ? #strings.replace(order.paymentMethod.name(), '_', ' ') : 'N/A'}"
-                              th:attr="data-payment-method=${order.id}"></span>
-                    </p>
-                    <p class="text-sm text-gray-600 flex items-center gap-2">
-                        Status:
-                        <span class="payment-badge"
-                              th:classappend="${order.paymentStatus != null} ? ' payment-' + order.paymentStatus : ''"
-                              th:text="${order.paymentStatus != null ? #strings.replace(order.paymentStatus.name(), '_', ' ') : 'N/A'}"
-                              th:attr="data-payment-status=${order.id}"></span>
-                    </p>
-                    <p class="text-sm text-gray-600" th:if="${order.paymentPaidAt != null}">
-                        Paid on:
-                        <span class="font-medium"
-                              th:text="${#temporals.format(order.paymentPaidAt, 'MMM dd, yyyy HH:mm')}"></span>
-                    </p>
-                    <p class="text-sm text-gray-600" th:if="${order.paymentTransactionId != null}">
-                        Transaction ID:
-                        <span class="font-medium" th:text="${order.paymentTransactionId}"></span>
-                    </p>
-                </div>
-                <div class="card-shell p-5 space-y-2">
-                    <p class="section-label">Need to change?</p>
-                    <p class="text-sm text-gray-600">We can cancel your order until the restaurant confirms it.</p>
-                    <div class="flex flex-wrap gap-3">
-                        <button onclick="window.location.href='/orders'"
-                                class="flex-1 rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50">
-                            Back to orders
-                        </button>
-                        <form class="flex-1"
-                              th:if="${order.status == 'PENDING' or order.status == 'CONFIRMED'}"
-                              th:action="@{/orders/{orderId}/cancel(orderId=${order.id})}" method="post"
-                              onsubmit="return confirm('Are you sure you want to cancel this order?');">
-                            <button type="submit"
-                                    class="w-full rounded-xl bg-red-600 px-4 py-3 text-sm font-semibold text-white hover:bg-red-700">
-                                Cancel order
-                            </button>
-                        </form>
-                    </div>
-                </div>
-            </div>
-        </div>
+        </template>
     </main>
+
 
     <main class="max-w-7xl mx-auto px-4 sm:px-6 py-8" th:unless="${order}">
         <div class="max-w-2xl mx-auto mb-6" th:if="${errorMessage}">
@@ -478,7 +431,10 @@
     <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
     <script th:inline="javascript">
-        const detailStatusClassMap = {
+        window.INITIAL_ORDER = /*[[${order}]]*/ null;
+    </script>
+    <script>
+        const ORDER_STATUS_CLASS_MAP = {
             'PENDING': 'status-PENDING',
             'CONFIRMED': 'status-CONFIRMED',
             'PREPARING': 'status-PREPARING',
@@ -489,287 +445,7 @@
             'DELIVERED': 'status-DELIVERED'
         };
 
-        const trackingStatuses = ['PENDING', 'CONFIRMED', 'PREPARING', 'READY', 'OUT_FOR_DELIVERY', 'DELIVERED'];
-        const trackingStatusFriendlyNames = {
-            'PENDING': 'Pending Confirmation',
-            'CONFIRMED': 'Confirmed',
-            'PREPARING': 'Preparing Order',
-            'READY': 'Ready for Pickup',
-            'OUT_FOR_DELIVERY': 'Out for Delivery',
-            'DELIVERED': 'Completed'
-        };
-
-        document.addEventListener('DOMContentLoaded', () => {
-            const container = document.querySelector('[data-order-id]');
-            if (!container) {
-                return;
-            }
-
-            const orderId = container.dataset.orderId;
-            const trackingContainer = document.querySelector(`[data-tracking="${orderId}"]`);
-            if (trackingContainer) {
-                updateTrackingSteps(orderId, trackingContainer.dataset.trackingStatus);
-            }
-
-            if (typeof SockJS === 'undefined' || typeof Stomp === 'undefined') {
-                return;
-            }
-
-            const socket = new SockJS('/ws');
-            const stompClient = Stomp.over(socket);
-            stompClient.reconnect_delay = 5000;
-
-            stompClient.connect({}, () => {
-                stompClient.subscribe(`/topic/orders/${orderId}`, message => {
-                    try {
-                        const payload = JSON.parse(message.body);
-                        console.log("Payload", payload);
-                        updateOrderDetails(orderId, payload);
-                    } catch (error) {
-                        console.error('Failed to parse order update', error);
-                    }
-                });
-                stompClient.subscribe(`/topic/orders/${orderId}/status`, message => {
-                    const payload = JSON.parse(message.body);
-                    updateOrderStatus(orderId, payload.status);
-                });
-            }, error => {
-                console.warn('Unable to connect to order updates', error);
-            });
-        });
-
-        function updateOrderStatus(orderId, status) {
-            const badge = document.querySelector(`[data-status-badge="${orderId}"]`);
-            if (!badge || !status) {
-                return;
-            }
-            console.log("status", status);
-            badge.textContent = formatEnumValue(status) || status;
-            badge.className = 'status-badge';
-            badge.classList.add(detailStatusClassMap[status] || 'status-PENDING');
-
-            updateTrackingSteps(orderId, status);
-        }
-
-        function updateOrderDetails(orderId, order) {
-            if (!order) {
-                return;
-            }
-
-            updateOrderStatus(orderId, order.status);
-
-            updateTrackingSteps(orderId, order.status);
-
-            if (order.updatedAt) {
-                updateLastUpdated(orderId, order.updatedAt);
-            }
-
-            const paymentMethodEl = document.querySelector(`[data-payment-method="${orderId}"]`);
-            if (paymentMethodEl) {
-                paymentMethodEl.textContent = formatEnumValue(order.paymentMethod) || 'N/A';
-            }
-
-            const paymentStatusEl = document.querySelector(`[data-payment-status="${orderId}"]`);
-            updatePaymentStatus(paymentStatusEl, order.paymentStatus);
-
-            const deliveryStatusEl = document.querySelector(`[data-delivery-status="${orderId}"]`);
-            if (deliveryStatusEl) {
-                deliveryStatusEl.textContent = formatEnumValue(order.deliveryStatus) || 'Pending';
-            }
-
-            const deliveryEtaEl = document.querySelector(`[data-delivery-eta="${orderId}"]`);
-            if (deliveryEtaEl) {
-                if (order.deliveryEstimatedArrivalTime) {
-                    deliveryEtaEl.textContent = formatDate(order.deliveryEstimatedArrivalTime);
-                } else {
-                    deliveryEtaEl.textContent = 'N/A';
-                }
-            }
-
-            const driverNameEl = document.querySelector(`[data-delivery-driver="${orderId}"]`);
-            if (driverNameEl) {
-                driverNameEl.textContent = order.deliveryDriverName || 'Not assigned yet';
-            }
-
-            const driverPhoneEl = document.querySelector(`[data-delivery-phone="${orderId}"]`);
-            if (driverPhoneEl) {
-                driverPhoneEl.textContent = order.deliveryDriverPhone || 'Not available yet';
-            }
-        }
-
-        function updateTrackingSteps(orderId, status) {
-            if (!orderId) {
-                return;
-            }
-
-            const trackingContainer = document.querySelector(`[data-tracking="${orderId}"]`);
-            if (!trackingContainer) {
-                return;
-            }
-
-            if (status) {
-                trackingContainer.dataset.trackingStatus = status;
-            } else {
-                status = trackingContainer.dataset.trackingStatus;
-            }
-
-            const steps = trackingContainer.querySelectorAll('[data-tracking-step]');
-            if (!steps.length) {
-                return;
-            }
-
-            const isCancelled = status === 'CANCELLED';
-            const activeIndex = trackingStatuses.indexOf(status);
-
-            steps.forEach((step, index) => {
-                step.classList.remove('tracking-step-completed', 'tracking-step-active', 'tracking-step-upcoming', 'tracking-step-cancelled');
-
-                if (isCancelled) {
-                    if (index === 0) {
-                        step.classList.add('tracking-step-cancelled');
-                    } else {
-                        step.classList.add('tracking-step-upcoming');
-                    }
-                    return;
-                }
-
-                if (activeIndex === -1) {
-                    step.classList.add('tracking-step-upcoming');
-                    return;
-                }
-
-                if (index < activeIndex) {
-                    step.classList.add('tracking-step-completed');
-                } else if (index === activeIndex) {
-                    step.classList.add('tracking-step-active');
-                } else {
-                    step.classList.add('tracking-step-upcoming');
-                }
-            });
-
-            updateTrackingDescription(orderId, status);
-            updateTrackingProgress(orderId, status);
-        }
-
-        function updateLastUpdated(orderId, timestamp) {
-            const container = document.querySelector(`[data-order-updated-container="${orderId}"]`);
-            const label = document.querySelector(`[data-order-updated="${orderId}"]`);
-
-            if (!container || !label) {
-                return;
-            }
-
-            container.classList.remove('hidden');
-            label.textContent = formatDate(timestamp);
-        }
-
-        function updateTrackingDescription(orderId, status) {
-            const description = document.querySelector(`[data-tracking-description="${orderId}"]`);
-            if (!description) {
-                return;
-            }
-
-            if (status === 'CANCELLED') {
-                description.textContent = 'This order was cancelled before completion.';
-                return;
-            }
-
-            const activeIndex = trackingStatuses.indexOf(status);
-            if (activeIndex === -1) {
-                description.textContent = 'See what step comes next so you always know what to expect.';
-                return;
-            }
-
-            if (activeIndex >= trackingStatuses.length - 1) {
-                description.textContent = 'Your meal has been delivered. Enjoy every bite!';
-                return;
-            }
-
-            const nextStatus = trackingStatuses[activeIndex + 1];
-            description.textContent = `${formatTrackingStatus(status)} stage in progress. Next: ${formatTrackingStatus(nextStatus)}.`;
-        }
-
-        function updateTrackingProgress(orderId, status) {
-            const progressBar = document.querySelector(`[data-tracking-progress="${orderId}"]`);
-            const progressLabel = document.querySelector(`[data-tracking-progress-label="${orderId}"]`);
-            const nextLabel = document.querySelector(`[data-tracking-next="${orderId}"]`);
-            const remainingLabel = document.querySelector(`[data-tracking-remaining="${orderId}"]`);
-
-            if (!progressBar || !progressLabel || !remainingLabel) {
-                return;
-            }
-
-            const totalSteps = trackingStatuses.length;
-            const isCancelled = status === 'CANCELLED';
-            const activeIndex = trackingStatuses.indexOf(status);
-            const hasValidStatus = activeIndex >= 0;
-            const completedSteps = isCancelled ? 0 : (hasValidStatus ? activeIndex + 1 : 0);
-            const progressPercent = isCancelled ? 0 : (completedSteps / totalSteps) * 100;
-
-            progressBar.style.width = `${Math.min(100, Math.max(0, progressPercent))}%`;
-
-            if (progressLabel) {
-                if (isCancelled) {
-                    progressLabel.textContent = 'Order Cancelled';
-                } else if (hasValidStatus) {
-                    progressLabel.textContent = `Step ${completedSteps} of ${totalSteps}`;
-                } else {
-                    progressLabel.textContent = 'Awaiting first update';
-                }
-            }
-
-            if (nextLabel) {
-                if (isCancelled) {
-                    nextLabel.textContent = 'No further steps';
-                    nextLabel.classList.add('text-red-600');
-                } else if (!hasValidStatus) {
-                    nextLabel.textContent = `Next: ${formatTrackingStatus(trackingStatuses[0])}`;
-                    nextLabel.classList.remove('text-red-600');
-                } else if (activeIndex >= totalSteps - 1) {
-                    nextLabel.textContent = 'All steps completed';
-                    nextLabel.classList.remove('text-red-600');
-                } else {
-                    const upcoming = trackingStatuses[activeIndex + 1];
-                    nextLabel.textContent = `Next: ${formatTrackingStatus(upcoming)}`;
-                    nextLabel.classList.remove('text-red-600');
-                }
-            }
-
-            if (remainingLabel) {
-                if (isCancelled) {
-                    remainingLabel.textContent = 'This order was cancelled before completion.';
-                } else if (!hasValidStatus) {
-                    remainingLabel.textContent = 'We will show the remaining steps once your order is confirmed.';
-                } else if (activeIndex >= totalSteps - 1) {
-                    remainingLabel.textContent = 'All steps are complete. Enjoy your meal!';
-                } else {
-                    const remainingSteps = trackingStatuses
-                        .slice(activeIndex + 1)
-                        .map(formatTrackingStatus);
-                    remainingLabel.textContent = `Still to come: ${remainingSteps.join(' → ')}`;
-                }
-            }
-        }
-
-        function formatDate(value) {
-            try {
-                const date = new Date(value);
-                if (!isNaN(date.getTime())) {
-                    return date.toLocaleString('en-US', {
-                        year: 'numeric',
-                        month: 'short',
-                        day: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                    });
-                }
-            } catch (error) {
-                console.warn('Unable to format date', value, error);
-            }
-            return value;
-        }
-
-        const detailPaymentStatusClassMap = {
+        const PAYMENT_STATUS_CLASS_MAP = {
             'PENDING': 'payment-PENDING',
             'AWAITING_SESSION': 'payment-AWAITING_SESSION',
             'AWAITING_WEBHOOK': 'payment-AWAITING_WEBHOOK',
@@ -781,37 +457,380 @@
             'REFUNDED': 'payment-REFUNDED'
         };
 
-        function updatePaymentStatus(element, status) {
-            if (!element) {
-                return;
-            }
+        const TRACKING_STEPS = [
+            { code: 'PENDING', label: 'Pending Confirmation', description: 'We received your order.' },
+            { code: 'CONFIRMED', label: 'Confirmed', description: 'Restaurant confirmed the order.' },
+            { code: 'PREPARING', label: 'Preparing Order', description: 'Chef is preparing your meal.' },
+            { code: 'READY', label: 'Ready for Pickup', description: 'Order ready for pickup.' },
+            { code: 'OUT_FOR_DELIVERY', label: 'Out for Delivery', description: 'Rider is on the way.' },
+            { code: 'DELIVERED', label: 'Completed', description: 'Delivered. Enjoy!' }
+        ];
 
-            element.textContent = formatEnumValue(status) || 'N/A';
-            element.className = 'payment-badge';
+        function orderDetailsPage() {
+            return {
+                order: null,
+                ready: false,
+                runtimeError: '',
+                stompClient: null,
+                pollTimerId: null,
+                placeholderImage: '/images/placeholder-food.jpg',
+                trackingSteps: TRACKING_STEPS,
 
-            if (status && detailPaymentStatusClassMap[status]) {
-                element.classList.add(detailPaymentStatusClassMap[status]);
-            }
-        }
+                init() {
+                    this.order = this.prepareOrder(window.INITIAL_ORDER || null);
+                    this.ready = true;
+                    if (this.order?.id) {
+                        this.connectWebsocket();
+                        this.startPolling();
+                        window.addEventListener('beforeunload', () => this.teardown());
+                    }
+                },
 
-        function formatTrackingStatus(status) {
-            if (!status) {
-                return '';
-            }
-            return trackingStatusFriendlyNames[status] || formatEnumValue(status);
-        }
+                prepareOrder(order) {
+                    if (!order) {
+                        return null;
+                    }
+                    const normalized = { ...order };
+                    normalized.orderItems = Array.isArray(order.orderItems) ? order.orderItems : [];
+                    if (!normalized.paymentMethod && normalized.paymentStatus === 'CASH_PENDING') {
+                        normalized.paymentMethod = 'CASH_ON_DELIVERY';
+                    }
+                    return normalized;
+                },
 
-        function formatEnumValue(value) {
-            if (!value) {
-                return '';
-            }
+                connectWebsocket() {
+                    if (!this.order?.id || typeof SockJS === 'undefined' || typeof Stomp === 'undefined') {
+                        return;
+                    }
+                    const socket = new SockJS('/ws');
+                    this.stompClient = Stomp.over(socket);
+                    this.stompClient.reconnect_delay = 5000;
+                    this.stompClient.connect({}, () => {
+                        const orderId = this.order.id;
+                        this.stompClient.subscribe(`/topic/orders/${orderId}`, message => {
+                            try {
+                                const payload = JSON.parse(message.body);
+                                this.applyOrderUpdate(payload);
+                            } catch (error) {
+                                console.error('Failed to parse order update', error);
+                            }
+                        });
+                        const handleStatusPayload = message => {
+                            try {
+                                const payload = JSON.parse(message.body);
+                                this.applyOrderStatusPayload(orderId, payload);
+                            } catch (error) {
+                                console.error('Failed to parse order status', error);
+                            }
+                        };
+                        this.stompClient.subscribe(`/topic/orders/${orderId}/status`, handleStatusPayload);
+                        this.stompClient.subscribe(`/topic/orders/${orderId}/notifications`, handleStatusPayload);
+                    }, error => {
+                        console.warn('Unable to connect to order updates', error);
+                    });
+                },
 
-            return value
-                .toString()
-                .split('_')
-                .map(part => part.charAt(0) + part.slice(1).toLowerCase())
-                .join(' ');
+                startPolling() {
+                    if (this.pollTimerId) {
+                        clearInterval(this.pollTimerId);
+                    }
+                    this.pollTimerId = window.setInterval(() => this.refreshOrder(), 30000);
+                },
+
+                async refreshOrder() {
+                    if (!this.order?.id || !window.API_BASE_URL) {
+                        return;
+                    }
+                    const token = localStorage.getItem('token');
+                    if (!token) {
+                        this.runtimeError = 'Please login to view this order.';
+                        return;
+                    }
+                    try {
+                        const response = await fetch(`${API_BASE_URL}/orders/${this.order.id}`, {
+                            headers: {
+                                'Authorization': `Bearer ${token}`
+                            }
+                        });
+                        if (response.status === 401) {
+                            window.location.href = LOGIN_PAGE_URL;
+                            return;
+                        }
+                        const payload = await response.json();
+                        if (!payload.success || !payload.data) {
+                            throw new Error(payload.message || 'Unable to load this order.');
+                        }
+                        this.applyOrderUpdate(payload.data);
+                        this.runtimeError = '';
+                    } catch (error) {
+                        console.error('Failed to refresh order', error);
+                        this.runtimeError = error.message || 'Unable to refresh this order right now.';
+                    }
+                },
+
+                applyOrderUpdate(update) {
+                    if (!update) {
+                        return;
+                    }
+                    this.order = this.prepareOrder({ ...(this.order || {}), ...update });
+                },
+
+                applyOrderStatusPayload(orderId, payload) {
+                    if (!payload) {
+                        return;
+                    }
+                    const update = { id: orderId };
+                    if (payload.status) {
+                        update.status = payload.status;
+                    }
+                    if (payload.estimatedDeliveryTime) {
+                        update.estimatedDeliveryTime = payload.estimatedDeliveryTime;
+                    }
+                    Object.assign(update, this.extractMetadataUpdates(payload.metadata));
+                    this.applyOrderUpdate(update);
+                },
+
+                extractMetadataUpdates(metadata) {
+                    if (!metadata || typeof metadata !== 'object') {
+                        return {};
+                    }
+                    const updates = {};
+                    const driverName = metadata.deliveryDriverName || metadata.driverName;
+                    const driverPhone = metadata.deliveryDriverPhone || metadata.driverPhone;
+                    const driverStatus = metadata.deliveryStatus || metadata.driverStatus;
+                    const eta = metadata.deliveryEstimatedArrivalTime || metadata.deliveryEta || metadata.estimatedArrivalTime;
+                    const actualDelivered = metadata.deliveryActualDeliveryTime || metadata.deliveredAt;
+                    if (driverName) {
+                        updates.deliveryDriverName = driverName;
+                    }
+                    if (driverPhone) {
+                        updates.deliveryDriverPhone = driverPhone;
+                    }
+                    if (driverStatus) {
+                        updates.deliveryStatus = driverStatus;
+                    }
+                    if (eta) {
+                        updates.deliveryEstimatedArrivalTime = eta;
+                    }
+                    if (actualDelivered) {
+                        updates.deliveryActualDeliveryTime = actualDelivered;
+                    }
+                    if (metadata.paymentStatus) {
+                        updates.paymentStatus = metadata.paymentStatus;
+                    }
+                    if (metadata.paymentMethod) {
+                        updates.paymentMethod = metadata.paymentMethod;
+                    }
+                    if (metadata.status) {
+                        updates.status = metadata.status;
+                    }
+                    if (metadata.orderStatus) {
+                        updates.status = metadata.orderStatus;
+                    }
+                    return updates;
+                },
+
+                teardown() {
+                    if (this.pollTimerId) {
+                        clearInterval(this.pollTimerId);
+                        this.pollTimerId = null;
+                    }
+                    if (this.stompClient) {
+                        try {
+                            this.stompClient.disconnect();
+                        } catch (error) {
+                            console.warn('Error disconnecting socket', error);
+                        }
+                        this.stompClient = null;
+                    }
+                },
+
+                orderItemsList() {
+                    return Array.isArray(this.order?.orderItems) ? this.order.orderItems : [];
+                },
+
+                orderTitle() {
+                    return this.order ? `Order #${this.order.id}` : '';
+                },
+
+                placedOnLabel() {
+                    return this.order?.createdAt ? `Placed on ${this.formatDateTime(this.order.createdAt)}` : '';
+                },
+
+                contactLabel() {
+                    if (!this.order) {
+                        return '';
+                    }
+                    const name = this.order.customerName || 'Customer';
+                    return this.order.phoneNumber ? `${name} • ${this.order.phoneNumber}` : name;
+                },
+
+                statusBadgeClass(status) {
+                    return ORDER_STATUS_CLASS_MAP[status || this.order?.status] || 'status-PENDING';
+                },
+
+                formatCurrency(value) {
+                    const number = Number(value);
+                    if (!Number.isNaN(number) && Number.isFinite(number)) {
+                        return `${number.toLocaleString('en-US')}៛`;
+                    }
+                    return value ? `${value}៛` : '0៛';
+                },
+
+                formatDateTime(value) {
+                    if (!value) {
+                        return '';
+                    }
+                    try {
+                        const date = new Date(value);
+                        if (!Number.isNaN(date.getTime())) {
+                            return date.toLocaleString('en-US', {
+                                year: 'numeric',
+                                month: 'short',
+                                day: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                            });
+                        }
+                    } catch (error) {
+                        console.warn('Unable to format date', value, error);
+                    }
+                    return value;
+                },
+
+                formatEnum(value) {
+                    if (!value) {
+                        return 'N/A';
+                    }
+                    return value
+                        .toString()
+                        .split('_')
+                        .map(part => part.charAt(0) + part.slice(1).toLowerCase())
+                        .join(' ');
+                },
+
+                trackingIndex() {
+                    if (!this.order) {
+                        return -1;
+                    }
+                    return this.trackingSteps.findIndex(step => step.code === this.order.status);
+                },
+
+                trackingHeroDescription() {
+                    if (!this.order) {
+                        return '';
+                    }
+                    if (this.order.status === 'CANCELLED') {
+                        return 'This order was cancelled before completion.';
+                    }
+                    const index = this.trackingIndex();
+                    if (index === -1) {
+                        return 'See what step comes next so you always know what to expect.';
+                    }
+                    if (index >= this.trackingSteps.length - 1) {
+                        return 'Your meal has been delivered. Enjoy every bite!';
+                    }
+                    const current = this.trackingSteps[index];
+                    const next = this.trackingSteps[index + 1];
+                    return `${current.label} stage in progress. Next: ${next.label}.`;
+                },
+
+                trackingProgressLabel() {
+                    if (!this.order) {
+                        return '';
+                    }
+                    if (this.order.status === 'CANCELLED') {
+                        return 'Order Cancelled';
+                    }
+                    const index = this.trackingIndex();
+                    if (index === -1) {
+                        return 'Awaiting first update';
+                    }
+                    return `Step ${Math.min(index + 1, this.trackingSteps.length)} of ${this.trackingSteps.length}`;
+                },
+
+                trackingProgressPercent() {
+                    if (!this.order || this.order.status === 'CANCELLED') {
+                        return 0;
+                    }
+                    const index = this.trackingIndex();
+                    if (index === -1) {
+                        return 0;
+                    }
+                    return Math.min(100, Math.max(0, ((index + 1) / this.trackingSteps.length) * 100));
+                },
+
+                trackingRemainingLabel() {
+                    if (!this.order) {
+                        return '';
+                    }
+                    if (this.order.status === 'CANCELLED') {
+                        return 'This order was cancelled before completion.';
+                    }
+                    const index = this.trackingIndex();
+                    if (index === -1) {
+                        return 'We will show the remaining steps once your order is confirmed.';
+                    }
+                    if (index >= this.trackingSteps.length - 1) {
+                        return 'All steps are complete. Enjoy your meal!';
+                    }
+                    const remaining = this.trackingSteps.slice(index + 1).map(step => step.label);
+                    return `Still to come: ${remaining.join(' → ')}`;
+                },
+
+                trackingStepClass(stepCode) {
+                    if (!this.order) {
+                        return 'tracking-step-upcoming';
+                    }
+                    if (this.order.status === 'CANCELLED') {
+                        return stepCode === 'PENDING' ? 'tracking-step-cancelled' : 'tracking-step-upcoming';
+                    }
+                    const activeIndex = this.trackingIndex();
+                    const stepIndex = this.trackingSteps.findIndex(step => step.code === stepCode);
+                    if (activeIndex === -1 || stepIndex === -1) {
+                        return 'tracking-step-upcoming';
+                    }
+                    if (stepIndex < activeIndex) {
+                        return 'tracking-step-completed';
+                    }
+                    if (stepIndex === activeIndex) {
+                        return 'tracking-step-active';
+                    }
+                    return 'tracking-step-upcoming';
+                },
+
+                paymentMethodLabel() {
+                    const method = this.order?.paymentMethod || (this.order?.paymentStatus === 'CASH_PENDING' ? 'CASH_ON_DELIVERY' : null);
+                    return method ? this.formatEnum(method) : 'N/A';
+                },
+
+                paymentStatusLabel() {
+                    return this.order?.paymentStatus ? this.formatEnum(this.order.paymentStatus) : 'N/A';
+                },
+
+                paymentStatusClass() {
+                    return this.order?.paymentStatus ? (PAYMENT_STATUS_CLASS_MAP[this.order.paymentStatus] || '') : '';
+                },
+
+                driverNameLabel() {
+                    return this.order?.deliveryDriverName || 'Driver assigned soon';
+                },
+
+                driverPhoneLabel() {
+                    return this.order?.deliveryDriverPhone || 'Not available yet';
+                },
+
+                deliveryStatusLabel() {
+                    return this.order?.deliveryStatus ? this.formatEnum(this.order.deliveryStatus) : 'Pending';
+                },
+
+                canCancel() {
+                    const status = this.order?.status;
+                    return status === 'PENDING' || status === 'CONFIRMED';
+                }
+            };
         }
     </script>
+
 </body>
 </html>
