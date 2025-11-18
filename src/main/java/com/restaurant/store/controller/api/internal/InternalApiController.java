@@ -63,7 +63,7 @@ public class InternalApiController {
         orderRepository.save(order);
         syncPickupStatus(order, newStatus);
 
-        if (newStatus == OrderStatus.DELIVERED) {
+        if (newStatus == OrderStatus.COMPLETED) {
             markCashOnDeliveryPaymentsAsCompleted(orderId);
         }
 
@@ -136,8 +136,8 @@ public class InternalApiController {
         pickupRepository.findByOrderId(order.getId()).ifPresent(pickup -> {
             switch (newStatus) {
                 case PREPARING -> pickup.setStatus(PickupStatus.PREPARING);
-                case READY -> pickup.setStatus(PickupStatus.READY_FOR_PICKUP);
-                case DELIVERED -> {
+                case READY_FOR_DELIVERY -> pickup.setStatus(PickupStatus.READY_FOR_PICKUP);
+                case COMPLETED -> {
                     pickup.setStatus(PickupStatus.COMPLETED);
                     pickup.setPickedUpAt(LocalDateTime.now());
                 }

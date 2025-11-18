@@ -39,9 +39,9 @@ public class OrderWebController {
             OrderStatus.PENDING,
             OrderStatus.CONFIRMED,
             OrderStatus.PREPARING,
-            OrderStatus.READY,
+            OrderStatus.READY_FOR_DELIVERY,
             OrderStatus.OUT_FOR_DELIVERY,
-            OrderStatus.DELIVERED
+            OrderStatus.COMPLETED
     );
 
     private static final Map<OrderStatus, String> TRACKING_STATUS_LABELS;
@@ -51,9 +51,9 @@ public class OrderWebController {
         labels.put(OrderStatus.PENDING, "Pending Confirmation");
         labels.put(OrderStatus.CONFIRMED, "Confirmed");
         labels.put(OrderStatus.PREPARING, "Preparing Order");
-        labels.put(OrderStatus.READY, "Ready for Pickup");
+        labels.put(OrderStatus.READY_FOR_DELIVERY, "Ready for Pickup");
         labels.put(OrderStatus.OUT_FOR_DELIVERY, "Out for Delivery");
-        labels.put(OrderStatus.DELIVERED, "Completed");
+        labels.put(OrderStatus.COMPLETED, "Completed");
         TRACKING_STATUS_LABELS = Collections.unmodifiableMap(labels);
     }
     

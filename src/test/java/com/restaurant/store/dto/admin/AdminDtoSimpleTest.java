@@ -268,9 +268,9 @@ class AdminDtoSimpleTest {
         assertTrue(Arrays.asList(statuses).contains(OrderStatus.PENDING));
         assertTrue(Arrays.asList(statuses).contains(OrderStatus.CONFIRMED));
         assertTrue(Arrays.asList(statuses).contains(OrderStatus.PREPARING));
-        assertTrue(Arrays.asList(statuses).contains(OrderStatus.READY));
+        assertTrue(Arrays.asList(statuses).contains(OrderStatus.READY_FOR_DELIVERY));
         assertTrue(Arrays.asList(statuses).contains(OrderStatus.OUT_FOR_DELIVERY));
-        assertTrue(Arrays.asList(statuses).contains(OrderStatus.DELIVERED));
+        assertTrue(Arrays.asList(statuses).contains(OrderStatus.COMPLETED));
         assertTrue(Arrays.asList(statuses).contains(OrderStatus.CANCELLED));
     }
 

@@ -252,7 +252,7 @@ class AdminDtoTest {
         OrderStatus[] statuses = OrderStatus.values();
         assertEquals(7, statuses.length);
         assertTrue(Arrays.asList(statuses).contains(OrderStatus.PENDING));
-        assertTrue(Arrays.asList(statuses).contains(OrderStatus.DELIVERED));
+        assertTrue(Arrays.asList(statuses).contains(OrderStatus.COMPLETED));
     }
 
     @Test

@@ -198,7 +198,7 @@ public class OrderService {
             throw new BadRequestException("Cannot process payment for cancelled order");
         }
 
-        if (order.getStatus() == OrderStatus.DELIVERED) {
+        if (order.getStatus() == OrderStatus.COMPLETED) {
             throw new BadRequestException("Order already delivered and paid");
         }
 
@@ -226,7 +226,7 @@ public class OrderService {
             throw new BadRequestException("Cannot process payment for cancelled order");
         }
 
-        if (order.getStatus() == OrderStatus.DELIVERED) {
+        if (order.getStatus() == OrderStatus.COMPLETED) {
             throw new BadRequestException("Order already delivered and paid");
         }
 
@@ -367,7 +367,7 @@ public class OrderService {
             throw new BadRequestException("Order does not belong to current customer");
         }
 
-        if (order.getStatus() == OrderStatus.DELIVERED) {
+        if (order.getStatus() == OrderStatus.COMPLETED) {
             throw new BadRequestException("Cannot cancel delivered order");
         }
 
