@@ -37,7 +37,8 @@
         .status-PENDING { background-color: #fef3c7; color: #92400e; }
         .status-CONFIRMED { background-color: #dbeafe; color: #1e40af; }
         .status-PREPARING { background-color: #ede9fe; color: #5b21b6; }
-        .status-READY { background-color: #e0e7ff; color: #3730a3; }
+        .status-READY_FOR_PICKUP { background-color: #ecfccb; color: #3f6212; }
+        .status-READY_FOR_DELIVERY { background-color: #e0e7ff; color: #3730a3; }
         .status-OUT_FOR_DELIVERY { background-color: #cffafe; color: #0f766e; }
         .status-COMPLETED { background-color: #dcfce7; color: #166534; }
         .status-CANCELLED { background-color: #fee2e2; color: #991b1b; }
@@ -288,12 +289,12 @@
                     </div>
 
                     <div class="order-tracking-timeline">
-                        <template x-for="(step, index) in trackingSteps" :key="step.code">
+                        <template x-for="(step, index) in currentTrackingSteps()" :key="`${step.code}-${index}`">
                             <div class="tracking-step" :class="trackingStepClass(step.code)">
                                 <div class="tracking-marker" x-text="index + 1"></div>
                                 <div class="tracking-connector" aria-hidden="true"></div>
                                 <div class="space-y-1">
-                                    <p class="text-xs uppercase tracking-wide text-gray-400" x-text="`Step ${index + 1} of ${trackingSteps.length}`"></p>
+                                    <p class="text-xs uppercase tracking-wide text-gray-400" x-text="`Step ${index + 1} of ${trackingStepCount()}`"></p>
                                     <p class="font-semibold text-gray-800" x-text="step.label"></p>
                                     <p class="text-sm text-gray-500" x-text="step.description"></p>
                                 </div>
@@ -322,7 +323,7 @@
                         </p>
                     </div>
                     <div class="card-shell p-5 space-y-2">
-                        <p class="section-label">Delivery details</p>
+                        <p class="section-label">Order details</p>
                         <p class="text-sm text-gray-500">Special instructions</p>
                         <p class="text-base text-gray-900" x-text="order?.specialInstructions || 'No additional instructions'"></p>
                         <p class="text-sm text-gray-500" x-show="order?.deliveryAddress">Address</p>
@@ -375,6 +376,29 @@
                         <p class="text-sm text-gray-600" x-show="order?.paymentTransactionId">
                             Transaction ID:
                             <span class="font-medium" x-text="order.paymentTransactionId"></span>
+                        </p>
+                    </div>
+                    <div class="card-shell p-5 space-y-2" x-show="order?.orderType === 'PICKUP'" x-cloak>
+                        <p class="section-label">Pickup information</p>
+                        <p class="text-sm text-gray-600">
+                            Status:
+                            <span class="font-medium" x-text="pickupStatusLabel()"></span>
+                        </p>
+                        <p class="text-sm text-gray-600">
+                            Ready at:
+                            <span class="font-medium" x-text="pickupReadyLabel()"></span>
+                        </p>
+                        <p class="text-sm text-gray-600">
+                            Pickup window:
+                            <span class="font-medium" x-text="pickupWindowLabel()"></span>
+                        </p>
+                        <p class="text-sm text-gray-600" x-show="order?.pickupCode">
+                            Pickup code:
+                            <span class="font-mono text-base" x-text="pickupCodeLabel()"></span>
+                        </p>
+                        <p class="text-sm text-gray-600">
+                            Instructions:
+                            <span class="font-medium" x-text="pickupInstructionsLabel()"></span>
                         </p>
                     </div>
                     <div class="card-shell p-5 space-y-2">
@@ -438,7 +462,8 @@
             'PENDING': 'status-PENDING',
             'CONFIRMED': 'status-CONFIRMED',
             'PREPARING': 'status-PREPARING',
-            'READY_FOR_DELIVERED': 'status-READY',
+            'READY_FOR_PICKUP': 'status-READY_FOR_PICKUP',
+            'READY_FOR_DELIVERY': 'status-READY_FOR_DELIVERY',
             'OUT_FOR_DELIVERY': 'status-OUT_FOR_DELIVERY',
             'COMPLETED': 'status-COMPLETED',
             'CANCELLED': 'status-CANCELLED',
@@ -457,14 +482,23 @@
             'REFUNDED': 'payment-REFUNDED'
         };
 
-        const TRACKING_STEPS = [
-            { code: 'PENDING', label: 'Pending Confirmation', description: 'We received your order.' },
-            { code: 'CONFIRMED', label: 'Confirmed', description: 'Restaurant confirmed the order.' },
-            { code: 'PREPARING', label: 'Preparing Order', description: 'Chef is preparing your meal.' },
-            { code: 'READY_FOR_DELIVERED', label: 'Ready for Pickup', description: 'Order ready for pickup.' },
-            { code: 'OUT_FOR_DELIVERY', label: 'Out for Delivery', description: 'Rider is on the way.' },
-            { code: 'COMPLETED', label: 'Completed', description: 'Delivered. Enjoy!' }
-        ];
+        const TRACKING_STEPS = {
+            DELIVERY: [
+                { code: 'PENDING', label: 'Pending Confirmation', description: 'We received your order.' },
+                { code: 'CONFIRMED', label: 'Confirmed', description: 'Restaurant confirmed the order.' },
+                { code: 'PREPARING', label: 'Preparing Order', description: 'Chef is preparing your meal.' },
+                { code: 'READY_FOR_DELIVERY', label: 'Ready for Delivery', description: 'Packed and waiting for a driver.' },
+                { code: 'OUT_FOR_DELIVERY', label: 'Out for Delivery', description: 'Rider is on the way.' },
+                { code: 'COMPLETED', label: 'Completed', description: 'Delivered. Enjoy!' }
+            ],
+            PICKUP: [
+                { code: 'PENDING', label: 'Pending Confirmation', description: 'We received your order.' },
+                { code: 'CONFIRMED', label: 'Confirmed', description: 'Restaurant confirmed the order.' },
+                { code: 'PREPARING', label: 'Preparing Order', description: 'Chef is preparing your meal.' },
+                { code: 'READY_FOR_PICKUP', label: 'Ready for Pickup', description: 'Show your code at the counter.' },
+                { code: 'COMPLETED', label: 'Picked Up', description: 'Enjoy your meal!' }
+            ]
+        };
 
         function orderDetailsPage() {
             return {
@@ -474,7 +508,7 @@
                 stompClient: null,
                 pollTimerId: null,
                 placeholderImage: '/images/placeholder-food.jpg',
-                trackingSteps: TRACKING_STEPS,
+                trackingStepsByType: TRACKING_STEPS,
 
                 init() {
                     this.order = this.prepareOrder(window.INITIAL_ORDER || null);
@@ -621,6 +655,27 @@
                     if (metadata.paymentMethod) {
                         updates.paymentMethod = metadata.paymentMethod;
                     }
+                    if (metadata.pickupStatus) {
+                        updates.pickupStatus = metadata.pickupStatus;
+                    }
+                    if (metadata.pickupCode) {
+                        updates.pickupCode = metadata.pickupCode;
+                    }
+                    if (metadata.pickupWindowStart) {
+                        updates.pickupWindowStart = metadata.pickupWindowStart;
+                    }
+                    if (metadata.pickupWindowEnd) {
+                        updates.pickupWindowEnd = metadata.pickupWindowEnd;
+                    }
+                    if (metadata.pickupReadyAt) {
+                        updates.pickupReadyAt = metadata.pickupReadyAt;
+                    }
+                    if (metadata.pickupPickedUpAt) {
+                        updates.pickupPickedUpAt = metadata.pickupPickedUpAt;
+                    }
+                    if (metadata.pickupInstructions) {
+                        updates.pickupInstructions = metadata.pickupInstructions;
+                    }
                     if (metadata.status) {
                         updates.status = metadata.status;
                     }
@@ -709,11 +764,25 @@
                         .join(' ');
                 },
 
+                currentTrackingSteps() {
+                    const type = this.order?.orderType;
+                    if (type && this.trackingStepsByType[type]) {
+                        return this.trackingStepsByType[type];
+                    }
+                    return this.trackingStepsByType.DELIVERY;
+                },
+
+                trackingStepCount() {
+                    const steps = this.currentTrackingSteps();
+                    return Array.isArray(steps) ? steps.length : 0;
+                },
+
                 trackingIndex() {
                     if (!this.order) {
                         return -1;
                     }
-                    return this.trackingSteps.findIndex(step => step.code === this.order.status);
+                    const steps = this.currentTrackingSteps();
+                    return steps.findIndex(step => step.code === this.order.status);
                 },
 
                 trackingHeroDescription() {
@@ -723,15 +792,16 @@
                     if (this.order.status === 'CANCELLED') {
                         return 'This order was cancelled before completion.';
                     }
+                    const steps = this.currentTrackingSteps();
                     const index = this.trackingIndex();
-                    if (index === -1) {
+                    if (index === -1 || steps.length === 0) {
                         return 'See what step comes next so you always know what to expect.';
                     }
-                    if (index >= this.trackingSteps.length - 1) {
-                        return 'Your meal has been delivered. Enjoy every bite!';
+                    if (index >= steps.length - 1) {
+                        return 'Your order is complete. Enjoy every bite!';
                     }
-                    const current = this.trackingSteps[index];
-                    const next = this.trackingSteps[index + 1];
+                    const current = steps[index];
+                    const next = steps[index + 1];
                     return `${current.label} stage in progress. Next: ${next.label}.`;
                 },
 
@@ -743,10 +813,11 @@
                         return 'Order Cancelled';
                     }
                     const index = this.trackingIndex();
-                    if (index === -1) {
+                    const stepCount = this.trackingStepCount();
+                    if (index === -1 || stepCount === 0) {
                         return 'Awaiting first update';
                     }
-                    return `Step ${Math.min(index + 1, this.trackingSteps.length)} of ${this.trackingSteps.length}`;
+                    return `Step ${Math.min(index + 1, stepCount)} of ${stepCount}`;
                 },
 
                 trackingProgressPercent() {
@@ -754,10 +825,11 @@
                         return 0;
                     }
                     const index = this.trackingIndex();
-                    if (index === -1) {
+                    const stepCount = this.trackingStepCount();
+                    if (index === -1 || stepCount === 0) {
                         return 0;
                     }
-                    return Math.min(100, Math.max(0, ((index + 1) / this.trackingSteps.length) * 100));
+                    return Math.min(100, Math.max(0, ((index + 1) / stepCount) * 100));
                 },
 
                 trackingRemainingLabel() {
@@ -768,13 +840,14 @@
                         return 'This order was cancelled before completion.';
                     }
                     const index = this.trackingIndex();
-                    if (index === -1) {
+                    const steps = this.currentTrackingSteps();
+                    if (index === -1 || steps.length === 0) {
                         return 'We will show the remaining steps once your order is confirmed.';
                     }
-                    if (index >= this.trackingSteps.length - 1) {
+                    if (index >= steps.length - 1) {
                         return 'All steps are complete. Enjoy your meal!';
                     }
-                    const remaining = this.trackingSteps.slice(index + 1).map(step => step.label);
+                    const remaining = steps.slice(index + 1).map(step => step.label);
                     return `Still to come: ${remaining.join(' → ')}`;
                 },
 
@@ -786,7 +859,8 @@
                         return stepCode === 'PENDING' ? 'tracking-step-cancelled' : 'tracking-step-upcoming';
                     }
                     const activeIndex = this.trackingIndex();
-                    const stepIndex = this.trackingSteps.findIndex(step => step.code === stepCode);
+                    const steps = this.currentTrackingSteps();
+                    const stepIndex = steps.findIndex(step => step.code === stepCode);
                     if (activeIndex === -1 || stepIndex === -1) {
                         return 'tracking-step-upcoming';
                     }
@@ -822,6 +896,32 @@
 
                 deliveryStatusLabel() {
                     return this.order?.deliveryStatus ? this.formatEnum(this.order.deliveryStatus) : 'Pending';
+                },
+
+                pickupStatusLabel() {
+                    const status = this.order?.pickupStatus;
+                    return status ? this.formatEnum(status) : 'Awaiting confirmation';
+                },
+
+                pickupReadyLabel() {
+                    return this.order?.pickupReadyAt ? this.formatDateTime(this.order.pickupReadyAt) : 'Not ready yet';
+                },
+
+                pickupWindowLabel() {
+                    const start = this.order?.pickupWindowStart ? this.formatDateTime(this.order.pickupWindowStart) : null;
+                    const end = this.order?.pickupWindowEnd ? this.formatDateTime(this.order.pickupWindowEnd) : null;
+                    if (start && end) {
+                        return `${start} → ${end}`;
+                    }
+                    return start || end || 'Pending';
+                },
+
+                pickupCodeLabel() {
+                    return this.order?.pickupCode || 'Code will be generated once ready';
+                },
+
+                pickupInstructionsLabel() {
+                    return this.order?.pickupInstructions || 'Show your confirmation at the pickup counter.';
                 },
 
                 canCancel() {

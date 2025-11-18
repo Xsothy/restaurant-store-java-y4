@@ -3,6 +3,7 @@ package com.restaurant.store.controller.web;
 import com.restaurant.store.dto.response.OrderResponse;
 import com.restaurant.store.entity.Customer;
 import com.restaurant.store.entity.OrderStatus;
+import com.restaurant.store.entity.OrderType;
 import com.restaurant.store.exception.BadRequestException;
 import com.restaurant.store.exception.ResourceNotFoundException;
 import com.restaurant.store.exception.UnauthorizedException;
@@ -35,12 +36,20 @@ public class OrderWebController {
     private final AuthHelper authHelper;
     private final OrderService orderService;
 
-    private static final List<OrderStatus> TRACKING_STATUSES = List.of(
+    private static final List<OrderStatus> DELIVERY_TRACKING_STATUSES = List.of(
             OrderStatus.PENDING,
             OrderStatus.CONFIRMED,
             OrderStatus.PREPARING,
             OrderStatus.READY_FOR_DELIVERY,
             OrderStatus.OUT_FOR_DELIVERY,
+            OrderStatus.COMPLETED
+    );
+
+    private static final List<OrderStatus> PICKUP_TRACKING_STATUSES = List.of(
+            OrderStatus.PENDING,
+            OrderStatus.CONFIRMED,
+            OrderStatus.PREPARING,
+            OrderStatus.READY_FOR_PICKUP,
             OrderStatus.COMPLETED
     );
 
@@ -51,7 +60,8 @@ public class OrderWebController {
         labels.put(OrderStatus.PENDING, "Pending Confirmation");
         labels.put(OrderStatus.CONFIRMED, "Confirmed");
         labels.put(OrderStatus.PREPARING, "Preparing Order");
-        labels.put(OrderStatus.READY_FOR_DELIVERY, "Ready for Pickup");
+        labels.put(OrderStatus.READY_FOR_PICKUP, "Ready for Pickup");
+        labels.put(OrderStatus.READY_FOR_DELIVERY, "Ready for Delivery");
         labels.put(OrderStatus.OUT_FOR_DELIVERY, "Out for Delivery");
         labels.put(OrderStatus.COMPLETED, "Completed");
         TRACKING_STATUS_LABELS = Collections.unmodifiableMap(labels);
@@ -126,23 +136,24 @@ public class OrderWebController {
     }
 
     private void applyTrackingAttributes(Model model, OrderResponse order) {
-        model.addAttribute("trackingStatuses", TRACKING_STATUSES);
+        List<OrderStatus> trackingStatuses = determineTrackingStatuses(order);
+        model.addAttribute("trackingStatuses", trackingStatuses);
         model.addAttribute("statusLabels", TRACKING_STATUS_LABELS);
 
-        int stepCount = TRACKING_STATUSES.size();
+        int stepCount = trackingStatuses.size();
         boolean hasOrder = order != null;
         boolean isCancelled = hasOrder && order.getStatus() == OrderStatus.CANCELLED;
-        int currentIndex = hasOrder ? TRACKING_STATUSES.indexOf(order.getStatus()) : -1;
+        int currentIndex = hasOrder ? trackingStatuses.indexOf(order.getStatus()) : -1;
         boolean hasValidStatus = currentIndex >= 0;
         int completedSteps = (!isCancelled && hasValidStatus) ? currentIndex + 1 : 0;
         double progressPercent = (!isCancelled && hasValidStatus && stepCount > 0)
                 ? (completedSteps * 100.0) / stepCount
                 : 0;
         OrderStatus nextStep = (!isCancelled && hasValidStatus && currentIndex < stepCount - 1)
-                ? TRACKING_STATUSES.get(currentIndex + 1)
+                ? trackingStatuses.get(currentIndex + 1)
                 : null;
         List<OrderStatus> remainingSteps = (!isCancelled && hasValidStatus && currentIndex < stepCount - 1)
-                ? TRACKING_STATUSES.subList(currentIndex + 1, stepCount)
+                ? trackingStatuses.subList(currentIndex + 1, stepCount)
                 : Collections.emptyList();
 
         model.addAttribute("trackingStepCount", stepCount);
@@ -153,5 +164,15 @@ public class OrderWebController {
         model.addAttribute("trackingProgressPercent", progressPercent);
         model.addAttribute("trackingNextStep", nextStep);
         model.addAttribute("trackingRemainingSteps", remainingSteps);
+    }
+
+    private List<OrderStatus> determineTrackingStatuses(OrderResponse order) {
+        if (order == null || order.getOrderType() == null) {
+            return DELIVERY_TRACKING_STATUSES;
+        }
+
+        return order.getOrderType() == OrderType.PICKUP
+                ? PICKUP_TRACKING_STATUSES
+                : DELIVERY_TRACKING_STATUSES;
     }
 }

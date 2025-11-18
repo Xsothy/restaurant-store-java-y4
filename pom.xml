@@ -226,9 +226,9 @@
                 </executions>
                 <configuration>
                     <jsonLibrary>jackson2</jsonLibrary>
-                    <classes>
-                        <class>com.restaurant.store.dto.response.CategoryResponse</class>
-                    </classes>
+                    <classPatterns>
+                        <classPattern>com.restaurant.store.dto..*</classPattern>
+                    </classPatterns>
                     <customTypeMappings>
                         <mapping>java.time.Instant:Date</mapping>
                     </customTypeMappings>
