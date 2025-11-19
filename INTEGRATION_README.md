@@ -116,10 +116,9 @@ Set `admin.api.order-status.polling.enabled=true` to switch the store into polli
 ```properties
 admin.api.order-status.polling.enabled=true
 admin.api.order-status.polling.interval=2000   # milliseconds between checks
-admin.api.order-status.polling.statuses=PENDING,CONFIRMED,PREPARING,READY_FOR_PICKUP,READY_FOR_DELIVERY,OUT_FOR_DELIVERY
 ```
 
-While polling mode is enabled, the Store API queries the Admin `/orders` endpoint at the configured interval and reuses the same WebSocket broadcasters to notify connected mobile and web clients about any status changes. The WebSocket bridge beans will not start until you set `admin.api.order-status.polling.enabled=false` again.
+While polling mode is enabled, the Store API queries the Admin `/orders/kitchen` and `/orders/delivery` endpoints at the configured interval and reuses the same WebSocket broadcasters to notify connected mobile and web clients about any status or delivery changes. The WebSocket bridge beans will not start until you set `admin.api.order-status.polling.enabled=false` again.
 
 ### 4. Internal API for Admin Backend
 
