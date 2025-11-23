@@ -34,6 +34,10 @@
       "description": "Order management operations"
     },
     {
+      "name": "Deliveries",
+      "description": "Delivery management operations"
+    },
+    {
       "name": "Users",
       "description": "User management operations"
     },
@@ -123,11 +127,14 @@
         "tags": [
           "Products"
         ],
+        "summary": "Update product",
+        "description": "Update an existing product",
         "operationId": "updateProduct",
         "parameters": [
           {
             "name": "id",
             "in": "path",
+            "description": "Product ID",
             "required": true,
             "schema": {
               "type": "integer",
@@ -147,7 +154,47 @@
         },
         "responses": {
           "200": {
-            "description": "OK",
+            "description": "Product updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDTO"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Product not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDTO"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDTOProductDTO"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDTO"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
             "content": {
               "*/*": {
                 "schema": {
@@ -167,11 +214,14 @@
         "tags": [
           "Products"
         ],
+        "summary": "Delete product",
+        "description": "Delete a product by ID",
         "operationId": "deleteProduct",
         "parameters": [
           {
             "name": "id",
             "in": "path",
+            "description": "Product ID",
             "required": true,
             "schema": {
               "type": "integer",
@@ -180,8 +230,38 @@
           }
         ],
         "responses": {
+          "404": {
+            "description": "Product not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDTO"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDTOVoid"
+                }
+              }
+            }
+          },
           "200": {
-            "description": "OK",
+            "description": "Product deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDTO"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
             "content": {
               "*/*": {
                 "schema": {
@@ -270,11 +350,14 @@
         "tags": [
           "Orders"
         ],
+        "summary": "Update order",
+        "description": "Update an existing order with new data. Supports optional geolocation data (latitude/longitude) for delivery orders to enable location-based features.",
         "operationId": "updateOrder",
         "parameters": [
           {
             "name": "id",
             "in": "path",
+            "description": "Order ID",
             "required": true,
             "schema": {
               "type": "integer",
@@ -294,7 +377,47 @@
         },
         "responses": {
           "200": {
-            "description": "OK",
+            "description": "Order updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDTO"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDTOOrderDTO"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Order not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDTO"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDTO"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
             "content": {
               "*/*": {
                 "schema": {
@@ -314,11 +437,14 @@
         "tags": [
           "Orders"
         ],
+        "summary": "Delete order",
+        "description": "Delete an order by ID",
         "operationId": "deleteOrder",
         "parameters": [
           {
             "name": "id",
             "in": "path",
+            "description": "Order ID",
             "required": true,
             "schema": {
               "type": "integer",
@@ -327,8 +453,38 @@
           }
         ],
         "responses": {
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDTOVoid"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Order not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDTO"
+                }
+              }
+            }
+          },
           "200": {
-            "description": "OK",
+            "description": "Order deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDTO"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
             "content": {
               "*/*": {
                 "schema": {
@@ -348,13 +504,16 @@
     "/api/deliveries/{id}": {
       "get": {
         "tags": [
-          "delivery-controller"
+          "Deliveries"
         ],
+        "summary": "Get delivery by ID",
+        "description": "Retrieve a specific delivery by its ID",
         "operationId": "getDeliveryById",
         "parameters": [
           {
             "name": "id",
             "in": "path",
+            "description": "Delivery ID",
             "required": true,
             "schema": {
               "type": "integer",
@@ -364,7 +523,37 @@
         ],
         "responses": {
           "200": {
-            "description": "OK",
+            "description": "Delivery retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDTO"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Delivery not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDTO"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDTODeliveryDTO"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
             "content": {
               "*/*": {
                 "schema": {
@@ -373,17 +562,25 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "Bearer Authentication": []
+          }
+        ]
       },
       "put": {
         "tags": [
-          "delivery-controller"
+          "Deliveries"
         ],
+        "summary": "Update delivery",
+        "description": "Update delivery information",
         "operationId": "updateDelivery",
         "parameters": [
           {
             "name": "id",
             "in": "path",
+            "description": "Delivery ID",
             "required": true,
             "schema": {
               "type": "integer",
@@ -403,7 +600,47 @@
         },
         "responses": {
           "200": {
-            "description": "OK",
+            "description": "Delivery updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDTO"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Delivery not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDTO"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDTODeliveryDTO"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDTO"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
             "content": {
               "*/*": {
                 "schema": {
@@ -412,17 +649,25 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "Bearer Authentication": []
+          }
+        ]
       },
       "delete": {
         "tags": [
-          "delivery-controller"
+          "Deliveries"
         ],
+        "summary": "Cancel delivery",
+        "description": "Cancel a delivery",
         "operationId": "cancelDelivery",
         "parameters": [
           {
             "name": "id",
             "in": "path",
+            "description": "Delivery ID",
             "required": true,
             "schema": {
               "type": "integer",
@@ -432,7 +677,37 @@
         ],
         "responses": {
           "200": {
-            "description": "OK",
+            "description": "Delivery cancelled successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDTO"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Delivery not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDTO"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDTOString"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
             "content": {
               "*/*": {
                 "schema": {
@@ -441,7 +716,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "Bearer Authentication": []
+          }
+        ]
       }
     },
     "/api/categories/{id}": {
@@ -475,22 +755,22 @@
               }
             }
           },
-          "403": {
-            "description": "Forbidden",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResponseDTOCategoryDTO"
-                }
-              }
-            }
-          },
           "200": {
             "description": "Category found",
             "content": {
               "*/*": {
                 "schema": {
                   "$ref": "#/components/schemas/Category"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDTOCategoryDTO"
                 }
               }
             }
@@ -516,11 +796,14 @@
         "tags": [
           "Categories"
         ],
+        "summary": "Update category",
+        "description": "Update an existing category",
         "operationId": "updateCategory",
         "parameters": [
           {
             "name": "id",
             "in": "path",
+            "description": "Category ID",
             "required": true,
             "schema": {
               "type": "integer",
@@ -540,7 +823,47 @@
         },
         "responses": {
           "200": {
-            "description": "OK",
+            "description": "Category updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDTO"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDTOCategoryDTO"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Category not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDTO"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDTO"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
             "content": {
               "*/*": {
                 "schema": {
@@ -560,11 +883,14 @@
         "tags": [
           "Categories"
         ],
+        "summary": "Delete category",
+        "description": "Delete a category by ID",
         "operationId": "deleteCategory",
         "parameters": [
           {
             "name": "id",
             "in": "path",
+            "description": "Category ID",
             "required": true,
             "schema": {
               "type": "integer",
@@ -573,8 +899,38 @@
           }
         ],
         "responses": {
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDTOVoid"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Category not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDTO"
+                }
+              }
+            }
+          },
           "200": {
-            "description": "OK",
+            "description": "Category deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDTO"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
             "content": {
               "*/*": {
                 "schema": {
@@ -689,22 +1045,22 @@
           }
         ],
         "responses": {
-          "200": {
-            "description": "Products retrieved successfully",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResponseDTO"
-                }
-              }
-            }
-          },
           "403": {
             "description": "Forbidden",
             "content": {
               "*/*": {
                 "schema": {
                   "$ref": "#/components/schemas/ApiResponseDTOPagedResponseDTOProductDTO"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Products retrieved successfully",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDTO"
                 }
               }
             }
@@ -744,16 +1100,6 @@
           "required": true
         },
         "responses": {
-          "201": {
-            "description": "Product created successfully",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/Product"
-                }
-              }
-            }
-          },
           "403": {
             "description": "Forbidden",
             "content": {
@@ -770,6 +1116,16 @@
               "*/*": {
                 "schema": {
                   "$ref": "#/components/schemas/ApiResponseDTOProductDTO"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Product created successfully",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Product"
                 }
               }
             }
@@ -899,22 +1255,22 @@
           }
         ],
         "responses": {
-          "200": {
-            "description": "Orders retrieved successfully",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResponseDTO"
-                }
-              }
-            }
-          },
           "403": {
             "description": "Forbidden",
             "content": {
               "*/*": {
                 "schema": {
                   "$ref": "#/components/schemas/ApiResponseDTOPagedResponseDTOOrderDTO"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Orders retrieved successfully",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDTO"
                 }
               }
             }
@@ -941,7 +1297,7 @@
           "Orders"
         ],
         "summary": "Create new order",
-        "description": "Create a new order with order items",
+        "description": "Create a new order with order items. Supports optional geolocation data (latitude/longitude) for delivery orders to enable location-based features.",
         "operationId": "createOrder",
         "requestBody": {
           "content": {
@@ -954,16 +1310,6 @@
           "required": true
         },
         "responses": {
-          "201": {
-            "description": "Order created successfully",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResponseDTO"
-                }
-              }
-            }
-          },
           "403": {
             "description": "Forbidden",
             "content": {
@@ -980,6 +1326,16 @@
               "*/*": {
                 "schema": {
                   "$ref": "#/components/schemas/ApiResponseDTOOrderDTO"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Order created successfully",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDTO"
                 }
               }
             }
@@ -1002,11 +1358,102 @@
         ]
       }
     },
+    "/api/orders/{id}/assign-driver": {
+      "post": {
+        "tags": [
+          "Orders"
+        ],
+        "summary": "Assign delivery driver to order",
+        "description": "Creates a delivery for the specified order and assigns a driver. If a delivery already exists in PENDING status, it will be updated with the new driver information. Returns an error if a delivery already exists with a non-PENDING status.",
+        "operationId": "assignDriverToOrder",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Order ID",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AssignDeliveryRequestDTO"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "400": {
+            "description": "Invalid request data or delivery already exists with non-PENDING status",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDTO"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Order or driver not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDTO"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDTODeliveryDTO"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Driver assigned successfully (delivery created or updated)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDTO"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDTODeliveryDTO"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer Authentication": []
+          }
+        ]
+      }
+    },
     "/api/deliveries/assign": {
       "post": {
         "tags": [
-          "delivery-controller"
+          "Deliveries"
         ],
+        "summary": "Assign delivery",
+        "description": "Assign a delivery to a driver. Creates a new delivery or updates an existing one if it's in PENDING status. Returns an error if a delivery already exists with a non-PENDING status.",
         "operationId": "assignDelivery",
         "requestBody": {
           "content": {
@@ -1020,7 +1467,47 @@
         },
         "responses": {
           "200": {
-            "description": "OK",
+            "description": "Delivery assigned successfully (created or updated)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDTO"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request data or delivery already exists with non-PENDING status",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDTO"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Order or driver not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDTO"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDTODeliveryDTO"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
             "content": {
               "*/*": {
                 "schema": {
@@ -1029,7 +1516,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "Bearer Authentication": []
+          }
+        ]
       }
     },
     "/api/categories": {
@@ -1149,16 +1641,6 @@
           "required": true
         },
         "responses": {
-          "201": {
-            "description": "Category created successfully",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/Category"
-                }
-              }
-            }
-          },
           "403": {
             "description": "Forbidden",
             "content": {
@@ -1175,6 +1657,16 @@
               "*/*": {
                 "schema": {
                   "$ref": "#/components/schemas/ApiResponseDTOCategoryDTO"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Category created successfully",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Category"
                 }
               }
             }
@@ -1221,7 +1713,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "string"
+                  "$ref": "#/components/schemas/ApiResponseDTO"
                 }
               }
             }
@@ -1229,7 +1721,11 @@
           "400": {
             "description": "Registration failed",
             "content": {
-              "application/json": {}
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDTO"
+                }
+              }
             }
           }
         }
@@ -1257,13 +1753,11 @@
           "500": {
             "description": "Internal server error",
             "content": {
-              "application/json": {}
-            }
-          },
-          "401": {
-            "description": "Authentication failed",
-            "content": {
-              "application/json": {}
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDTO"
+                }
+              }
             }
           },
           "200": {
@@ -1271,7 +1765,17 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/TokenResponse"
+                  "$ref": "#/components/schemas/ApiResponseDTO"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDTO"
                 }
               }
             }
@@ -1301,13 +1805,21 @@
           "500": {
             "description": "Password change failed",
             "content": {
-              "application/json": {}
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDTO"
+                }
+              }
             }
           },
           "401": {
             "description": "Current password verification failed",
             "content": {
-              "application/json": {}
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDTO"
+                }
+              }
             }
           },
           "200": {
@@ -1315,7 +1827,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "string"
+                  "$ref": "#/components/schemas/ApiResponseDTO"
                 }
               }
             }
@@ -1333,11 +1845,14 @@
         "tags": [
           "Users"
         ],
+        "summary": "Toggle user status",
+        "description": "Enable or disable a user account",
         "operationId": "toggleUserStatus",
         "parameters": [
           {
             "name": "id",
             "in": "path",
+            "description": "User ID",
             "required": true,
             "schema": {
               "type": "integer",
@@ -1346,8 +1861,38 @@
           }
         ],
         "responses": {
+          "404": {
+            "description": "User not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDTO"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDTOUserDTO"
+                }
+              }
+            }
+          },
           "200": {
-            "description": "OK",
+            "description": "User status updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDTO"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
             "content": {
               "*/*": {
                 "schema": {
@@ -1364,11 +1909,14 @@
         "tags": [
           "Users"
         ],
+        "summary": "Update user role",
+        "description": "Update the role of a user (ADMIN only)",
         "operationId": "updateUserRole",
         "parameters": [
           {
             "name": "id",
             "in": "path",
+            "description": "User ID",
             "required": true,
             "schema": {
               "type": "integer",
@@ -1387,8 +1935,48 @@
           "required": true
         },
         "responses": {
+          "403": {
+            "description": "Forbidden - ADMIN role required",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDTOUserDTO"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "User not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDTO"
+                }
+              }
+            }
+          },
           "200": {
-            "description": "OK",
+            "description": "User role updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDTO"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDTO"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
             "content": {
               "*/*": {
                 "schema": {
@@ -1405,11 +1993,14 @@
         "tags": [
           "Products"
         ],
+        "summary": "Toggle product availability",
+        "description": "Toggle the availability status of a product",
         "operationId": "toggleProductAvailability",
         "parameters": [
           {
             "name": "id",
             "in": "path",
+            "description": "Product ID",
             "required": true,
             "schema": {
               "type": "integer",
@@ -1418,8 +2009,38 @@
           }
         ],
         "responses": {
+          "404": {
+            "description": "Product not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDTO"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDTOProductDTO"
+                }
+              }
+            }
+          },
           "200": {
-            "description": "OK",
+            "description": "Product availability updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDTO"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
             "content": {
               "*/*": {
                 "schema": {
@@ -1528,13 +2149,16 @@
     "/api/deliveries/{id}/status": {
       "patch": {
         "tags": [
-          "delivery-controller"
+          "Deliveries"
         ],
+        "summary": "Update delivery status",
+        "description": "Update the status of a delivery",
         "operationId": "updateDeliveryStatus",
         "parameters": [
           {
             "name": "id",
             "in": "path",
+            "description": "Delivery ID",
             "required": true,
             "schema": {
               "type": "integer",
@@ -1554,7 +2178,47 @@
         },
         "responses": {
           "200": {
-            "description": "OK",
+            "description": "Delivery status updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDTO"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Delivery not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDTO"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDTODeliveryDTO"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDTO"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
             "content": {
               "*/*": {
                 "schema": {
@@ -1563,19 +2227,27 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "Bearer Authentication": []
+          }
+        ]
       }
     },
     "/api/deliveries/{id}/reassign": {
       "patch": {
         "tags": [
-          "delivery-controller"
+          "Deliveries"
         ],
+        "summary": "Reassign driver",
+        "description": "Reassign a delivery to a different driver",
         "operationId": "reassignDriver",
         "parameters": [
           {
             "name": "id",
             "in": "path",
+            "description": "Delivery ID",
             "required": true,
             "schema": {
               "type": "integer",
@@ -1594,8 +2266,48 @@
           "required": true
         },
         "responses": {
+          "404": {
+            "description": "Delivery or driver not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDTO"
+                }
+              }
+            }
+          },
           "200": {
-            "description": "OK",
+            "description": "Driver reassigned successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDTO"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDTODeliveryDTO"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDTO"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
             "content": {
               "*/*": {
                 "schema": {
@@ -1604,7 +2316,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "Bearer Authentication": []
+          }
+        ]
       }
     },
     "/api/users": {
@@ -1731,11 +2448,14 @@
         "tags": [
           "Users"
         ],
+        "summary": "Get user by ID",
+        "description": "Retrieve a specific user by their ID",
         "operationId": "getUserById",
         "parameters": [
           {
             "name": "id",
             "in": "path",
+            "description": "User ID",
             "required": true,
             "schema": {
               "type": "integer",
@@ -1744,8 +2464,38 @@
           }
         ],
         "responses": {
+          "404": {
+            "description": "User not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDTO"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDTOUserDTO"
+                }
+              }
+            }
+          },
           "200": {
-            "description": "OK",
+            "description": "User retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDTO"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
             "content": {
               "*/*": {
                 "schema": {
@@ -1760,11 +2510,14 @@
         "tags": [
           "Users"
         ],
+        "summary": "Delete user",
+        "description": "Delete a user account (ADMIN only)",
         "operationId": "deleteUser",
         "parameters": [
           {
             "name": "id",
             "in": "path",
+            "description": "User ID",
             "required": true,
             "schema": {
               "type": "integer",
@@ -1773,8 +2526,38 @@
           }
         ],
         "responses": {
+          "403": {
+            "description": "Forbidden - ADMIN role required",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDTOVoid"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "User not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDTO"
+                }
+              }
+            }
+          },
           "200": {
-            "description": "OK",
+            "description": "User deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDTO"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
             "content": {
               "*/*": {
                 "schema": {
@@ -1791,11 +2574,14 @@
         "tags": [
           "Users"
         ],
+        "summary": "Get user by username",
+        "description": "Retrieve a specific user by their username",
         "operationId": "getUserByUsername",
         "parameters": [
           {
             "name": "username",
             "in": "path",
+            "description": "Username",
             "required": true,
             "schema": {
               "type": "string"
@@ -1803,8 +2589,38 @@
           }
         ],
         "responses": {
+          "404": {
+            "description": "User not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDTO"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDTOUserDTO"
+                }
+              }
+            }
+          },
           "200": {
-            "description": "OK",
+            "description": "User retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDTO"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
             "content": {
               "*/*": {
                 "schema": {
@@ -1821,11 +2637,14 @@
         "tags": [
           "Users"
         ],
+        "summary": "Get users by role",
+        "description": "Retrieve all users with a specific role",
         "operationId": "getUsersByRole",
         "parameters": [
           {
             "name": "role",
             "in": "path",
+            "description": "User role",
             "required": true,
             "schema": {
               "type": "string",
@@ -1840,7 +2659,27 @@
         ],
         "responses": {
           "200": {
-            "description": "OK",
+            "description": "Users retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDTO"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDTOListUserDTO"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
             "content": {
               "*/*": {
                 "schema": {
@@ -1857,11 +2696,14 @@
         "tags": [
           "Users"
         ],
+        "summary": "Get users by enabled status",
+        "description": "Retrieve all users filtered by enabled/disabled status",
         "operationId": "getUsersByEnabledStatus",
         "parameters": [
           {
             "name": "enabled",
             "in": "path",
+            "description": "Enabled status (true/false)",
             "required": true,
             "schema": {
               "type": "boolean"
@@ -1870,7 +2712,27 @@
         ],
         "responses": {
           "200": {
-            "description": "OK",
+            "description": "Users retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDTO"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDTOListUserDTO"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
             "content": {
               "*/*": {
                 "schema": {
@@ -1887,10 +2749,32 @@
         "tags": [
           "Users"
         ],
+        "summary": "Get available delivery staff",
+        "description": "Retrieve all available delivery staff members",
         "operationId": "getAvailableDeliveryStaff",
         "responses": {
           "200": {
-            "description": "OK",
+            "description": "Available delivery staff retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDTO"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDTOListUserDTO"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
             "content": {
               "*/*": {
                 "schema": {
@@ -1907,11 +2791,14 @@
         "tags": [
           "Products"
         ],
+        "summary": "Search products",
+        "description": "Search products by name",
         "operationId": "searchProducts",
         "parameters": [
           {
             "name": "name",
             "in": "query",
+            "description": "Product name to search for",
             "required": true,
             "schema": {
               "type": "string"
@@ -1919,8 +2806,28 @@
           }
         ],
         "responses": {
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDTOListProductDTO"
+                }
+              }
+            }
+          },
           "200": {
-            "description": "OK",
+            "description": "Products retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDTO"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
             "content": {
               "*/*": {
                 "schema": {
@@ -1942,11 +2849,14 @@
         "tags": [
           "Products"
         ],
+        "summary": "Get products by price range",
+        "description": "Retrieve products within a specified price range",
         "operationId": "getProductsByPriceRange",
         "parameters": [
           {
             "name": "minPrice",
             "in": "query",
+            "description": "Minimum price",
             "required": true,
             "schema": {
               "type": "number"
@@ -1955,6 +2865,7 @@
           {
             "name": "maxPrice",
             "in": "query",
+            "description": "Maximum price",
             "required": true,
             "schema": {
               "type": "number"
@@ -1962,8 +2873,28 @@
           }
         ],
         "responses": {
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDTOListProductDTO"
+                }
+              }
+            }
+          },
           "200": {
-            "description": "OK",
+            "description": "Products retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDTO"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
             "content": {
               "*/*": {
                 "schema": {
@@ -1985,11 +2916,14 @@
         "tags": [
           "Products"
         ],
+        "summary": "Check product existence",
+        "description": "Check if a product exists by name",
         "operationId": "checkProductExists",
         "parameters": [
           {
             "name": "name",
             "in": "path",
+            "description": "Product name",
             "required": true,
             "schema": {
               "type": "string"
@@ -1997,8 +2931,28 @@
           }
         ],
         "responses": {
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDTOBoolean"
+                }
+              }
+            }
+          },
           "200": {
-            "description": "OK",
+            "description": "Product existence checked",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDTO"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
             "content": {
               "*/*": {
                 "schema": {
@@ -2020,11 +2974,14 @@
         "tags": [
           "Products"
         ],
+        "summary": "Get products by category",
+        "description": "Retrieve all products in a specific category",
         "operationId": "getProductsByCategory",
         "parameters": [
           {
             "name": "categoryId",
             "in": "path",
+            "description": "Category ID",
             "required": true,
             "schema": {
               "type": "integer",
@@ -2033,8 +2990,28 @@
           }
         ],
         "responses": {
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDTOListProductDTO"
+                }
+              }
+            }
+          },
           "200": {
-            "description": "OK",
+            "description": "Products retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDTO"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
             "content": {
               "*/*": {
                 "schema": {
@@ -2056,11 +3033,14 @@
         "tags": [
           "Products"
         ],
+        "summary": "Get available products by category",
+        "description": "Retrieve all available products in a specific category",
         "operationId": "getAvailableProductsByCategory",
         "parameters": [
           {
             "name": "categoryId",
             "in": "path",
+            "description": "Category ID",
             "required": true,
             "schema": {
               "type": "integer",
@@ -2070,7 +3050,27 @@
         ],
         "responses": {
           "200": {
-            "description": "OK",
+            "description": "Available products retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDTO"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDTOListProductDTO"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
             "content": {
               "*/*": {
                 "schema": {
@@ -2092,10 +3092,32 @@
         "tags": [
           "Products"
         ],
+        "summary": "Get available products",
+        "description": "Retrieve all available products",
         "operationId": "getAvailableProducts",
         "responses": {
           "200": {
-            "description": "OK",
+            "description": "Available products retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDTO"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDTOListProductDTO"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
             "content": {
               "*/*": {
                 "schema": {
@@ -2117,11 +3139,14 @@
         "tags": [
           "Orders"
         ],
+        "summary": "Get order items",
+        "description": "Retrieve all items for a specific order",
         "operationId": "getOrderItems",
         "parameters": [
           {
             "name": "id",
             "in": "path",
+            "description": "Order ID",
             "required": true,
             "schema": {
               "type": "integer",
@@ -2131,7 +3156,37 @@
         ],
         "responses": {
           "200": {
-            "description": "OK",
+            "description": "Order items retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDTO"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDTOListOrderItemDTO"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Order not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDTO"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
             "content": {
               "*/*": {
                 "schema": {
@@ -2153,10 +3208,32 @@
         "tags": [
           "Orders"
         ],
+        "summary": "Get today's orders",
+        "description": "Retrieve all orders created today",
         "operationId": "getTodaysOrders",
         "responses": {
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDTOListOrderDTO"
+                }
+              }
+            }
+          },
           "200": {
-            "description": "OK",
+            "description": "Today's orders retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDTO"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
             "content": {
               "*/*": {
                 "schema": {
@@ -2178,11 +3255,14 @@
         "tags": [
           "Orders"
         ],
+        "summary": "Get orders by status",
+        "description": "Retrieve paginated list of orders filtered by status",
         "operationId": "getOrdersByStatus",
         "parameters": [
           {
             "name": "status",
             "in": "path",
+            "description": "Order status",
             "required": true,
             "schema": {
               "type": "string",
@@ -2201,6 +3281,7 @@
           {
             "name": "page",
             "in": "query",
+            "description": "Page number (0-based)",
             "required": false,
             "schema": {
               "type": "integer",
@@ -2211,6 +3292,7 @@
           {
             "name": "size",
             "in": "query",
+            "description": "Page size",
             "required": false,
             "schema": {
               "type": "integer",
@@ -2221,6 +3303,7 @@
           {
             "name": "sortBy",
             "in": "query",
+            "description": "Sort field",
             "required": false,
             "schema": {
               "type": "string",
@@ -2230,6 +3313,7 @@
           {
             "name": "sortDir",
             "in": "query",
+            "description": "Sort direction (asc/desc)",
             "required": false,
             "schema": {
               "type": "string",
@@ -2238,8 +3322,28 @@
           }
         ],
         "responses": {
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDTOPagedResponseDTOOrderDTO"
+                }
+              }
+            }
+          },
           "200": {
-            "description": "OK",
+            "description": "Orders retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDTO"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
             "content": {
               "*/*": {
                 "schema": {
@@ -2261,10 +3365,32 @@
         "tags": [
           "Orders"
         ],
+        "summary": "Get today's statistics",
+        "description": "Retrieve statistics for today's orders including count and revenue",
         "operationId": "getTodaysStats",
         "responses": {
           "200": {
-            "description": "OK",
+            "description": "Statistics retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDTO"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDTOStatsResponseDTO"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
             "content": {
               "*/*": {
                 "schema": {
@@ -2286,10 +3412,32 @@
         "tags": [
           "Orders"
         ],
+        "summary": "Get orders ready for delivery",
+        "description": "Retrieve orders that are ready for delivery",
         "operationId": "getOrdersReadyForDelivery",
         "responses": {
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDTOListOrderDTO"
+                }
+              }
+            }
+          },
           "200": {
-            "description": "OK",
+            "description": "Orders ready for delivery retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDTO"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
             "content": {
               "*/*": {
                 "schema": {
@@ -2311,10 +3459,32 @@
         "tags": [
           "Orders"
         ],
+        "summary": "Get kitchen orders",
+        "description": "Retrieve orders that need kitchen preparation",
         "operationId": "getKitchenOrders",
         "responses": {
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDTOListOrderDTO"
+                }
+              }
+            }
+          },
           "200": {
-            "description": "OK",
+            "description": "Kitchen orders retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDTO"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
             "content": {
               "*/*": {
                 "schema": {
@@ -2336,10 +3506,32 @@
         "tags": [
           "Orders"
         ],
+        "summary": "Get delivery orders",
+        "description": "Retrieve orders ready for delivery. Returns role-based filtered results: DELIVERY_STAFF users see only orders assigned to them, ADMIN/MANAGER users see all delivery orders",
         "operationId": "getDeliveryOrders",
         "responses": {
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDTOListOrderDTO"
+                }
+              }
+            }
+          },
           "200": {
-            "description": "OK",
+            "description": "Delivery orders retrieved successfully (filtered by user role)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDTO"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
             "content": {
               "*/*": {
                 "schema": {
@@ -2361,11 +3553,14 @@
         "tags": [
           "Orders"
         ],
+        "summary": "Get orders by date range",
+        "description": "Retrieve paginated orders within a specified date range",
         "operationId": "getOrdersByDateRange",
         "parameters": [
           {
             "name": "startDate",
             "in": "query",
+            "description": "Start date (ISO format: yyyy-MM-ddTHH:mm:ss)",
             "required": true,
             "schema": {
               "type": "string",
@@ -2375,6 +3570,7 @@
           {
             "name": "endDate",
             "in": "query",
+            "description": "End date (ISO format: yyyy-MM-ddTHH:mm:ss)",
             "required": true,
             "schema": {
               "type": "string",
@@ -2384,6 +3580,7 @@
           {
             "name": "page",
             "in": "query",
+            "description": "Page number (0-based)",
             "required": false,
             "schema": {
               "type": "integer",
@@ -2394,6 +3591,7 @@
           {
             "name": "size",
             "in": "query",
+            "description": "Page size",
             "required": false,
             "schema": {
               "type": "integer",
@@ -2404,6 +3602,7 @@
           {
             "name": "sortBy",
             "in": "query",
+            "description": "Sort field",
             "required": false,
             "schema": {
               "type": "string",
@@ -2413,6 +3612,7 @@
           {
             "name": "sortDir",
             "in": "query",
+            "description": "Sort direction (asc/desc)",
             "required": false,
             "schema": {
               "type": "string",
@@ -2421,8 +3621,28 @@
           }
         ],
         "responses": {
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDTOPagedResponseDTOOrderDTO"
+                }
+              }
+            }
+          },
           "200": {
-            "description": "OK",
+            "description": "Orders retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDTO"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
             "content": {
               "*/*": {
                 "schema": {
@@ -2448,22 +3668,22 @@
         "description": "Retrieve a list of all users with DELIVERY_STAFF role",
         "operationId": "getAllDeliveryDrivers",
         "responses": {
-          "403": {
-            "description": "Forbidden",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResponseDTOListUserDTO"
-                }
-              }
-            }
-          },
           "200": {
             "description": "Delivery drivers retrieved successfully",
             "content": {
               "*/*": {
                 "schema": {
                   "$ref": "#/components/schemas/ApiResponseDTO"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDTOListUserDTO"
                 }
               }
             }
@@ -2526,59 +3746,110 @@
     "/api/deliveries": {
       "get": {
         "tags": [
-          "delivery-controller"
+          "Deliveries"
         ],
+        "summary": "Get all deliveries",
+        "description": "Retrieve all deliveries",
         "operationId": "getAllDeliveries",
         "responses": {
-          "200": {
-            "description": "OK",
+          "403": {
+            "description": "Forbidden",
             "content": {
               "*/*": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/Delivery"
-                  }
+                  "$ref": "#/components/schemas/ApiResponseDTOListDeliveryDTO"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Deliveries retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDTO"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDTOListDeliveryDTO"
                 }
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "Bearer Authentication": []
+          }
+        ]
       }
     },
     "/api/deliveries/today": {
       "get": {
         "tags": [
-          "delivery-controller"
+          "Deliveries"
         ],
+        "summary": "Get today's deliveries",
+        "description": "Retrieve all deliveries for today",
         "operationId": "getTodaysDeliveries",
         "responses": {
-          "200": {
-            "description": "OK",
+          "403": {
+            "description": "Forbidden",
             "content": {
               "*/*": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/Delivery"
-                  }
+                  "$ref": "#/components/schemas/ApiResponseDTOListDeliveryDTO"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Today's deliveries retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDTO"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDTOListDeliveryDTO"
                 }
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "Bearer Authentication": []
+          }
+        ]
       }
     },
     "/api/deliveries/status/{status}": {
       "get": {
         "tags": [
-          "delivery-controller"
+          "Deliveries"
         ],
+        "summary": "Get deliveries by status",
+        "description": "Retrieve all deliveries with a specific status",
         "operationId": "getDeliveriesByStatus",
         "parameters": [
           {
             "name": "status",
             "in": "path",
+            "description": "Delivery status",
             "required": true,
             "schema": {
               "type": "string",
@@ -2593,31 +3864,75 @@
           }
         ],
         "responses": {
-          "200": {
-            "description": "OK",
+          "403": {
+            "description": "Forbidden",
             "content": {
               "*/*": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/Delivery"
-                  }
+                  "$ref": "#/components/schemas/ApiResponseDTOListDeliveryDTO"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Deliveries retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDTO"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDTOListDeliveryDTO"
                 }
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "Bearer Authentication": []
+          }
+        ]
       }
     },
     "/api/deliveries/stats": {
       "get": {
         "tags": [
-          "delivery-controller"
+          "Deliveries"
         ],
+        "summary": "Get delivery statistics",
+        "description": "Retrieve delivery statistics including completed and active counts",
         "operationId": "getDeliveryStats",
         "responses": {
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDTOStatsResponseDTO"
+                }
+              }
+            }
+          },
           "200": {
-            "description": "OK",
+            "description": "Delivery statistics retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDTO"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
             "content": {
               "*/*": {
                 "schema": {
@@ -2626,42 +3941,74 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "Bearer Authentication": []
+          }
+        ]
       }
     },
     "/api/deliveries/pending": {
       "get": {
         "tags": [
-          "delivery-controller"
+          "Deliveries"
         ],
+        "summary": "Get pending deliveries",
+        "description": "Retrieve all pending deliveries",
         "operationId": "getPendingDeliveries",
         "responses": {
           "200": {
-            "description": "OK",
+            "description": "Pending deliveries retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDTO"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
             "content": {
               "*/*": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/Delivery"
-                  }
+                  "$ref": "#/components/schemas/ApiResponseDTOListDeliveryDTO"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDTOListDeliveryDTO"
                 }
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "Bearer Authentication": []
+          }
+        ]
       }
     },
     "/api/deliveries/order/{orderId}": {
       "get": {
         "tags": [
-          "delivery-controller"
+          "Deliveries"
         ],
+        "summary": "Get delivery by order ID",
+        "description": "Retrieve delivery information for a specific order",
         "operationId": "getDeliveryByOrderId",
         "parameters": [
           {
             "name": "orderId",
             "in": "path",
+            "description": "Order ID",
             "required": true,
             "schema": {
               "type": "integer",
@@ -2671,7 +4018,37 @@
         ],
         "responses": {
           "200": {
-            "description": "OK",
+            "description": "Delivery retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDTO"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Delivery not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDTO"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDTODeliveryDTO"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
             "content": {
               "*/*": {
                 "schema": {
@@ -2680,19 +4057,27 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "Bearer Authentication": []
+          }
+        ]
       }
     },
     "/api/deliveries/my": {
       "get": {
         "tags": [
-          "delivery-controller"
+          "Deliveries"
         ],
+        "summary": "Get my deliveries",
+        "description": "Retrieve paginated deliveries for the current authenticated driver",
         "operationId": "getMyDeliveries",
         "parameters": [
           {
             "name": "page",
             "in": "query",
+            "description": "Page number (0-based)",
             "required": false,
             "schema": {
               "type": "integer",
@@ -2703,6 +4088,7 @@
           {
             "name": "size",
             "in": "query",
+            "description": "Page size",
             "required": false,
             "schema": {
               "type": "integer",
@@ -2713,6 +4099,7 @@
           {
             "name": "sortBy",
             "in": "query",
+            "description": "Sort field",
             "required": false,
             "schema": {
               "type": "string",
@@ -2722,6 +4109,7 @@
           {
             "name": "sortDir",
             "in": "query",
+            "description": "Sort direction (asc/desc)",
             "required": false,
             "schema": {
               "type": "string",
@@ -2731,7 +4119,27 @@
         ],
         "responses": {
           "200": {
-            "description": "OK",
+            "description": "My deliveries retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDTO"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDTOPagedResponseDTODeliveryDTO"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
             "content": {
               "*/*": {
                 "schema": {
@@ -2740,42 +4148,74 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "Bearer Authentication": []
+          }
+        ]
       }
     },
     "/api/deliveries/drivers/available": {
       "get": {
         "tags": [
-          "delivery-controller"
+          "Deliveries"
         ],
+        "summary": "Get available drivers",
+        "description": "Retrieve all available delivery drivers",
         "operationId": "getAvailableDrivers",
         "responses": {
           "200": {
-            "description": "OK",
+            "description": "Available drivers retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDTO"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
             "content": {
               "*/*": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/User"
-                  }
+                  "$ref": "#/components/schemas/ApiResponseDTOListUserDTO"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDTOListUserDTO"
                 }
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "Bearer Authentication": []
+          }
+        ]
       }
     },
     "/api/deliveries/driver/{driverId}": {
       "get": {
         "tags": [
-          "delivery-controller"
+          "Deliveries"
         ],
+        "summary": "Get deliveries by driver",
+        "description": "Retrieve all deliveries assigned to a specific driver",
         "operationId": "getDeliveriesByDriver",
         "parameters": [
           {
             "name": "driverId",
             "in": "path",
+            "description": "Driver ID",
             "required": true,
             "schema": {
               "type": "integer",
@@ -2784,32 +4224,57 @@
           }
         ],
         "responses": {
-          "200": {
-            "description": "OK",
+          "403": {
+            "description": "Forbidden",
             "content": {
               "*/*": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/Delivery"
-                  }
+                  "$ref": "#/components/schemas/ApiResponseDTOListDeliveryDTO"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Deliveries retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDTO"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDTOListDeliveryDTO"
                 }
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "Bearer Authentication": []
+          }
+        ]
       }
     },
     "/api/deliveries/date-range": {
       "get": {
         "tags": [
-          "delivery-controller"
+          "Deliveries"
         ],
+        "summary": "Get deliveries by date range",
+        "description": "Retrieve deliveries within a specified date range",
         "operationId": "getDeliveriesByDateRange",
         "parameters": [
           {
             "name": "startDate",
             "in": "query",
+            "description": "Start date (ISO format: yyyy-MM-ddTHH:mm:ss)",
             "required": true,
             "schema": {
               "type": "string",
@@ -2819,6 +4284,7 @@
           {
             "name": "endDate",
             "in": "query",
+            "description": "End date (ISO format: yyyy-MM-ddTHH:mm:ss)",
             "required": true,
             "schema": {
               "type": "string",
@@ -2827,43 +4293,89 @@
           }
         ],
         "responses": {
-          "200": {
-            "description": "OK",
+          "403": {
+            "description": "Forbidden",
             "content": {
               "*/*": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/Delivery"
-                  }
+                  "$ref": "#/components/schemas/ApiResponseDTOListDeliveryDTO"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Deliveries retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDTO"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDTOListDeliveryDTO"
                 }
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "Bearer Authentication": []
+          }
+        ]
       }
     },
     "/api/deliveries/active": {
       "get": {
         "tags": [
-          "delivery-controller"
+          "Deliveries"
         ],
+        "summary": "Get active deliveries",
+        "description": "Retrieve all active deliveries",
         "operationId": "getActiveDeliveries",
         "responses": {
           "200": {
-            "description": "OK",
+            "description": "Active deliveries retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDTO"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
             "content": {
               "*/*": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/Delivery"
-                  }
+                  "$ref": "#/components/schemas/ApiResponseDTOListDeliveryDTO"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDTOListDeliveryDTO"
                 }
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "Bearer Authentication": []
+          }
+        ]
       }
     },
     "/api/categories/search": {
@@ -2871,11 +4383,14 @@
         "tags": [
           "Categories"
         ],
+        "summary": "Search categories",
+        "description": "Search categories by name",
         "operationId": "searchCategories",
         "parameters": [
           {
             "name": "name",
             "in": "query",
+            "description": "Category name to search for",
             "required": true,
             "schema": {
               "type": "string"
@@ -2883,8 +4398,28 @@
           }
         ],
         "responses": {
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDTOListCategoryDTO"
+                }
+              }
+            }
+          },
           "200": {
-            "description": "OK",
+            "description": "Categories retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDTO"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
             "content": {
               "*/*": {
                 "schema": {
@@ -2906,11 +4441,14 @@
         "tags": [
           "Categories"
         ],
+        "summary": "Check category existence",
+        "description": "Check if a category exists by name",
         "operationId": "checkCategoryExists",
         "parameters": [
           {
             "name": "name",
             "in": "path",
+            "description": "Category name",
             "required": true,
             "schema": {
               "type": "string"
@@ -2918,8 +4456,28 @@
           }
         ],
         "responses": {
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDTOBoolean"
+                }
+              }
+            }
+          },
           "200": {
-            "description": "OK",
+            "description": "Category existence checked",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDTO"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
             "content": {
               "*/*": {
                 "schema": {
@@ -2948,15 +4506,9 @@
           "401": {
             "description": "Unauthorized",
             "content": {
-              "application/json": {}
-            }
-          },
-          "200": {
-            "description": "User information retrieved successfully",
-            "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/UserDTO"
+                  "$ref": "#/components/schemas/ApiResponseDTO"
                 }
               }
             }
@@ -2964,7 +4516,21 @@
           "404": {
             "description": "User not found",
             "content": {
-              "application/json": {}
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDTO"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "User information retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseDTO"
+                }
+              }
             }
           }
         },
@@ -3031,7 +4597,7 @@
             "type": "string"
           },
           "price": {
-            "minimum": 0.0,
+            "minimum": 0,
             "exclusiveMinimum": true,
             "type": "number"
           },
@@ -3049,6 +4615,27 @@
             "format": "date-time"
           },
           "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ApiResponseDTO": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "type": "object"
+          },
+          "error": {
+            "type": "string"
+          },
+          "timestamp": {
             "type": "string",
             "format": "date-time"
           }
@@ -3128,7 +4715,7 @@
             "type": "string"
           },
           "price": {
-            "minimum": 0.0,
+            "minimum": 0,
             "exclusiveMinimum": true,
             "type": "number"
           },
@@ -3169,7 +4756,7 @@
             "format": "int32"
           },
           "price": {
-            "minimum": 0.0,
+            "minimum": 0,
             "exclusiveMinimum": true,
             "type": "number"
           }
@@ -3199,13 +4786,21 @@
             "minLength": 0,
             "type": "string"
           },
+          "latitude": {
+            "type": "number",
+            "format": "double"
+          },
+          "longitude": {
+            "type": "number",
+            "format": "double"
+          },
           "notes": {
             "maxLength": 500,
             "minLength": 0,
             "type": "string"
           },
           "totalAmount": {
-            "minimum": 0.0,
+            "minimum": 0,
             "exclusiveMinimum": true,
             "type": "number"
           },
@@ -3230,14 +4825,14 @@
               "$ref": "#/components/schemas/CreateOrderItemRequestDTO"
             }
           },
-          "totalPrice": {
-            "type": "number"
-          },
           "customerDetails": {
             "type": "string"
+          },
+          "totalPrice": {
+            "type": "number"
           }
         },
-        "description": "Order creation request"
+        "description": "Order creation request (includes customer info, items, and optional latitude/longitude for geolocation)"
       },
       "ApiResponseDTOOrderDTO": {
         "type": "object",
@@ -3301,6 +4896,14 @@
             "maxLength": 1000,
             "minLength": 0,
             "type": "string"
+          },
+          "latitude": {
+            "type": "number",
+            "format": "double"
+          },
+          "longitude": {
+            "type": "number",
+            "format": "double"
           }
         }
       },
@@ -3347,7 +4950,7 @@
             ]
           },
           "totalPrice": {
-            "minimum": 0.0,
+            "minimum": 0,
             "exclusiveMinimum": true,
             "type": "number"
           },
@@ -3400,7 +5003,7 @@
             "format": "int32"
           },
           "price": {
-            "minimum": 0.0,
+            "minimum": 0,
             "exclusiveMinimum": true,
             "type": "number"
           }
@@ -3466,7 +5069,8 @@
             "minLength": 0,
             "type": "string"
           }
-        }
+        },
+        "description": "Delivery update request"
       },
       "ApiResponseDTODeliveryDTO": {
         "type": "object",
@@ -3510,27 +5114,6 @@
           }
         }
       },
-      "ApiResponseDTO": {
-        "type": "object",
-        "properties": {
-          "success": {
-            "type": "boolean"
-          },
-          "message": {
-            "type": "string"
-          },
-          "data": {
-            "type": "object"
-          },
-          "error": {
-            "type": "string"
-          },
-          "timestamp": {
-            "type": "string",
-            "format": "date-time"
-          }
-        }
-      },
       "AssignDeliveryRequestDTO": {
         "required": [
           "deliveryAddress",
@@ -3557,7 +5140,8 @@
             "minLength": 0,
             "type": "string"
           }
-        }
+        },
+        "description": "Delivery assignment request"
       },
       "RegisterRequestDTO": {
         "required": [
@@ -3619,17 +5203,6 @@
         },
         "description": "Login credentials"
       },
-      "TokenResponse": {
-        "type": "object",
-        "properties": {
-          "token": {
-            "type": "string"
-          },
-          "user": {
-            "$ref": "#/components/schemas/UserDTO"
-          }
-        }
-      },
       "ChangePasswordRequestDTO": {
         "required": [
           "currentPassword",
@@ -3690,7 +5263,8 @@
               "DELIVERY_STAFF"
             ]
           }
-        }
+        },
+        "description": "Role update request"
       },
       "UpdateOrderStatusRequestDTO": {
         "required": [
@@ -3730,7 +5304,8 @@
               "CANCELLED"
             ]
           }
-        }
+        },
+        "description": "Status update request"
       },
       "ReassignDriverRequestDTO": {
         "required": [
@@ -3742,7 +5317,8 @@
             "type": "integer",
             "format": "int64"
           }
-        }
+        },
+        "description": "Driver reassignment request"
       },
       "ApiResponseDTOPagedResponseDTOUserDTO": {
         "type": "object",
@@ -4082,209 +5658,27 @@
           }
         }
       },
-      "Delivery": {
-        "required": [
-          "order"
-        ],
+      "ApiResponseDTOListDeliveryDTO": {
         "type": "object",
         "properties": {
-          "id": {
-            "type": "integer",
-            "format": "int64"
+          "success": {
+            "type": "boolean"
           },
-          "order": {
-            "$ref": "#/components/schemas/Order"
-          },
-          "driver": {
-            "$ref": "#/components/schemas/User"
-          },
-          "status": {
-            "type": "string",
-            "enum": [
-              "PENDING",
-              "ASSIGNED",
-              "OUT_FOR_DELIVERY",
-              "DELIVERED",
-              "CANCELLED"
-            ]
-          },
-          "dispatchedAt": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "deliveredAt": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "deliveryAddress": {
+          "message": {
             "type": "string"
           },
-          "deliveryNotes": {
-            "type": "string"
-          }
-        }
-      },
-      "GrantedAuthority": {
-        "type": "object",
-        "properties": {
-          "authority": {
-            "type": "string"
-          }
-        }
-      },
-      "Order": {
-        "required": [
-          "customerDetails",
-          "totalPrice"
-        ],
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "integer",
-            "format": "int64"
-          },
-          "customerDetails": {
-            "maxLength": 500,
-            "minLength": 0,
-            "type": "string"
-          },
-          "status": {
-            "type": "string",
-            "enum": [
-              "PENDING",
-              "CONFIRMED",
-              "PREPARING",
-              "READY_FOR_PICKUP",
-              "READY_FOR_DELIVERY",
-              "OUT_FOR_DELIVERY",
-              "COMPLETED",
-              "CANCELLED"
-            ]
-          },
-          "totalPrice": {
-            "minimum": 0.0,
-            "exclusiveMinimum": true,
-            "type": "number"
-          },
-          "orderType": {
-            "type": "string",
-            "enum": [
-              "DINE_IN",
-              "TAKEOUT",
-              "DELIVERY",
-              "PICKUP"
-            ]
-          },
-          "createdAt": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "orderItems": {
+          "data": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/OrderItem"
+              "$ref": "#/components/schemas/DeliveryDTO"
             }
           },
-          "delivery": {
-            "$ref": "#/components/schemas/Delivery"
-          }
-        }
-      },
-      "OrderItem": {
-        "required": [
-          "order",
-          "price",
-          "product",
-          "quantity"
-        ],
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "integer",
-            "format": "int64"
-          },
-          "order": {
-            "$ref": "#/components/schemas/Order"
-          },
-          "product": {
-            "$ref": "#/components/schemas/Product"
-          },
-          "quantity": {
-            "minimum": 1,
-            "type": "integer",
-            "format": "int32"
-          },
-          "price": {
-            "minimum": 0.0,
-            "exclusiveMinimum": true,
-            "type": "number"
-          },
-          "totalPrice": {
-            "type": "number"
-          }
-        }
-      },
-      "User": {
-        "required": [
-          "password",
-          "username"
-        ],
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "integer",
-            "format": "int64"
-          },
-          "username": {
-            "maxLength": 50,
-            "minLength": 3,
+          "error": {
             "type": "string"
           },
-          "password": {
-            "maxLength": 2147483647,
-            "minLength": 6,
-            "type": "string"
-          },
-          "email": {
-            "type": "string"
-          },
-          "fullName": {
-            "type": "string"
-          },
-          "role": {
-            "type": "string",
-            "enum": [
-              "ADMIN",
-              "MANAGER",
-              "KITCHEN_STAFF",
-              "DELIVERY_STAFF"
-            ]
-          },
-          "enabled": {
-            "type": "boolean"
-          },
-          "createdAt": {
+          "timestamp": {
             "type": "string",
             "format": "date-time"
-          },
-          "updatedAt": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "authorities": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/GrantedAuthority"
-            }
-          },
-          "accountNonLocked": {
-            "type": "boolean"
-          },
-          "credentialsNonExpired": {
-            "type": "boolean"
-          },
-          "accountNonExpired": {
-            "type": "boolean"
           }
         }
       },
