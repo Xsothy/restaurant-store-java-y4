@@ -15,20 +15,24 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class DeliveryDTO {
     private Long id;
-    
+
     private Long orderId;
-    
+
     private UserDTO driver;
-    
+
     private DeliveryStatus status;
-    
+
     private LocalDateTime dispatchedAt;
-    
+
     private LocalDateTime deliveredAt;
-    
+
     @Size(max = 500, message = "Delivery address must not exceed 500 characters")
     private String deliveryAddress;
-    
+
     @Size(max = 1000, message = "Delivery notes must not exceed 1000 characters")
     private String deliveryNotes;
+
+    private Double latitude;
+
+    private Double longitude;
 }

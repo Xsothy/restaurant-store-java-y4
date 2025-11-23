@@ -21,31 +21,31 @@ import java.util.List;
 @AllArgsConstructor
 public class OrderDTO {
     private Long id;
-    
+
     private String customerName;
-    
+
     private String customerPhone;
-    
+
     private String customerAddress;
-    
+
     private String notes;
-    
+
     @NotBlank(message = "Customer details are required")
     @Size(max = 500, message = "Customer details must not exceed 500 characters")
     private String customerDetails;
-    
+
     private OrderStatus status;
-    
+
     @NotNull(message = "Total price is required")
     @DecimalMin(value = "0.0", inclusive = false, message = "Total price must be greater than 0")
     private BigDecimal totalPrice;
-    
+
     @NotNull(message = "Order type is required")
     private OrderType orderType;
-    
+
     private LocalDateTime createdAt;
-    
+
     private List<OrderItemDTO> orderItems;
-    
+
     private DeliveryDTO delivery;
 }

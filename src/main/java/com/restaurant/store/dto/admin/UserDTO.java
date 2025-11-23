@@ -16,22 +16,22 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class UserDTO {
     private Long id;
-    
+
     @NotBlank(message = "Username is required")
     @Size(max = 50, message = "Username must not exceed 50 characters")
     private String username;
-    
+
     @Size(max = 100, message = "Email must not exceed 100 characters")
     private String email;
-    
+
     @Size(max = 100, message = "Full name must not exceed 100 characters")
     private String fullName;
-    
+
     private Role role;
-    
+
     private Boolean enabled;
-    
+
     private LocalDateTime createdAt;
-    
+
     private LocalDateTime updatedAt;
 }
