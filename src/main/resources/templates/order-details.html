@@ -531,6 +531,7 @@
                 deliveryMap: null,
                 driverMarker: null,
                 destinationMarker: null,
+                routeLine: null,
 
                 init() {
                     this.order = this.prepareOrder(window.INITIAL_ORDER || null);
@@ -973,11 +974,16 @@
                         return;
                     }
 
-                    const lat = this.order.deliveryLatitude;
-                    const lng = this.order.deliveryLongitude;
+                    const driverLat = this.order.deliveryLatitude;
+                    const driverLng = this.order.deliveryLongitude;
 
-                    // Initialize map centered on driver location
-                    this.deliveryMap = L.map('deliveryMap').setView([lat, lng], 13);
+                    // Try to parse destination coordinates from delivery address
+                    // For now, we'll center on driver location, but you can add logic to parse address
+                    const centerLat = driverLat;
+                    const centerLng = driverLng;
+
+                    // Initialize map centered between driver and destination
+                    this.deliveryMap = L.map('deliveryMap').setView([centerLat, centerLng], 13);
 
                     // Add OpenStreetMap tile layer
                     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -985,18 +991,55 @@
                         maxZoom: 19
                     }).addTo(this.deliveryMap);
 
-                    // Create custom driver icon
+                    // Create custom driver icon (blue car)
                     const driverIcon = L.divIcon({
                         className: 'custom-driver-marker',
-                        html: '<div style="background-color: #3b82f6; width: 32px; height: 32px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center;"><svg style="width: 16px; height: 16px; fill: white;" viewBox="0 0 24 24"><path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-.83 0-1.5-.67-1.5-1.5S5.67 13 6.5 13s1.5.67 1.5 1.5S7.33 16 6.5 16zm11 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM5 11l1.5-4.5h11L19 11H5z"/></svg></div>',
+                        html: '<div style="background-color: #3b82f6; width: 36px; height: 36px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 10px rgba(59, 130, 246, 0.5); display: flex; align-items: center; justify-content: center; animation: pulse 2s infinite;"><svg style="width: 18px; height: 18px; fill: white;" viewBox="0 0 24 24"><path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-.83 0-1.5-.67-1.5-1.5S5.67 13 6.5 13s1.5.67 1.5 1.5S7.33 16 6.5 16zm11 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM5 11l1.5-4.5h11L19 11H5z"/></svg></div><style>@keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }</style>',
+                        iconSize: [36, 36],
+                        iconAnchor: [18, 18]
+                    });
+
+                    // Create custom destination icon (red pin)
+                    const destinationIcon = L.divIcon({
+                        className: 'custom-destination-marker',
+                        html: '<div style="background-color: #ef4444; width: 32px; height: 32px; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); border: 3px solid white; box-shadow: 0 2px 8px rgba(239, 68, 68, 0.4); display: flex; align-items: center; justify-content: center;"><svg style="width: 16px; height: 16px; fill: white; transform: rotate(45deg);" viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg></div>',
                         iconSize: [32, 32],
-                        iconAnchor: [16, 16]
+                        iconAnchor: [8, 32]
                     });
 
                     // Add driver marker
-                    this.driverMarker = L.marker([lat, lng], { icon: driverIcon })
+                    this.driverMarker = L.marker([driverLat, driverLng], { icon: driverIcon })
                         .addTo(this.deliveryMap)
-                        .bindPopup('<b>Driver Location</b><br/>Your order is on the way!');
+                        .bindPopup('<b>Driver Location</b><br/>Your order is on the way!<br/><small>' + (this.order.deliveryDriverName || 'Driver') + '</small>');
+
+                    // Add destination marker if we have delivery address coordinates
+                    // You can enhance this by geocoding the delivery address
+                    // For demo purposes, we'll add a marker slightly offset from driver
+                    if (this.order.deliveryAddress) {
+                        // This is a placeholder - in production, you'd geocode the address
+                        // For now, show it as a popup on the driver marker
+                        const destLat = driverLat + 0.01; // Offset for demo
+                        const destLng = driverLng + 0.01;
+                        
+                        this.destinationMarker = L.marker([destLat, destLng], { icon: destinationIcon })
+                            .addTo(this.deliveryMap)
+                            .bindPopup('<b>Delivery Destination</b><br/>' + this.order.deliveryAddress);
+
+                        // Draw a line between driver and destination
+                        this.routeLine = L.polyline([
+                            [driverLat, driverLng],
+                            [destLat, destLng]
+                        ], {
+                            color: '#3b82f6',
+                            weight: 3,
+                            opacity: 0.6,
+                            dashArray: '10, 10'
+                        }).addTo(this.deliveryMap);
+
+                        // Fit bounds to show both markers
+                        const bounds = L.latLngBounds([[driverLat, driverLng], [destLat, destLng]]);
+                        this.deliveryMap.fitBounds(bounds, { padding: [50, 50] });
+                    }
                 },
 
                 updateDriverLocation(lat, lng) {
@@ -1012,8 +1055,21 @@
                         this.driverMarker.setLatLng([lat, lng]);
                     }
 
-                    // Pan map to new location
-                    this.deliveryMap.panTo([lat, lng]);
+                    // Update route line if destination marker exists
+                    if (this.routeLine && this.destinationMarker) {
+                        const destLatLng = this.destinationMarker.getLatLng();
+                        this.routeLine.setLatLngs([
+                            [lat, lng],
+                            [destLatLng.lat, destLatLng.lng]
+                        ]);
+
+                        // Fit bounds to show both markers
+                        const bounds = L.latLngBounds([[lat, lng], [destLatLng.lat, destLatLng.lng]]);
+                        this.deliveryMap.fitBounds(bounds, { padding: [50, 50] });
+                    } else {
+                        // Pan map to new driver location
+                        this.deliveryMap.panTo([lat, lng]);
+                    }
                 },
 
                 teardown() {
@@ -1026,6 +1082,9 @@
                     if (this.deliveryMap) {
                         this.deliveryMap.remove();
                         this.deliveryMap = null;
+                        this.driverMarker = null;
+                        this.destinationMarker = null;
+                        this.routeLine = null;
                     }
                 }
             };

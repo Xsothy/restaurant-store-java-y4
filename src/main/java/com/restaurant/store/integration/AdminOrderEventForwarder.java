@@ -14,6 +14,8 @@ import com.restaurant.store.entity.Order;
 import com.restaurant.store.entity.OrderStatus;
 import com.restaurant.store.repository.DeliveryRepository;
 import com.restaurant.store.repository.OrderRepository;
+import com.restaurant.store.service.DeliveryService;
+import com.restaurant.store.service.OrderService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -48,6 +50,8 @@ public class AdminOrderEventForwarder {
     private final OrderStatusWebSocketController orderStatusWebSocketController;
     private final DeliveryStatusWebSocketController deliveryStatusWebSocketController;
     private final ObjectMapper objectMapper;
+    private final OrderService orderService;
+    private final DeliveryService deliveryService;
 
     public void forwardOrderUpdate(OrderDTO orderData, WebSocketMessageDTO<?> envelope, String defaultMessage) {
         if (orderData == null && (envelope == null || envelope.getData() == null)) {
@@ -77,32 +81,23 @@ public class AdminOrderEventForwarder {
             return;
         }
 
-        Optional<Order> optionalOrder;
-        try {
-            optionalOrder = orderRepository.findByExternalId(adminOrderId);
-            if (optionalOrder.isEmpty()) {
-                optionalOrder = orderRepository.findById(adminOrderId);
-            }
-        } catch (Exception e) {
-            log.warn("Error finding order by external_id {}: {}. Trying to find by ID.", adminOrderId, e.getMessage());
-            optionalOrder = orderRepository.findById(adminOrderId);
-        }
-
+        Optional<Order> optionalOrder = orderService.findOrderByAdminId(adminOrderId);
         if (optionalOrder.isEmpty()) {
             log.warn("Received Admin order event for unknown order id {}", adminOrderId);
             return;
         }
 
         Order order = optionalOrder.get();
-        boolean orderUpdated = applyAdminOrderData(order, metadata);
-        if (orderUpdated) {
-            orderRepository.save(order);
-        }
+        String statusStr = metadata.containsKey("status") ? String.valueOf(metadata.get("status")) : null;
+        LocalDateTime estimatedDeliveryTime = parseDateTime(
+                metadata.containsKey("estimatedDeliveryTime") ? String.valueOf(metadata.get("estimatedDeliveryTime")) : null
+        );
+        boolean orderUpdated = orderService.updateOrderFromAdmin(order, statusStr, estimatedDeliveryTime);
 
         // Update delivery entity if delivery data is present in the order
         boolean deliveryUpdated = false;
         if (payload.getDelivery() != null) {
-            deliveryUpdated = applyAdminDeliveryData(order.getId(), payload.getDelivery(), metadata);
+            deliveryUpdated = updateDeliveryFromPayload(order.getId(), payload.getDelivery());
         }
 
         OrderStatusMessage statusMessage = buildStatusMessage(order,
@@ -144,38 +139,24 @@ public class AdminOrderEventForwarder {
             return;
         }
 
-        Optional<Order> optionalOrder;
-        try {
-            optionalOrder = orderRepository.findByExternalId(adminOrderId);
-            if (optionalOrder.isEmpty()) {
-                optionalOrder = orderRepository.findById(adminOrderId);
-            }
-        } catch (Exception e) {
-            log.warn("Error finding order by external_id {}: {}. Trying to find by ID.", adminOrderId, e.getMessage());
-            optionalOrder = orderRepository.findById(adminOrderId);
-        }
-
+        Optional<Order> optionalOrder = orderService.findOrderByAdminId(adminOrderId);
         if (optionalOrder.isEmpty()) {
             log.warn("Received Admin delivery event for unknown order id {}", adminOrderId);
             return;
         }
 
         Order order = optionalOrder.get();
-        boolean orderUpdated = applyAdminOrderData(order, metadata);
-        if (orderUpdated) {
-            orderRepository.save(order);
-        }
-
-        // Update delivery entity if present
-        boolean deliveryUpdated = applyAdminDeliveryData(order.getId(), payload, metadata);
+        
+        // Update delivery entity if present (don't apply delivery status to order status)
+        boolean deliveryUpdated = updateDeliveryFromPayload(order.getId(), payload);
 
         OrderStatusMessage statusMessage = buildStatusMessage(order,
                 envelope,
                 messageType,
                 metadata,
                 defaultMessage != null ? defaultMessage : "Delivery update received");
-        log.info("Forwarding Admin delivery event type={} for order {} status {} (delivery updated: {})", messageType,
-                order.getId(), order.getStatus(), deliveryUpdated);
+        log.info("Forwarding Admin delivery event type={} for order {} (delivery updated: {})", messageType,
+                order.getId(), deliveryUpdated);
         orderStatusWebSocketController.sendOrderNotification(order.getId(), statusMessage);
         deliveryStatusWebSocketController.sendDeliveryStatusUpdate(order.getId(), statusMessage);
     }
@@ -215,119 +196,33 @@ public class AdminOrderEventForwarder {
         return null;
     }
 
-    private boolean applyAdminOrderData(Order order, Map<String, Object> data) {
-        boolean updated = false;
-
-        if (data.containsKey("status")) {
-            OrderStatus status = parseStatus(String.valueOf(data.get("status")));
-            if (status != null && status != order.getStatus()) {
-                order.setStatus(status);
-                updated = true;
-            }
-        }
-
-        if (data.containsKey("estimatedDeliveryTime")) {
-            LocalDateTime estimatedDelivery = parseDateTime(String.valueOf(data.get("estimatedDeliveryTime")));
-            if (estimatedDelivery != null && !estimatedDelivery.equals(order.getEstimatedDeliveryTime())) {
-                order.setEstimatedDeliveryTime(estimatedDelivery);
-                updated = true;
-            }
-        }
-
-        return updated;
-    }
-
-    private boolean applyAdminDeliveryData(Long orderId, DeliveryDTO deliveryDTO, Map<String, Object> metadata) {
-        Optional<Delivery> optionalDelivery = deliveryRepository.findByOrderId(orderId);
-        if (optionalDelivery.isEmpty()) {
-            log.debug("No delivery found for order {}, skipping delivery update", orderId);
+    /**
+     * Updates delivery entity from admin payload using DeliveryService
+     */
+    private boolean updateDeliveryFromPayload(Long orderId, DeliveryDTO deliveryDTO) {
+        if (deliveryDTO == null) {
             return false;
         }
 
-        Delivery delivery = optionalDelivery.get();
-        boolean updated = false;
-
-        // Update delivery status
-        if (deliveryDTO.getStatus() != null && deliveryDTO.getStatus() != delivery.getStatus()) {
-            delivery.setStatus(deliveryDTO.getStatus());
-            updated = true;
-        }
-
-        // Update latitude
-        if (deliveryDTO.getLatitude() != null && !deliveryDTO.getLatitude().equals(delivery.getLatitude())) {
-            delivery.setLatitude(deliveryDTO.getLatitude());
-            updated = true;
-        }
-
-        // Update longitude
-        if (deliveryDTO.getLongitude() != null && !deliveryDTO.getLongitude().equals(delivery.getLongitude())) {
-            delivery.setLongitude(deliveryDTO.getLongitude());
-            updated = true;
-        }
-
-        // Update current location if coordinates are available
-        if (deliveryDTO.getLatitude() != null && deliveryDTO.getLongitude() != null) {
-            String locationString = String.format("%.6f,%.6f", deliveryDTO.getLatitude(), deliveryDTO.getLongitude());
-            if (!locationString.equals(delivery.getCurrentLocation())) {
-                delivery.setCurrentLocation(locationString);
-                updated = true;
-            }
-        }
-
-        // Update delivery address if provided
-        if (deliveryDTO.getDeliveryAddress() != null && !deliveryDTO.getDeliveryAddress().equals(delivery.getDeliveryAddress())) {
-            delivery.setDeliveryAddress(deliveryDTO.getDeliveryAddress());
-            updated = true;
-        }
-
-        // Update delivery notes if provided
-        if (deliveryDTO.getDeliveryNotes() != null && !deliveryDTO.getDeliveryNotes().equals(delivery.getDeliveryNotes())) {
-            delivery.setDeliveryNotes(deliveryDTO.getDeliveryNotes());
-            updated = true;
-        }
-
-        // Update driver information if available
+        String driverName = null;
+        String driverPhone = null;
         if (deliveryDTO.getDriver() != null) {
-            String driverName = deliveryDTO.getDriver().getFullName();
-            if (driverName != null && !driverName.equals(delivery.getDriverName())) {
-                delivery.setDriverName(driverName);
-                updated = true;
-            }
-            
-            String driverEmail = deliveryDTO.getDriver().getEmail();
-            if (driverEmail != null && !driverEmail.equals(delivery.getDriverPhone())) {
-                delivery.setDriverPhone(driverEmail);
-                updated = true;
-            }
+            driverName = deliveryDTO.getDriver().getFullName();
+            driverPhone = deliveryDTO.getDriver().getEmail(); // Using email as phone for now
         }
 
-        // Update timestamps
-        if (deliveryDTO.getDispatchedAt() != null && !deliveryDTO.getDispatchedAt().equals(delivery.getEstimatedDeliveryTime())) {
-            delivery.setEstimatedDeliveryTime(deliveryDTO.getDispatchedAt());
-            updated = true;
-        }
-
-        if (deliveryDTO.getDeliveredAt() != null && !deliveryDTO.getDeliveredAt().equals(delivery.getActualDeliveryTime())) {
-            delivery.setActualDeliveryTime(deliveryDTO.getDeliveredAt());
-            updated = true;
-        }
-
-        if (updated) {
-            deliveryRepository.save(delivery);
-            log.info("Updated delivery for order {} with admin data (lat: {}, lng: {})", 
-                    orderId, delivery.getLatitude(), delivery.getLongitude());
-        }
-
-        return updated;
-    }
-
-    private OrderStatus parseStatus(String status) {
-        try {
-            return OrderStatus.valueOf(status.toUpperCase());
-        } catch (IllegalArgumentException ex) {
-            log.debug("Unknown status {}", status, ex);
-            return null;
-        }
+        return deliveryService.updateDeliveryFromAdmin(
+                orderId,
+                deliveryDTO.getStatus(),
+                deliveryDTO.getLatitude(),
+                deliveryDTO.getLongitude(),
+                driverName,
+                driverPhone,
+                deliveryDTO.getDeliveryAddress(),
+                deliveryDTO.getDeliveryNotes(),
+                deliveryDTO.getDispatchedAt(),
+                deliveryDTO.getDeliveredAt()
+        );
     }
 
     private LocalDateTime parseDateTime(String value) {
