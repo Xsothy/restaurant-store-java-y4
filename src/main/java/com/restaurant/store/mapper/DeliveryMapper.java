@@ -24,6 +24,8 @@ public class DeliveryMapper {
                 .actualDeliveryTime(delivery.getActualDeliveryTime())
                 .deliveryNotes(delivery.getDeliveryNotes())
                 .currentLocation(delivery.getCurrentLocation())
+                .latitude(delivery.getLatitude())
+                .longitude(delivery.getLongitude())
                 .createdAt(delivery.getCreatedAt())
                 .updatedAt(delivery.getUpdatedAt())
                 .build();

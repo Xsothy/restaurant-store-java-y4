@@ -49,7 +49,7 @@ public class Order {
     @Column(name = "special_instructions")
     private String specialInstructions;
     
-    @Column(name = "external_id")
+    @Column(name = "external_id", unique = true)
     private Long externalId;
     
     @Column(name = "synced_at")
