@@ -80,8 +80,8 @@ import com.restaurant.store.entity.Role;
 
 Role.ADMIN
 Role.MANAGER
-Role.CHEF
-Role.DRIVER
+Role.KITCHEN_STAFF
+Role.DELIVERY_STAFF
 ```
 
 ## Usage Examples
@@ -135,7 +135,7 @@ RegisterRequestDTO request = RegisterRequestDTO.builder()
     .password("securepass")
     .email("chef1@restaurant.com")
     .fullName("Chef John")
-    .role(Role.CHEF)
+    .role(Role.KITCHEN_STAFF)
     .build();
 ```
 

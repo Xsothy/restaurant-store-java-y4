@@ -182,13 +182,13 @@ class AdminDtoSimpleTest {
                 .password("password123")
                 .email("newuser@test.com")
                 .fullName("New User")
-                .role(Role.CHEF)
+                .role(Role.KITCHEN_STAFF)
                 .build();
 
         String json = objectMapper.writeValueAsString(dto);
         RegisterRequestDTO deserialized = objectMapper.readValue(json, RegisterRequestDTO.class);
 
-        assertEquals(Role.CHEF, deserialized.getRole());
+        assertEquals(Role.KITCHEN_STAFF, deserialized.getRole());
         assertEquals("newuser", deserialized.getUsername());
     }
 
@@ -289,8 +289,8 @@ class AdminDtoSimpleTest {
         assertEquals(4, roles.length);
         assertTrue(Arrays.asList(roles).contains(Role.ADMIN));
         assertTrue(Arrays.asList(roles).contains(Role.MANAGER));
-        assertTrue(Arrays.asList(roles).contains(Role.CHEF));
-        assertTrue(Arrays.asList(roles).contains(Role.DRIVER));
+        assertTrue(Arrays.asList(roles).contains(Role.KITCHEN_STAFF));
+        assertTrue(Arrays.asList(roles).contains(Role.DELIVERY_STAFF));
     }
 
     @Test
