@@ -2,11 +2,7 @@ package com.restaurant.store.mapper;
 
 import com.restaurant.store.dto.response.OrderItemResponse;
 import com.restaurant.store.dto.response.OrderResponse;
-import com.restaurant.store.entity.Delivery;
-import com.restaurant.store.entity.Order;
-import com.restaurant.store.entity.OrderItem;
-import com.restaurant.store.entity.Payment;
-import com.restaurant.store.entity.Pickup;
+import com.restaurant.store.entity.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -78,6 +74,8 @@ public class OrderMapper {
         }
 
         if (payments == null || payments.isEmpty()) {
+            builder.paymentStatus(PaymentStatus.PENDING)
+                    .paymentMethod(PaymentMethod.CASH_ON_DELIVERY);
             return;
         }
 

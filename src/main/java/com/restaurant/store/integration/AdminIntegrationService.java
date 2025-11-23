@@ -7,7 +7,6 @@ import com.restaurant.store.entity.Product;
 import com.restaurant.store.integration.dto.AdminCategoryDto;
 import com.restaurant.store.integration.dto.AdminProductDto;
 import com.restaurant.store.dto.admin.OrderDTO;
-import com.restaurant.store.entity.OrderStatus;
 
 import java.util.List;
 import java.util.Optional;
@@ -28,5 +27,7 @@ public interface AdminIntegrationService {
 
     void updateOrderStatus(Order order);
 
-    List<OrderDTO> fetchOrdersByStatus(OrderStatus status);
+    List<OrderDTO> fetchKitchenOrders();
+
+    List<OrderDTO> fetchDeliveryOrders();
 }

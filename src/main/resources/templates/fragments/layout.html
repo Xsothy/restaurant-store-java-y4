@@ -31,16 +31,6 @@
 
             <!-- Authenticated State -->
             <div id="authNav" class="items-center gap-4" sec:authorize="isAuthenticated()">
-                <div class="flex flex-col text-left">
-                    <span id="customerName" class="text-gray-600 text-sm font-medium"
-                          th:text="${session.customer != null ? 'Hi, ' + session.customer.name : ''}"></span>
-                    <div class="text-xs text-gray-500">
-                        Logged user: <span class="font-semibold" sec:authentication="name">Guest</span>
-                    </div>
-                    <div class="text-xs text-gray-500">
-                        Access level: Standard customer
-                    </div>
-                </div>
                 <!-- Cart Icon with Badge -->
                 <button onclick="window.location.href='/cart'" class="relative px-3 py-2 text-gray-700 hover:text-gray-900 transition-colors">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">

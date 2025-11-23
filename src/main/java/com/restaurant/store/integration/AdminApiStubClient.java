@@ -1,11 +1,15 @@
 package com.restaurant.store.integration;
 
+import com.restaurant.store.dto.admin.DeliveryDTO;
 import com.restaurant.store.dto.admin.OrderDTO;
+import com.restaurant.store.dto.admin.UserDTO;
 import com.restaurant.store.entity.Category;
 import com.restaurant.store.entity.Order;
 import com.restaurant.store.entity.OrderItem;
 import com.restaurant.store.entity.OrderStatus;
+import com.restaurant.store.entity.OrderType;
 import com.restaurant.store.entity.Product;
+import com.restaurant.store.entity.DeliveryStatus;
 import com.restaurant.store.integration.dto.AdminCategoryDto;
 import com.restaurant.store.integration.dto.AdminProductDto;
 import lombok.extern.slf4j.Slf4j;
@@ -15,6 +19,7 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -137,8 +142,53 @@ public class AdminApiStubClient implements AdminIntegrationService {
     }
 
     @Override
-    public List<OrderDTO> fetchOrdersByStatus(OrderStatus status) {
-        log.info("Stubbed Admin API polling orders with status {}", status);
-        return List.of();
+    public List<OrderDTO> fetchKitchenOrders() {
+        log.info("Stubbed Admin API polling kitchen orders");
+        OrderDTO kitchenOrder = OrderDTO.builder()
+                .id(31001L)
+                .customerName("Sophea Kitchen")
+                .customerPhone("+855 12 345 678")
+                .customerAddress("Phnom Penh")
+                .customerDetails("Sophea | +85512345678")
+                .status(OrderStatus.PREPARING)
+                .totalPrice(new BigDecimal("25000"))
+                .orderType(OrderType.DINE_IN)
+                .createdAt(LocalDateTime.now().minusMinutes(5))
+                .orderItems(Collections.emptyList())
+                .build();
+        return List.of(kitchenOrder);
+    }
+
+    @Override
+    public List<OrderDTO> fetchDeliveryOrders() {
+        log.info("Stubbed Admin API polling delivery orders");
+        DeliveryDTO delivery = DeliveryDTO.builder()
+                .id(41001L)
+                .orderId(32002L)
+                .status(DeliveryStatus.ON_THE_WAY)
+                .driver(UserDTO.builder()
+                        .id(51001L)
+                        .username("driver.chan")
+                        .fullName("Chan Dara")
+                        .build())
+                .deliveryAddress("123 Riverside Blvd")
+                .dispatchedAt(LocalDateTime.now().minusMinutes(10))
+                .build();
+
+        OrderDTO deliveryOrder = OrderDTO.builder()
+                .id(32002L)
+                .customerName("Vuthy Delivery")
+                .customerPhone("+855 98 765 432")
+                .customerAddress("123 Riverside Blvd")
+                .customerDetails("Vuthy | +85598765432")
+                .status(OrderStatus.OUT_FOR_DELIVERY)
+                .totalPrice(new BigDecimal("38000"))
+                .orderType(OrderType.DELIVERY)
+                .createdAt(LocalDateTime.now().minusMinutes(15))
+                .orderItems(Collections.emptyList())
+                .delivery(delivery)
+                .build();
+
+        return List.of(deliveryOrder);
     }
 }

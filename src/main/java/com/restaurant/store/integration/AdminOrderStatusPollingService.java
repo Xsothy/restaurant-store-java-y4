@@ -1,8 +1,8 @@
 package com.restaurant.store.integration;
 
+import com.restaurant.store.dto.admin.DeliveryDTO;
 import com.restaurant.store.dto.admin.OrderDTO;
 import com.restaurant.store.dto.admin.websocket.WebSocketMessageDTO;
-import com.restaurant.store.entity.OrderStatus;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -10,13 +10,10 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
-import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
-import java.util.Arrays;
 import java.util.List;
-import java.util.Locale;
-import java.util.stream.Collectors;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -27,44 +24,43 @@ public class AdminOrderStatusPollingService {
     private final AdminIntegrationService adminIntegrationService;
     private final AdminOrderEventForwarder adminOrderEventForwarder;
 
-    @Value("${admin.api.order-status.polling.statuses:PENDING,CONFIRMED,PREPARING,READY_FOR_PICKUP,READY_FOR_DELIVERY,OUT_FOR_DELIVERY,COMPLETED,CANCELLED}")
-    private String polledStatuses;
-
     @Value("${admin.api.order-status.polling.interval:2000}")
     private long pollingIntervalMs;
 
     @PostConstruct
     public void logPollingMode() {
-        log.info("Admin order status polling mode enabled (interval={} ms, statuses={}). WebSocket bridge remains disabled while this flag is true.",
-                pollingIntervalMs,
-                polledStatuses);
+        log.info("Admin order status polling mode enabled (interval={} ms). WebSocket bridge remains disabled while this flag is true.",
+                pollingIntervalMs);
     }
 
     @Scheduled(fixedDelayString = "${admin.api.order-status.polling.interval:2000}")
     public void pollOrderStatuses() {
-        List<OrderStatus> statusesToPoll = parseStatuses();
-        if (statusesToPoll.isEmpty()) {
-            log.debug("Order status polling skipped - no statuses configured");
-            return;
-        }
-
-        statusesToPoll.forEach(status -> {
-            List<OrderDTO> remoteOrders = adminIntegrationService.fetchOrdersByStatus(status);
-            log.info("Polled {} admin orders for status {}", remoteOrders.size(), status);
-            remoteOrders.forEach(order -> forwardPolledOrder(order, status));
-        });
+        pollKitchenOrders();
+        pollDeliveryOrders();
     }
 
-    private void forwardPolledOrder(OrderDTO order, OrderStatus requestedStatus) {
+    private void pollKitchenOrders() {
+        List<OrderDTO> remoteOrders = adminIntegrationService.fetchKitchenOrders();
+        log.info("Polled {} admin kitchen orders", remoteOrders.size());
+        remoteOrders.forEach(order -> forwardPolledOrder(order, "kitchen"));
+    }
+
+    private void pollDeliveryOrders() {
+        List<OrderDTO> remoteOrders = adminIntegrationService.fetchDeliveryOrders();
+        log.info("Polled {} admin delivery orders", remoteOrders.size());
+        remoteOrders.forEach(this::forwardPolledDeliveryOrder);
+    }
+
+    private void forwardPolledOrder(OrderDTO order, String source) {
         if (order == null || order.getId() == null) {
-            log.debug("Skipping polled order for status {} due to missing payload", requestedStatus);
+            log.debug("Skipping polled {} order due to missing payload", source);
             return;
         }
 
         WebSocketMessageDTO<OrderDTO> message = WebSocketMessageDTO.<OrderDTO>builder()
                 .type(WebSocketMessageDTO.MessageType.ORDER_STATUS_CHANGED.name())
                 .title("Admin status poll")
-                .message(String.format("Polled status %s from Admin API", order.getStatus()))
+                .message(String.format("Polled %s order status %s from Admin API", source, order.getStatus()))
                 .timestamp(LocalDateTime.now())
                 .data(order)
                 .build();
@@ -72,23 +68,27 @@ public class AdminOrderStatusPollingService {
         adminOrderEventForwarder.forwardOrderUpdate(order, message, "Polled order update received");
     }
 
-    private List<OrderStatus> parseStatuses() {
-        if (!StringUtils.hasText(polledStatuses)) {
-            return List.of();
+    private void forwardPolledDeliveryOrder(OrderDTO order) {
+        forwardPolledOrder(order, "delivery");
+
+        DeliveryDTO delivery = Optional.ofNullable(order).map(OrderDTO::getDelivery).orElse(null);
+        if (delivery == null) {
+            log.debug("Polled delivery order {} missing delivery payload", order != null ? order.getId() : null);
+            return;
         }
 
-        return Arrays.stream(polledStatuses.split(","))
-                .map(String::trim)
-                .filter(StringUtils::hasText)
-                .map(value -> {
-                    try {
-                        return OrderStatus.valueOf(value.toUpperCase(Locale.US));
-                    } catch (IllegalArgumentException ex) {
-                        log.warn("Ignoring unknown order status '{}' in polling configuration", value);
-                        return null;
-                    }
-                })
-                .filter(status -> status != null)
-                .collect(Collectors.toList());
+        if (delivery.getOrderId() == null && order != null) {
+            delivery.setOrderId(order.getId());
+        }
+
+        WebSocketMessageDTO<DeliveryDTO> message = WebSocketMessageDTO.<DeliveryDTO>builder()
+                .type(WebSocketMessageDTO.MessageType.DELIVERY_STATUS_UPDATED.name())
+                .title("Admin delivery poll")
+                .message(String.format("Polled delivery status %s from Admin API", delivery.getStatus()))
+                .timestamp(LocalDateTime.now())
+                .data(delivery)
+                .build();
+
+        adminOrderEventForwarder.forwardDeliveryUpdate(delivery, message, "Polled delivery update received");
     }
 }
