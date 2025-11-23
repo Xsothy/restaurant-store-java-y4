@@ -2,6 +2,10 @@
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
     <th:block th:replace="~{fragments/layout :: head('Order Details - Restaurant Store')}"></th:block>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+          integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+            integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Kantumruy+Pro:wght@400;500;600;700&display=swap');
@@ -204,6 +208,12 @@
                 padding-left: 2.75rem;
             }
         }
+        #deliveryMap {
+            height: 400px;
+            width: 100%;
+            border-radius: 16px;
+            border: 2px solid #e5e7eb;
+        }
     </style>
 </head>
 <body class="min-h-screen">
@@ -329,6 +339,15 @@
                         <p class="text-sm text-gray-500" x-show="order?.deliveryAddress">Address</p>
                         <p class="text-base text-gray-900" x-show="order?.deliveryAddress" x-text="order.deliveryAddress"></p>
                     </div>
+                </div>
+
+                <!-- Delivery Map -->
+                <div class="card-shell p-5" x-show="order?.orderType === 'DELIVERY' && hasDriverLocation()" x-cloak>
+                    <div class="mb-3">
+                        <p class="section-label">Driver Location</p>
+                        <p class="text-sm text-gray-500 mt-1">Track your driver in real-time</p>
+                    </div>
+                    <div id="deliveryMap"></div>
                 </div>
 
                 <div class="card-shell p-6" x-show="orderItemsList().length" x-cloak>
@@ -509,6 +528,9 @@
                 pollTimerId: null,
                 placeholderImage: '/images/placeholder-food.jpg',
                 trackingStepsByType: TRACKING_STEPS,
+                deliveryMap: null,
+                driverMarker: null,
+                destinationMarker: null,
 
                 init() {
                     this.order = this.prepareOrder(window.INITIAL_ORDER || null);
@@ -517,6 +539,8 @@
                         this.connectWebsocket();
                         this.startPolling();
                         window.addEventListener('beforeunload', () => this.teardown());
+                        // Initialize map after a short delay to ensure DOM is ready
+                        setTimeout(() => this.initializeMap(), 500);
                     }
                 },
 
@@ -607,6 +631,11 @@
                         return;
                     }
                     this.order = this.prepareOrder({ ...(this.order || {}), ...update });
+                    
+                    // Update map if driver location changed
+                    if (update.deliveryLatitude && update.deliveryLongitude) {
+                        this.updateDriverLocation(update.deliveryLatitude, update.deliveryLongitude);
+                    }
                 },
 
                 applyOrderStatusPayload(orderId, payload) {
@@ -681,6 +710,12 @@
                     }
                     if (metadata.orderStatus) {
                         updates.status = metadata.orderStatus;
+                    }
+                    if (metadata.deliveryLatitude || metadata.latitude) {
+                        updates.deliveryLatitude = metadata.deliveryLatitude || metadata.latitude;
+                    }
+                    if (metadata.deliveryLongitude || metadata.longitude) {
+                        updates.deliveryLongitude = metadata.deliveryLongitude || metadata.longitude;
                     }
                     return updates;
                 },
@@ -927,6 +962,71 @@
                 canCancel() {
                     const status = this.order?.status;
                     return status === 'PENDING' || status === 'CONFIRMED';
+                },
+
+                hasDriverLocation() {
+                    return this.order?.deliveryLatitude && this.order?.deliveryLongitude;
+                },
+
+                initializeMap() {
+                    if (!this.hasDriverLocation() || this.deliveryMap) {
+                        return;
+                    }
+
+                    const lat = this.order.deliveryLatitude;
+                    const lng = this.order.deliveryLongitude;
+
+                    // Initialize map centered on driver location
+                    this.deliveryMap = L.map('deliveryMap').setView([lat, lng], 13);
+
+                    // Add OpenStreetMap tile layer
+                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+                        maxZoom: 19
+                    }).addTo(this.deliveryMap);
+
+                    // Create custom driver icon
+                    const driverIcon = L.divIcon({
+                        className: 'custom-driver-marker',
+                        html: '<div style="background-color: #3b82f6; width: 32px; height: 32px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center;"><svg style="width: 16px; height: 16px; fill: white;" viewBox="0 0 24 24"><path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-.83 0-1.5-.67-1.5-1.5S5.67 13 6.5 13s1.5.67 1.5 1.5S7.33 16 6.5 16zm11 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM5 11l1.5-4.5h11L19 11H5z"/></svg></div>',
+                        iconSize: [32, 32],
+                        iconAnchor: [16, 16]
+                    });
+
+                    // Add driver marker
+                    this.driverMarker = L.marker([lat, lng], { icon: driverIcon })
+                        .addTo(this.deliveryMap)
+                        .bindPopup('<b>Driver Location</b><br/>Your order is on the way!');
+                },
+
+                updateDriverLocation(lat, lng) {
+                    if (!this.deliveryMap) {
+                        this.order.deliveryLatitude = lat;
+                        this.order.deliveryLongitude = lng;
+                        this.initializeMap();
+                        return;
+                    }
+
+                    // Update marker position
+                    if (this.driverMarker) {
+                        this.driverMarker.setLatLng([lat, lng]);
+                    }
+
+                    // Pan map to new location
+                    this.deliveryMap.panTo([lat, lng]);
+                },
+
+                teardown() {
+                    if (this.stompClient) {
+                        this.stompClient.disconnect();
+                    }
+                    if (this.pollTimerId) {
+                        clearInterval(this.pollTimerId);
+                    }
+                    if (this.deliveryMap) {
+                        this.deliveryMap.remove();
+                        this.deliveryMap = null;
+                    }
                 }
             };
         }

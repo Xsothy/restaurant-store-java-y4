@@ -64,6 +64,12 @@ public class Delivery {
     @Column(name = "current_location")
     private String currentLocation;
     
+    @Column(name = "latitude")
+    private Double latitude;
+    
+    @Column(name = "longitude")
+    private Double longitude;
+    
     @Column(name = "created_at")
     private LocalDateTime createdAt;
     

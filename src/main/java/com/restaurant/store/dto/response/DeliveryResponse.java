@@ -25,6 +25,8 @@ public class DeliveryResponse {
     private LocalDateTime actualDeliveryTime;
     private String deliveryNotes;
     private String currentLocation;
+    private Double latitude;
+    private Double longitude;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

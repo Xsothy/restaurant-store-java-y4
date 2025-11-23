@@ -73,8 +73,14 @@ public class AdminOrderEventForwarder {
             return;
         }
 
-        Optional<Order> optionalOrder = orderRepository.findByExternalId(adminOrderId);
-        if (optionalOrder.isEmpty()) {
+        Optional<Order> optionalOrder;
+        try {
+            optionalOrder = orderRepository.findByExternalId(adminOrderId);
+            if (optionalOrder.isEmpty()) {
+                optionalOrder = orderRepository.findById(adminOrderId);
+            }
+        } catch (Exception e) {
+            log.warn("Error finding order by external_id {}: {}. Trying to find by ID.", adminOrderId, e.getMessage());
             optionalOrder = orderRepository.findById(adminOrderId);
         }
 
@@ -128,8 +134,14 @@ public class AdminOrderEventForwarder {
             return;
         }
 
-        Optional<Order> optionalOrder = orderRepository.findByExternalId(adminOrderId);
-        if (optionalOrder.isEmpty()) {
+        Optional<Order> optionalOrder;
+        try {
+            optionalOrder = orderRepository.findByExternalId(adminOrderId);
+            if (optionalOrder.isEmpty()) {
+                optionalOrder = orderRepository.findById(adminOrderId);
+            }
+        } catch (Exception e) {
+            log.warn("Error finding order by external_id {}: {}. Trying to find by ID.", adminOrderId, e.getMessage());
             optionalOrder = orderRepository.findById(adminOrderId);
         }
 

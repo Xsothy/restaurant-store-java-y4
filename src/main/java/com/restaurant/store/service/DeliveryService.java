@@ -119,6 +119,27 @@ public class DeliveryService {
     }
 
     @Transactional
+    public void updateDeliveryLocation(Long orderId, Double latitude, Double longitude) {
+        log.info("Updating delivery location for order: {} - Lat: {}, Lng: {}", orderId, latitude, longitude);
+
+        Delivery delivery = deliveryRepository.findByOrderId(orderId)
+                .orElseThrow(() -> new ResourceNotFoundException("Delivery not found for order id: " + orderId));
+
+        delivery.setLatitude(latitude);
+        delivery.setLongitude(longitude);
+        
+        if (latitude != null && longitude != null) {
+            delivery.setCurrentLocation(String.format("%.6f,%.6f", latitude, longitude));
+        }
+        
+        deliveryRepository.save(delivery);
+
+        deliveryStatusWebSocketController.sendLocationUpdate(orderId, 
+                String.format("{\"latitude\":%.6f,\"longitude\":%.6f}", latitude, longitude));
+        log.info("Delivery location updated for order: {}", orderId);
+    }
+
+    @Transactional
     public DeliveryResponse assignDriver(Long orderId, String driverName, String driverPhone, String vehicleInfo) {
         log.info("Assigning driver to delivery for order: {} - Driver: {}", orderId, driverName);
 

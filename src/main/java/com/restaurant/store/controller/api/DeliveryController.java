@@ -85,19 +85,33 @@ public class DeliveryController {
     @PostMapping("/{orderId}/location")
     @Hidden
     @Operation(summary = "Update Delivery Location (Driver Only)", 
-               description = "Updates driver location and broadcasts via WebSocket. This endpoint is for driver use only.")
+               description = "Updates driver location with coordinates and broadcasts via WebSocket. This endpoint is for driver use only.")
     public ResponseEntity<ApiResponse<String>> updateDeliveryLocation(
             @PathVariable Long orderId,
-            @RequestParam String location) {
+            @RequestParam(required = false) String location,
+            @RequestParam(required = false) Double latitude,
+            @RequestParam(required = false) Double longitude) {
 
-        log.info("Received delivery location update for order: {} - Location: {}", orderId, location);
+        log.info("Received delivery location update for order: {} - Location: {}, Lat: {}, Lng: {}", 
+                orderId, location, latitude, longitude);
 
-        deliveryService.updateDeliveryLocation(orderId, location);
-
-        return ResponseEntity.ok(ApiResponse.success(
-                "Delivery location updated successfully",
-                "Location updated to: " + location
-        ));
+        if (latitude != null && longitude != null) {
+            deliveryService.updateDeliveryLocation(orderId, latitude, longitude);
+            return ResponseEntity.ok(ApiResponse.success(
+                    "Delivery location updated successfully",
+                    String.format("Location updated to: %.6f,%.6f", latitude, longitude)
+            ));
+        } else if (location != null) {
+            deliveryService.updateDeliveryLocation(orderId, location);
+            return ResponseEntity.ok(ApiResponse.success(
+                    "Delivery location updated successfully",
+                    "Location updated to: " + location
+            ));
+        } else {
+            return ResponseEntity.badRequest().body(ApiResponse.error(
+                    "Either location or latitude/longitude must be provided"
+            ));
+        }
     }
 
     @PostMapping("/{orderId}/driver")
