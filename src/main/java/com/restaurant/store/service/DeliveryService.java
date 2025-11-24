@@ -255,5 +255,105 @@ public class DeliveryService {
             default -> "Your delivery status has been updated";
         };
     }
+
+    /**
+     * Updates delivery with data from admin backend
+     * @param orderId Order ID
+     * @param deliveryStatus Delivery status
+     * @param latitude Driver latitude
+     * @param longitude Driver longitude
+     * @param driverName Driver name
+     * @param driverPhone Driver phone
+     * @param deliveryAddress Delivery address
+     * @param deliveryNotes Delivery notes
+     * @param dispatchedAt Dispatched time
+     * @param deliveredAt Delivered time
+     * @return true if delivery was updated
+     */
+    @Transactional
+    public boolean updateDeliveryFromAdmin(Long orderId, DeliveryStatus deliveryStatus,
+                                          Double latitude, Double longitude,
+                                          String driverName, String driverPhone,
+                                          String deliveryAddress, String deliveryNotes,
+                                          LocalDateTime dispatchedAt, LocalDateTime deliveredAt) {
+        Delivery delivery = deliveryRepository.findByOrderId(orderId).orElse(null);
+        if (delivery == null) {
+            log.debug("No delivery found for order {}, skipping delivery update", orderId);
+            return false;
+        }
+
+        boolean updated = false;
+
+        // Update delivery status
+        if (deliveryStatus != null && deliveryStatus != delivery.getStatus()) {
+            delivery.setStatus(deliveryStatus);
+            updated = true;
+            log.debug("Updated delivery status for order {} to {}", orderId, deliveryStatus);
+        }
+
+        // Update latitude
+        if (latitude != null && !latitude.equals(delivery.getLatitude())) {
+            delivery.setLatitude(latitude);
+            updated = true;
+        }
+
+        // Update longitude
+        if (longitude != null && !longitude.equals(delivery.getLongitude())) {
+            delivery.setLongitude(longitude);
+            updated = true;
+        }
+
+        // Update current location if coordinates are available
+        if (latitude != null && longitude != null) {
+            String locationString = String.format("%.6f,%.6f", latitude, longitude);
+            if (!locationString.equals(delivery.getCurrentLocation())) {
+                delivery.setCurrentLocation(locationString);
+                updated = true;
+                log.debug("Updated delivery location for order {} to {}", orderId, locationString);
+            }
+        }
+
+        // Update delivery address if provided
+        if (deliveryAddress != null && !deliveryAddress.equals(delivery.getDeliveryAddress())) {
+            delivery.setDeliveryAddress(deliveryAddress);
+            updated = true;
+        }
+
+        // Update delivery notes if provided
+        if (deliveryNotes != null && !deliveryNotes.equals(delivery.getDeliveryNotes())) {
+            delivery.setDeliveryNotes(deliveryNotes);
+            updated = true;
+        }
+
+        // Update driver information if available
+        if (driverName != null && !driverName.equals(delivery.getDriverName())) {
+            delivery.setDriverName(driverName);
+            updated = true;
+        }
+
+        if (driverPhone != null && !driverPhone.equals(delivery.getDriverPhone())) {
+            delivery.setDriverPhone(driverPhone);
+            updated = true;
+        }
+
+        // Update timestamps
+        if (dispatchedAt != null && !dispatchedAt.equals(delivery.getEstimatedDeliveryTime())) {
+            delivery.setEstimatedDeliveryTime(dispatchedAt);
+            updated = true;
+        }
+
+        if (deliveredAt != null && !deliveredAt.equals(delivery.getActualDeliveryTime())) {
+            delivery.setActualDeliveryTime(deliveredAt);
+            updated = true;
+        }
+
+        if (updated) {
+            deliveryRepository.save(delivery);
+            log.info("Updated delivery for order {} with admin data (status: {}, lat: {}, lng: {})",
+                    orderId, deliveryStatus, latitude, longitude);
+        }
+
+        return updated;
+    }
 }
 

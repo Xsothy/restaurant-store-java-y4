@@ -622,5 +622,68 @@ public class OrderService {
 
         return enrichedMetadata;
     }
+
+    /**
+     * Updates order with data from admin backend
+     * @param order Order to update
+     * @param statusStr Order status string
+     * @param estimatedDeliveryTime Estimated delivery time
+     * @return true if order was updated
+     */
+    @Transactional
+    public boolean updateOrderFromAdmin(Order order, String statusStr, LocalDateTime estimatedDeliveryTime) {
+        if (order == null) {
+            return false;
+        }
+
+        boolean updated = false;
+
+        if (statusStr != null && !statusStr.isBlank()) {
+            try {
+                OrderStatus status = OrderStatus.valueOf(statusStr.toUpperCase());
+                if (status != order.getStatus()) {
+                    order.setStatus(status);
+                    updated = true;
+                    log.debug("Updated order {} status to {}", order.getId(), status);
+                }
+            } catch (IllegalArgumentException ex) {
+                log.debug("Ignoring unknown order status: {}", statusStr);
+            }
+        }
+
+        if (estimatedDeliveryTime != null && !estimatedDeliveryTime.equals(order.getEstimatedDeliveryTime())) {
+            order.setEstimatedDeliveryTime(estimatedDeliveryTime);
+            updated = true;
+            log.debug("Updated order {} estimated delivery time", order.getId());
+        }
+
+        if (updated) {
+            orderRepository.save(order);
+        }
+
+        return updated;
+    }
+
+    /**
+     * Finds order by external ID or regular ID
+     * @param adminOrderId Order ID from admin system
+     * @return Optional Order
+     */
+    public Optional<Order> findOrderByAdminId(Long adminOrderId) {
+        if (adminOrderId == null) {
+            return Optional.empty();
+        }
+
+        try {
+            Optional<Order> order = orderRepository.findByExternalId(adminOrderId);
+            if (order.isPresent()) {
+                return order;
+            }
+            return orderRepository.findById(adminOrderId);
+        } catch (Exception e) {
+            log.warn("Error finding order by external_id {}: {}. Trying to find by ID.", adminOrderId, e.getMessage());
+            return orderRepository.findById(adminOrderId);
+        }
+    }
 }
 
