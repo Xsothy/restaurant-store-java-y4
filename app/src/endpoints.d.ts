@@ -1,6 +1,6 @@
 /* tslint:disable */
 /* eslint-disable */
-// Generated using typescript-generator version 3.2.1263 on 2025-11-18 18:56:12.
+// Generated using typescript-generator version 3.2.1263 on 2025-11-28 23:57:04.
 
 declare namespace endpoint {
 
@@ -27,6 +27,8 @@ declare namespace endpoint {
         deliveryDriverPhone: string;
         deliveryEstimatedArrivalTime: Date;
         deliveryActualDeliveryTime: Date;
+        deliveryLatitude: number;
+        deliveryLongitude: number;
         pickupStatus: PickupStatus;
         pickupCode: string;
         pickupReadyAt: Date;

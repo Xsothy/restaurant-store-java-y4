@@ -1,6 +1,5 @@
 package com.restaurant.store.integration;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.restaurant.store.controller.api.DeliveryStatusWebSocketController;
 import com.restaurant.store.controller.api.OrderStatusWebSocketController;
@@ -12,7 +11,6 @@ import com.restaurant.store.entity.Delivery;
 import com.restaurant.store.entity.DeliveryStatus;
 import com.restaurant.store.entity.Order;
 import com.restaurant.store.entity.OrderStatus;
-import com.restaurant.store.repository.DeliveryRepository;
 import com.restaurant.store.repository.OrderRepository;
 import com.restaurant.store.service.DeliveryService;
 import com.restaurant.store.service.OrderService;
@@ -22,19 +20,16 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.time.format.DateTimeParseException;
-import java.util.Collections;
 import java.util.EnumSet;
-import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Component
 @RequiredArgsConstructor
 @Slf4j
 public class AdminOrderEventForwarder {
 
-    private static final TypeReference<Map<String, Object>> MAP_TYPE = new TypeReference<>() { };
     private static final EnumSet<WebSocketMessageDTO.MessageType> ORDER_MESSAGE_TYPES = EnumSet.of(
             WebSocketMessageDTO.MessageType.ORDER_CREATED,
             WebSocketMessageDTO.MessageType.ORDER_UPDATED,
@@ -46,7 +41,6 @@ public class AdminOrderEventForwarder {
     );
 
     private final OrderRepository orderRepository;
-    private final DeliveryRepository deliveryRepository;
     private final OrderStatusWebSocketController orderStatusWebSocketController;
     private final DeliveryStatusWebSocketController deliveryStatusWebSocketController;
     private final ObjectMapper objectMapper;
@@ -66,18 +60,16 @@ public class AdminOrderEventForwarder {
 
         OrderDTO payload = orderData != null
                 ? orderData
-                : convertPayload(envelope != null ? envelope.getData() : null, OrderDTO.class);
+                : convertPayload(envelope.getData(), OrderDTO.class);
 
         if (payload == null) {
             log.debug("Skipping Admin order event - payload could not be converted");
             return;
         }
 
-        Map<String, Object> metadata = convertDataToMap(payload);
-        Long adminOrderId = Optional.ofNullable(payload.getId())
-                .orElseGet(() -> extractOrderId(metadata));
+        Long adminOrderId = payload.getId();
         if (adminOrderId == null) {
-            log.debug("Ignoring Admin order event without order id: {}", metadata);
+            log.debug("Ignoring Admin order event without order id");
             return;
         }
 
@@ -88,11 +80,10 @@ public class AdminOrderEventForwarder {
         }
 
         Order order = optionalOrder.get();
-        String statusStr = metadata.containsKey("status") ? String.valueOf(metadata.get("status")) : null;
-        LocalDateTime estimatedDeliveryTime = parseDateTime(
-                metadata.containsKey("estimatedDeliveryTime") ? String.valueOf(metadata.get("estimatedDeliveryTime")) : null
-        );
-        boolean orderUpdated = orderService.updateOrderFromAdmin(order, statusStr, estimatedDeliveryTime);
+        String statusStr = payload.getStatus() != null
+                ? payload.getStatus().name()
+                : null;
+        boolean orderUpdated = orderService.updateOrderFromAdmin(order, statusStr, null);
 
         // Update delivery entity if delivery data is present in the order
         boolean deliveryUpdated = false;
@@ -100,10 +91,10 @@ public class AdminOrderEventForwarder {
             deliveryUpdated = updateDeliveryFromPayload(order.getId(), payload.getDelivery());
         }
 
+        log.info("Order update for {} status={} eta={}", order.getId(), order.getStatus(), order.getEstimatedDeliveryTime());
         OrderStatusMessage statusMessage = buildStatusMessage(order,
                 envelope,
                 messageType,
-                metadata,
                 defaultMessage != null ? defaultMessage : "Order update received");
         log.info("Forwarding Admin order event type={} for order {} status {} (delivery updated: {})", messageType,
                 order.getId(), order.getStatus(), deliveryUpdated);
@@ -131,11 +122,10 @@ public class AdminOrderEventForwarder {
             return;
         }
 
-        Map<String, Object> metadata = convertDataToMap(payload);
         Long adminOrderId = Optional.ofNullable(payload.getOrderId())
-                .orElseGet(() -> extractOrderId(metadata));
+                .orElse(payload.getOrderId());
         if (adminOrderId == null) {
-            log.debug("Ignoring Admin delivery event without order id: {}", metadata);
+            log.debug("Ignoring Admin delivery event without order id");
             return;
         }
 
@@ -146,54 +136,18 @@ public class AdminOrderEventForwarder {
         }
 
         Order order = optionalOrder.get();
-        
+
         // Update delivery entity if present (don't apply delivery status to order status)
         boolean deliveryUpdated = updateDeliveryFromPayload(order.getId(), payload);
 
         OrderStatusMessage statusMessage = buildStatusMessage(order,
                 envelope,
                 messageType,
-                metadata,
                 defaultMessage != null ? defaultMessage : "Delivery update received");
         log.info("Forwarding Admin delivery event type={} for order {} (delivery updated: {})", messageType,
                 order.getId(), deliveryUpdated);
         orderStatusWebSocketController.sendOrderNotification(order.getId(), statusMessage);
         deliveryStatusWebSocketController.sendDeliveryStatusUpdate(order.getId(), statusMessage);
-    }
-
-    private Map<String, Object> convertDataToMap(Object data) {
-        if (data == null) {
-            return Collections.emptyMap();
-        }
-
-        if (data instanceof Map<?, ?> map) {
-            return map.entrySet().stream()
-                    .collect(Collectors.toMap(entry -> String.valueOf(entry.getKey()), Map.Entry::getValue));
-        }
-
-        try {
-            return objectMapper.convertValue(data, MAP_TYPE);
-        } catch (IllegalArgumentException e) {
-            log.warn("Failed to convert Admin payload data: {}", data, e);
-            return Collections.emptyMap();
-        }
-    }
-
-    private Long extractOrderId(Map<String, Object> data) {
-        Object rawOrderId = data.getOrDefault("orderId", data.get("id"));
-        if (rawOrderId instanceof Number number) {
-            return number.longValue();
-        }
-
-        if (rawOrderId instanceof String string) {
-            try {
-                return Long.parseLong(string);
-            } catch (NumberFormatException ex) {
-                log.debug("Failed to parse order id {}", string, ex);
-            }
-        }
-
-        return null;
     }
 
     /**
@@ -225,12 +179,33 @@ public class AdminOrderEventForwarder {
         );
     }
 
-    private LocalDateTime parseDateTime(String value) {
-        try {
-            return LocalDateTime.parse(value);
-        } catch (DateTimeParseException ex) {
-            log.debug("Failed to parse timestamp {}", value, ex);
+    private LocalDateTime parseDateTime(Object value) {
+        if (value == null) {
             return null;
+        }
+
+        if (value instanceof LocalDateTime localDateTime) {
+            return localDateTime;
+        }
+
+        if (value instanceof OffsetDateTime offsetDateTime) {
+            return offsetDateTime.toLocalDateTime();
+        }
+
+        String text = String.valueOf(value);
+        if (!StringUtils.hasText(text) || "null".equalsIgnoreCase(text)) {
+            return null;
+        }
+
+        try {
+            return LocalDateTime.parse(text);
+        } catch (DateTimeParseException ex) {
+            try {
+                return OffsetDateTime.parse(text).toLocalDateTime();
+            } catch (DateTimeParseException ignored) {
+                log.debug("Failed to parse timestamp {}", text, ex);
+                return null;
+            }
         }
     }
 
@@ -254,7 +229,6 @@ public class AdminOrderEventForwarder {
     private OrderStatusMessage buildStatusMessage(Order order,
                                                   WebSocketMessageDTO<?> message,
                                                   WebSocketMessageDTO.MessageType messageType,
-                                                  Map<String, Object> metadata,
                                                   String defaultMessage) {
         return OrderStatusMessage.builder()
                 .orderId(order.getId())
@@ -265,7 +239,7 @@ public class AdminOrderEventForwarder {
                 .estimatedDeliveryTime(order.getEstimatedDeliveryTime())
                 .timestamp(Optional.ofNullable(message != null ? message.getTimestamp() : null)
                         .orElse(LocalDateTime.now()))
-                .metadata(metadata.isEmpty() ? Collections.emptyMap() : metadata)
+                .metadata(null)
                 .build();
     }
 

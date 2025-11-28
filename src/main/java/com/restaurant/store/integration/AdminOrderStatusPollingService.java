@@ -69,6 +69,7 @@ public class AdminOrderStatusPollingService {
     }
 
     private void forwardPolledDeliveryOrder(OrderDTO order) {
+        // Forward full order as well to keep order status in sync for delivery poll results
         forwardPolledOrder(order, "delivery");
 
         DeliveryDTO delivery = Optional.ofNullable(order).map(OrderDTO::getDelivery).orElse(null);

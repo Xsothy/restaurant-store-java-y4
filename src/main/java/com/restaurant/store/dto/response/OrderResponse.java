@@ -43,6 +43,8 @@ public class OrderResponse {
     private String deliveryDriverPhone;
     private LocalDateTime deliveryEstimatedArrivalTime;
     private LocalDateTime deliveryActualDeliveryTime;
+    private Double deliveryLatitude;
+    private Double deliveryLongitude;
     private PickupStatus pickupStatus;
     private String pickupCode;
     private LocalDateTime pickupReadyAt;

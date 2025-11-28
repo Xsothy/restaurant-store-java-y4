@@ -415,11 +415,17 @@
                         return {};
                     }
                     const updates = {};
-                    const driverName = metadata.deliveryDriverName || metadata.driverName;
-                    const driverPhone = metadata.deliveryDriverPhone || metadata.driverPhone;
-                    const driverStatus = metadata.deliveryStatus || metadata.driverStatus;
-                    const eta = metadata.deliveryEstimatedArrivalTime || metadata.deliveryEta || metadata.estimatedArrivalTime;
-                    const actualDelivered = metadata.deliveryActualDeliveryTime || metadata.deliveredAt;
+                    const delivery = metadata.delivery || {};
+                    const driver = delivery.driver || {};
+                    const driverName = metadata.deliveryDriverName || metadata.driverName || driver.fullName || driver.name;
+                    const driverPhone = metadata.deliveryDriverPhone || metadata.driverPhone || driver.phone || driver.email;
+                    const driverStatus = metadata.deliveryStatus || metadata.driverStatus || delivery.status;
+                    const eta = metadata.deliveryEstimatedArrivalTime || metadata.deliveryEta || metadata.estimatedArrivalTime || delivery.estimatedArrivalTime;
+                    const actualDelivered = metadata.deliveryActualDeliveryTime || metadata.deliveredAt || delivery.deliveredAt || delivery.actualDeliveryTime;
+                    const lat = metadata.deliveryLatitude ?? delivery.latitude;
+                    const lng = metadata.deliveryLongitude ?? delivery.longitude;
+                    const deliveryEta = delivery.estimatedDeliveryTime || delivery.estimatedArrivalTime;
+
                     if (driverName) {
                         updates.deliveryDriverName = driverName;
                     }
@@ -429,11 +435,17 @@
                     if (driverStatus) {
                         updates.deliveryStatus = driverStatus;
                     }
-                    if (eta) {
-                        updates.deliveryEstimatedArrivalTime = eta;
+                    if (eta || deliveryEta) {
+                        updates.deliveryEstimatedArrivalTime = eta || deliveryEta;
                     }
                     if (actualDelivered) {
                         updates.deliveryActualDeliveryTime = actualDelivered;
+                    }
+                    if (lat) {
+                        updates.deliveryLatitude = lat;
+                    }
+                    if (lng) {
+                        updates.deliveryLongitude = lng;
                     }
                     if (metadata.paymentStatus) {
                         updates.paymentStatus = metadata.paymentStatus;

@@ -104,7 +104,9 @@ public class OrderMapper {
                 .deliveryDriverName(delivery.getDriverName())
                 .deliveryDriverPhone(delivery.getDriverPhone())
                 .deliveryEstimatedArrivalTime(delivery.getEstimatedArrivalTime())
-                .deliveryActualDeliveryTime(delivery.getActualDeliveryTime());
+                .deliveryActualDeliveryTime(delivery.getActualDeliveryTime())
+                .deliveryLatitude(delivery.getLatitude())
+                .deliveryLongitude(delivery.getLongitude());
     }
 
     private void applyPickupDetails(OrderResponse.OrderResponseBuilder builder, Pickup pickup) {

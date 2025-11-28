@@ -30,4 +30,8 @@ public class CreateOrderRequest {
     
     @Size(max = 500, message = "Special instructions must be less than 500 characters")
     private String specialInstructions;
+
+    private Double latitude;
+
+    private Double longitude;
 }

@@ -4,6 +4,10 @@
     <th:block th:replace="~{fragments/layout :: head('Checkout - Restaurant Store')}"></th:block>
     <script src="https://js.stripe.com/v3/"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+          integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+            integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Kantumruy+Pro:wght@400;500;600;700&display=swap');
         body {
@@ -39,6 +43,14 @@
             font-size: 0.875rem;
             margin-top: 0.5rem;
         }
+
+        #deliveryMap {
+            height: 280px;
+            width: 100%;
+            border-radius: 0.75rem;
+            border: 1px solid #e5e7eb;
+            box-shadow: inset 0 1px 2px rgba(0,0,0,0.04);
+        }
     </style>
 </head>
 <body class="bg-gradient-to-br from-gray-50 to-gray-100 min-h-screen">
@@ -60,7 +72,7 @@
                         <div class="space-y-4">
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Order Type</label>
-                                <select x-model="orderType" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent">
+                                <select x-model="orderType" @change="handleOrderTypeChange" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent">
                                     <option value="DELIVERY">Delivery</option>
                                     <option value="PICKUP">Pickup</option>
                                 </select>
@@ -69,6 +81,31 @@
                             <div x-show="orderType === 'DELIVERY'">
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Delivery Address</label>
                                 <input type="text" x-model="deliveryAddress" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent" placeholder="Enter your delivery address">
+                            </div>
+
+                            <div x-show="orderType === 'DELIVERY'" x-cloak class="space-y-3">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <p class="text-sm font-medium text-gray-700">Pin Your Location (optional)</p>
+                                        <p class="text-xs text-gray-500">Tap the map to drop a pin or use your browser location.</p>
+                                    </div>
+                                    <button type="button"
+                                            @click="useBrowserLocation"
+                                            class="inline-flex items-center px-3 py-1.5 text-xs font-semibold text-red-700 bg-red-50 border border-red-100 rounded-lg hover:bg-red-100 transition">
+                                        Use my location
+                                    </button>
+                                </div>
+                                <div id="deliveryMap"></div>
+                                <div class="grid grid-cols-2 gap-3 text-sm text-gray-600">
+                                    <div class="flex flex-col">
+                                        <span class="text-gray-500">Latitude</span>
+                                        <span class="font-semibold" x-text="deliveryLatitude ?? '—'"></span>
+                                    </div>
+                                    <div class="flex flex-col">
+                                        <span class="text-gray-500">Longitude</span>
+                                        <span class="font-semibold" x-text="deliveryLongitude ?? '—'"></span>
+                                    </div>
+                                </div>
                             </div>
                             
                             <div>
@@ -196,6 +233,10 @@
                 processing: false,
                 stripe: null,
                 cardElement: null,
+                deliveryLatitude: null,
+                deliveryLongitude: null,
+                deliveryMap: null,
+                deliveryMarker: null,
                 
                 async init() {
                     const token = localStorage.getItem('token');
@@ -208,6 +249,7 @@
                     
                     await this.loadCart();
                     await this.loadCustomerInfo();
+                    this.$nextTick(() => this.ensureMap());
                     this.initStripe();
                 },
                 
@@ -244,6 +286,97 @@
                     }
                 },
                 
+                handleOrderTypeChange() {
+                    if (this.orderType === 'DELIVERY') {
+                        this.$nextTick(() => this.ensureMap());
+                    } else {
+                        this.deliveryLatitude = null;
+                        this.deliveryLongitude = null;
+                        if (this.deliveryMarker) {
+                            this.deliveryMarker.remove();
+                            this.deliveryMarker = null;
+                        }
+                    }
+                },
+
+                ensureMap() {
+                    if (this.orderType !== 'DELIVERY') {
+                        return;
+                    }
+                    if (typeof L === 'undefined') {
+                        console.warn('Leaflet not available for map drop-in');
+                        return;
+                    }
+                    if (this.deliveryMap) {
+                        this.deliveryMap.invalidateSize();
+                        return;
+                    }
+                    const defaultCenter = [11.5564, 104.9282]; // Phnom Penh fallback
+                    const center = (this.deliveryLatitude != null && this.deliveryLongitude != null)
+                        ? [this.deliveryLatitude, this.deliveryLongitude]
+                        : defaultCenter;
+
+                    this.deliveryMap = L.map('deliveryMap').setView(center, 13);
+                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                        attribution: '&copy; OpenStreetMap contributors',
+                        maxZoom: 19
+                    }).addTo(this.deliveryMap);
+
+                    this.deliveryMap.on('click', (e) => {
+                        this.setPin(e.latlng.lat, e.latlng.lng, true);
+                    });
+
+                    if (this.deliveryLatitude != null && this.deliveryLongitude != null) {
+                        this.setPin(this.deliveryLatitude, this.deliveryLongitude, false);
+                    }
+                },
+
+                setPin(lat, lng, pan = false) {
+                    this.deliveryLatitude = Number(lat.toFixed(6));
+                    this.deliveryLongitude = Number(lng.toFixed(6));
+
+                    if (!this.deliveryMap) {
+                        return;
+                    }
+
+                    if (!this.deliveryMarker) {
+                        this.deliveryMarker = L.marker([lat, lng], { draggable: true }).addTo(this.deliveryMap);
+                        this.deliveryMarker.on('dragend', (event) => {
+                            const pos = event.target.getLatLng();
+                            this.setPin(pos.lat, pos.lng, false);
+                        });
+                    } else {
+                        this.deliveryMarker.setLatLng([lat, lng]);
+                    }
+
+                    if (pan) {
+                        this.deliveryMap.panTo([lat, lng]);
+                    }
+                },
+
+                useBrowserLocation() {
+                    if (!navigator.geolocation) {
+                        alert('Geolocation not supported in this browser.');
+                        return;
+                    }
+                    navigator.geolocation.getCurrentPosition(
+                        (pos) => {
+                            const { latitude, longitude } = pos.coords;
+                            this.setPin(latitude, longitude, true);
+                            this.ensureMap();
+                        },
+                        (err) => {
+                            console.warn('Geolocation error', err);
+                            alert('Unable to fetch your location.');
+                        },
+                        { enableHighAccuracy: true, timeout: 8000 }
+                    );
+                },
+
+                hasCoordinates() {
+                    return this.deliveryLatitude != null && this.deliveryLongitude != null;
+                },
+
                 initStripe() {
                     this.stripe = Stripe(STRIPE_PUBLIC_KEY);
                     const elements = this.stripe.elements();
@@ -286,6 +419,12 @@
                         return;
                     }
                     
+                    if (this.orderType === 'DELIVERY' && !this.hasCoordinates()) {
+                        alert('Please drop a pin for your delivery location.');
+                        this.ensureMap();
+                        return;
+                    }
+                    
                     if (!this.phoneNumber.trim()) {
                         alert('Please enter phone number');
                         return;
@@ -314,7 +453,9 @@
                                 orderType: this.orderType,
                                 deliveryAddress: this.orderType === 'DELIVERY' ? this.deliveryAddress : null,
                                 phoneNumber: this.phoneNumber,
-                                specialInstructions: this.specialInstructions
+                                specialInstructions: this.specialInstructions,
+                                latitude: this.orderType === 'DELIVERY' && this.hasCoordinates() ? this.deliveryLatitude : null,
+                                longitude: this.orderType === 'DELIVERY' && this.hasCoordinates() ? this.deliveryLongitude : null
                             })
                         });
                         

@@ -24,12 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.EnumSet;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -130,6 +125,10 @@ public class OrderService {
             delivery.setOrder(order);
             delivery.setDeliveryAddress(request.getDeliveryAddress());
             delivery.setPhoneNumber(request.getPhoneNumber());
+            if (request.getLatitude() != null && request.getLongitude() != null) {
+                delivery.setLatitude(request.getLatitude());
+                delivery.setLongitude(request.getLongitude());
+            }
             delivery.setStatus(DeliveryStatus.PENDING);
             delivery.setEstimatedDeliveryTime(order.getEstimatedDeliveryTime());
             deliveryRepository.save(delivery);
@@ -544,6 +543,9 @@ public class OrderService {
             }
             if (request.getPhoneNumber() == null || request.getPhoneNumber().isBlank()) {
                 throw new BadRequestException("Phone number is required for delivery orders");
+            }
+            if (request.getLatitude() == null || request.getLongitude() == null) {
+                throw new BadRequestException("Delivery location is required for delivery orders");
             }
         } else if (request.getOrderType() == OrderType.PICKUP) {
             if (request.getPhoneNumber() == null || request.getPhoneNumber().isBlank()) {
