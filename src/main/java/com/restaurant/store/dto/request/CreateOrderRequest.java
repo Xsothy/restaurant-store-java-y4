@@ -1,13 +1,15 @@
 package com.restaurant.store.dto.request;
 
-import com.restaurant.store.entity.OrderType;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
+import com.restaurant.store.entity.OrderType;
 
 import java.util.List;
 
@@ -34,4 +36,36 @@ public class CreateOrderRequest {
     private Double latitude;
 
     private Double longitude;
+
+    @AssertTrue(message = "Delivery address is required for delivery orders")
+    private boolean isDeliveryAddressValid() {
+        if (orderType != OrderType.DELIVERY) {
+            return true;
+        }
+        return deliveryAddress != null && !deliveryAddress.isBlank();
+    }
+
+    @AssertTrue(message = "Delivery location is required for delivery orders")
+    private boolean isDeliveryLocationValid() {
+        if (orderType != OrderType.DELIVERY) {
+            return true;
+        }
+        return latitude != null && longitude != null;
+    }
+
+    @AssertTrue(message = "Phone number is required for delivery orders")
+    private boolean isDeliveryPhoneValid() {
+        if (orderType != OrderType.DELIVERY) {
+            return true;
+        }
+        return phoneNumber != null && !phoneNumber.isBlank();
+    }
+
+    @AssertTrue(message = "Phone number is required for pickup orders")
+    private boolean isPickupPhoneValid() {
+        if (orderType != OrderType.PICKUP) {
+            return true;
+        }
+        return phoneNumber != null && !phoneNumber.isBlank();
+    }
 }

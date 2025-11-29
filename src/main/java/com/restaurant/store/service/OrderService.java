@@ -69,8 +69,6 @@ public class OrderService {
     }
 
     private OrderResponse createOrderInternal(CreateOrderRequest request, Customer customer) {
-        validateOrderDetails(request);
-
         // Validate and calculate total price
         BigDecimal totalPrice = BigDecimal.ZERO;
         List<OrderItem> orderItems = new ArrayList<>();
@@ -530,28 +528,6 @@ public class OrderService {
         return cartItems.stream()
                 .map(item -> new OrderItemRequest(item.getProductId(), item.getQuantity(), null))
                 .collect(Collectors.toList());
-    }
-
-    private void validateOrderDetails(CreateOrderRequest request) {
-        if (request == null || request.getOrderType() == null) {
-            throw new BadRequestException("Order type is required");
-        }
-
-        if (request.getOrderType() == OrderType.DELIVERY) {
-            if (request.getDeliveryAddress() == null || request.getDeliveryAddress().isBlank()) {
-                throw new BadRequestException("Delivery address is required for delivery orders");
-            }
-            if (request.getPhoneNumber() == null || request.getPhoneNumber().isBlank()) {
-                throw new BadRequestException("Phone number is required for delivery orders");
-            }
-            if (request.getLatitude() == null || request.getLongitude() == null) {
-                throw new BadRequestException("Delivery location is required for delivery orders");
-            }
-        } else if (request.getOrderType() == OrderType.PICKUP) {
-            if (request.getPhoneNumber() == null || request.getPhoneNumber().isBlank()) {
-                throw new BadRequestException("Phone number is required for pickup orders");
-            }
-        }
     }
 
     private Pickup createPickupRecord(Order order, CreateOrderRequest request, Customer customer) {
